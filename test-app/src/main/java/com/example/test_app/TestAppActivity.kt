@@ -1,12 +1,9 @@
 package com.example.test_app
 
 import android.os.Bundle
-import android.support.design.widget.CollapsingToolbarLayout
-import android.support.design.widget.FloatingActionButton
-import android.support.design.widget.Snackbar
-import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import androidx.appcompat.app.AppCompatActivity
 import com.example.test_app.databinding.ActivityTestAppBinding
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 
@@ -21,15 +18,14 @@ class TestAppActivity : AppCompatActivity() {
         val retriever : RetrieverAndroidImpl = RetrieverAndroidImpl(applicationContext)
         retriever.startNSD()
 
-        binding = ActivityTestAppBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_test_app)
+        setTitle("Retreiver Test")
+//
+//        binding = ActivityTestAppBinding.inflate(layoutInflater)
+//        setContentView(binding.root)
+
 
         setSupportActionBar(findViewById(R.id.toolbar))
-        binding.toolbarLayout.title = title
-        binding.fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
-        }
 
 
 

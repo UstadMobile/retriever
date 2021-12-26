@@ -94,6 +94,8 @@ ext {
     version_androidx_legacy = "1.0.0"
     version_android_roboelectric = "4.5.1"
     version_android_espresso = "3.4.0"
+
+    version_android_room = "2.4.0-rc01"
 }
 
 allprojects {
