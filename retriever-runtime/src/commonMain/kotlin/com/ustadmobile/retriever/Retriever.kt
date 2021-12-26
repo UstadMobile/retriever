@@ -6,4 +6,5 @@ interface Retriever {
     //    .saveTo(dirPath)
     fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall
 
+    fun startNSD()
 }

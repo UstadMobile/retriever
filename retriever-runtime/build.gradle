@@ -42,6 +42,11 @@ kotlin {
     }
 }
 
+dependencies {
+    implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
+    implementation "io.github.aakira:napier:$version_napier"
+}
+
 android {
     compileSdkVersion 31
     buildToolsVersion "30.0.3"

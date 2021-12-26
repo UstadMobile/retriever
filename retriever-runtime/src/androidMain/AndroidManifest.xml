@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.ustadmobile.retriever.runtime">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
 </manifest>

@@ -1,2 +1,19 @@
+pluginManagement {
+    repositories {
+        maven {
+            url "https://devserver3.ustadmobile.com/maven"
+        }
+
+        mavenCentral()
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+
+    }
+}
+
 rootProject.name = 'retriever'
-include "retriever-runtime"
+include ':retriever-runtime',
+         ':test-app',
+         ':lib-database-entities',
+         ':lib-database', ':lib-database-android'
