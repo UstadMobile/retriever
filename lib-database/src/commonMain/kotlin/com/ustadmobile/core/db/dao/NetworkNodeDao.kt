@@ -11,6 +11,11 @@ import com.ustadmobile.lib.db.entities.NetworkNode
 abstract class NetworkNodeDao: BaseDao<NetworkNode>{
 
 
+    @Query("""
+        SELECT * FROM NetworkNode where networkNodeEndpointUrl = :endpointUrl
+    """)
+    abstract suspend fun findByEndpointUrl(endpointUrl: String): List<NetworkNode>
+
     @Update
     abstract suspend fun updateAsync(networkNode: NetworkNode)
 

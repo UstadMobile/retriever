@@ -34,6 +34,7 @@ kotlin {
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
                 implementation project(':lib-database')
                 implementation project(':lib-database-entities')
+                implementation "com.soywiz.korlibs.klock:klock:$version_klock"
 
             }
         }
@@ -59,6 +60,7 @@ kotlin {
 dependencies {
     implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
     implementation "io.github.aakira:napier:$version_napier"
+
 
 }
 

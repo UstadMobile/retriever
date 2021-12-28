@@ -19,6 +19,8 @@ open class NetworkNode {
 
     var networkNodeEndpointUrl: String? = null
 
+    var networkNodeDiscovered: Long = 0
+
 
 
 

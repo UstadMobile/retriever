@@ -24,6 +24,7 @@ class RetrieverAndroidImpl(
     init {
         database = DatabaseBuilder.databaseBuilder(applicationContext, UmAppDatabase::class,
             DBNAME).build()
+        retreiverController = NetworkNodeController(applicationContext, database)
 
     }
 
@@ -66,7 +67,8 @@ class RetrieverAndroidImpl(
     }
 
     override fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall {
-        TODO("Not yet implemented")
+        //TODO("Not yet implemented")
+        return RetrieverCall()
     }
 
     private val registrationListener = object: NsdManager.RegistrationListener{
@@ -164,8 +166,7 @@ class RetrieverAndroidImpl(
             println("P2PManagerAndroid: host:port  "
                     + host + ":" + port)
 
-            //TODO: Add to NetworkNode
-            retreiverController = NetworkNodeController(applicationContext, database)
+            //retreiverController = NetworkNodeController(applicationContext, database)
 
             val networkNode = NetworkNode()
             networkNode.networkNodeIPAddress = host.toString()
