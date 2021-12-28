@@ -3,6 +3,10 @@ package com.ustadmobile.retriever
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import com.ustadmobile.core.db.UmAppDatabase
+import com.ustadmobile.door.DatabaseBuilder
+import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.controller.NetworkNodeController
 import java.io.IOException
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -13,7 +17,13 @@ class RetrieverAndroidImpl(
     val applicationContext: Context
 ): Retriever {
 
+    var database: UmAppDatabase? = null
+
+    private var retreiverController:NetworkNodeController? = null
+
     init {
+        database = DatabaseBuilder.databaseBuilder(applicationContext, UmAppDatabase::class,
+            DBNAME).build()
 
     }
 
@@ -31,6 +41,9 @@ class RetrieverAndroidImpl(
     private lateinit var server: NanoHTTPD
 
     override fun startNSD() {
+
+        database = DatabaseBuilder.databaseBuilder(applicationContext,
+            UmAppDatabase::class, DBNAME).build()
 
         //Start nanohttpd server
         server = object : NanoHTTPD(listeningPort){}
@@ -142,7 +155,7 @@ class RetrieverAndroidImpl(
             if (serviceInfo.serviceName == mServiceName) {
                 println( "P2PManagerAndroid: Same IP.")
                 println("P2PManagerAndroid: Same IP ")
-                //return
+                return
             }
             mService = serviceInfo
             val port: Int = serviceInfo.port
@@ -150,10 +163,23 @@ class RetrieverAndroidImpl(
 
             println("P2PManagerAndroid: host:port  "
                     + host + ":" + port)
-            println("P2PManagerAndroid: host:port  "
-                    + host + ":" + port)
+
+            //TODO: Add to NetworkNode
+            retreiverController = NetworkNodeController(applicationContext, database)
+
+            val networkNode = NetworkNode()
+            networkNode.networkNodeIPAddress = host.toString()
+            networkNode.networkNodeEndpointUrl = "$host:$port"
+
+            retreiverController?.addNewNode(networkNode)
+
+
 
 
         }
+    }
+
+    companion object {
+        private const val DBNAME: String = "retreiverdb"
     }
 }

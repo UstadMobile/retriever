@@ -5,6 +5,8 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.example.test_app.databinding.ActivityTestAppBinding
+import com.ustadmobile.core.db.UmAppDatabase
+import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 
 class TestAppActivity : AppCompatActivity() {
@@ -17,6 +19,8 @@ class TestAppActivity : AppCompatActivity() {
         //Trying to init:
         val retriever : RetrieverAndroidImpl = RetrieverAndroidImpl(applicationContext)
         retriever.startNSD()
+
+        DatabaseBuilder.databaseBuilder(applicationContext, UmAppDatabase::class, "dbname").build()
 
         setContentView(R.layout.activity_test_app)
         setTitle("Retreiver Test")

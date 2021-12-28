@@ -6,17 +6,18 @@ import com.ustadmobile.door.annotation.*
 import kotlinx.serialization.Serializable
 
 /**
- * Test entity
+ * Network Node Watch List
 */
 @Entity
 @Serializable
-open class Potato {
+open class NetworkNodeWatchList {
 
     @PrimaryKey(autoGenerate = true)
-    var potatoUid: Long = 0
+    var networkNodeWatchListId: Long = 0
 
+    var networkNodeWatchListOriginalUrl: String? = null
 
-    var potatoName: String? = null
+    var networkNodeWatchListListenerUid: Long = 0
 
 
 }

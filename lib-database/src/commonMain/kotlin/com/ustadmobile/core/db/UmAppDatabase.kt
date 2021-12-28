@@ -14,7 +14,14 @@ import com.ustadmobile.lib.db.entities.*
 import kotlin.js.JsName
 import kotlin.jvm.JvmField
 
-@Database(entities = [Potato::class, SyncNode::class, SyncResult::class,
+@Database(entities = [Potato::class,
+
+    NetworkNodeAvailability::class,
+    NetworkNodeWatchList::class,
+    NetworkNode::class,
+
+    SyncNode::class, SyncResult::class,
+
     //Door Helper entities
     SqliteChangeSeqNums::class,
     UpdateNotification::class,
@@ -46,6 +53,9 @@ abstract class UmAppDatabase : DoorDatabase(), SyncableDoorDatabase {
 
     @JsName("potatoDao")
     abstract val potatoDao: PotatoDao
+
+    @JsName("networkNodeDao")
+    abstract val networkNodeDao : NetworkNodeDao
 
     @JsName("syncNodeDao")
     abstract val syncNodeDao: SyncNodeDao

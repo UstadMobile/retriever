@@ -31,6 +31,10 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
+                implementation "com.ustadmobile.door:door-runtime:$version_door"
+                implementation project(':lib-database')
+                implementation project(':lib-database-entities')
+
             }
         }
         commonTest {
@@ -39,12 +43,23 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
+        androidMain{
+            dependencies {
+                // Room (annotation processing takes place only on lib-database-android to improve build times)
+                implementation "androidx.room:room-runtime:$version_android_room"
+                implementation project(':lib-database-android')
+                implementation "com.ustadmobile.door:door-runtime:$version_door"
+                implementation project(':lib-database')
+                implementation project(':lib-database-entities')
+            }
+        }
     }
 }
 
 dependencies {
     implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
     implementation "io.github.aakira:napier:$version_napier"
+
 }
 
 android {

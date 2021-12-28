@@ -2,39 +2,15 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "fe50101ee72d06d080eca461cbf58c45",
+    "identityHash": "61335454da7d490bdc95bed9bb5ea89b",
     "entities": [
       {
         "tableName": "Potato",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`potatoUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `potatoPcsn` INTEGER NOT NULL, `potatoLcsn` INTEGER NOT NULL, `potatoLcb` INTEGER NOT NULL, `potatoLct` INTEGER NOT NULL, `potatoName` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`potatoUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `potatoName` TEXT)",
         "fields": [
           {
             "fieldPath": "potatoUid",
             "columnName": "potatoUid",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "potatoPcsn",
-            "columnName": "potatoPcsn",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "potatoLcsn",
-            "columnName": "potatoLcsn",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "potatoLcb",
-            "columnName": "potatoLcb",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "potatoLct",
-            "columnName": "potatoLct",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -48,6 +24,114 @@
         "primaryKey": {
           "columnNames": [
             "potatoUid"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "NetworkNodeAvailability",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`availabilityUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `availabilityNetworkNode` INTEGER NOT NULL, `availabilityOriginUrl` TEXT, `availabilityAvailable` INTEGER, `availabilityTime` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "availabilityUid",
+            "columnName": "availabilityUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availabilityNetworkNode",
+            "columnName": "availabilityNetworkNode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availabilityOriginUrl",
+            "columnName": "availabilityOriginUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "availabilityAvailable",
+            "columnName": "availabilityAvailable",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "availabilityTime",
+            "columnName": "availabilityTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "availabilityUid"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "NetworkNodeWatchList",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`networkNodeWatchListId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `networkNodeWatchListOriginalUrl` TEXT, `networkNodeWatchListListenerUid` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "networkNodeWatchListId",
+            "columnName": "networkNodeWatchListId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "networkNodeWatchListOriginalUrl",
+            "columnName": "networkNodeWatchListOriginalUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "networkNodeWatchListListenerUid",
+            "columnName": "networkNodeWatchListListenerUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "networkNodeWatchListId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "NetworkNode",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`networkNodeId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `networkNodeIPAddress` TEXT, `networkNodeEndpointUrl` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "networkNodeId",
+            "columnName": "networkNodeId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "networkNodeIPAddress",
+            "columnName": "networkNodeIPAddress",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "networkNodeEndpointUrl",
+            "columnName": "networkNodeEndpointUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "networkNodeId"
           ],
           "autoGenerate": true
         },
@@ -397,90 +481,12 @@
         },
         "indices": [],
         "foreignKeys": []
-      },
-      {
-        "tableName": "Potato_trk",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`pk` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `epk` INTEGER NOT NULL, `clientId` INTEGER NOT NULL, `csn` INTEGER NOT NULL, `rx` INTEGER NOT NULL, `reqId` INTEGER NOT NULL, `ts` INTEGER NOT NULL)",
-        "fields": [
-          {
-            "fieldPath": "pk",
-            "columnName": "pk",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "epk",
-            "columnName": "epk",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "clientId",
-            "columnName": "clientId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "csn",
-            "columnName": "csn",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "rx",
-            "columnName": "rx",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "reqId",
-            "columnName": "reqId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "ts",
-            "columnName": "ts",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "columnNames": [
-            "pk"
-          ],
-          "autoGenerate": true
-        },
-        "indices": [
-          {
-            "name": "index_Potato_trk_clientId_epk_csn",
-            "unique": false,
-            "columnNames": [
-              "clientId",
-              "epk",
-              "csn"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_Potato_trk_clientId_epk_csn` ON `${TABLE_NAME}` (`clientId`, `epk`, `csn`)"
-          },
-          {
-            "name": "index_Potato_trk_epk_clientId",
-            "unique": true,
-            "columnNames": [
-              "epk",
-              "clientId"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_Potato_trk_epk_clientId` ON `${TABLE_NAME}` (`epk`, `clientId`)"
-          }
-        ],
-        "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fe50101ee72d06d080eca461cbf58c45')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '61335454da7d490bdc95bed9bb5ea89b')"
     ]
   }
 }

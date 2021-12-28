@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.test_app"
-        minSdkVersion 24
+        minSdkVersion 23
         targetSdkVersion 31
         versionCode 1
         versionName "1.0"
@@ -54,4 +54,5 @@ dependencies {
     implementation project(":lib-database-entities")
     // Room (annotation processing takes place only on lib-database-android to improve build times)
     implementation "androidx.room:room-runtime:$version_android_room"
+    implementation "com.ustadmobile.door:door-runtime:$version_door"
 }
