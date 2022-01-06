@@ -6,7 +6,11 @@ import com.ustadmobile.door.annotation.*
 import kotlinx.serialization.Serializable
 
 /**
- * Network Node
+ * Network Node - Represents a Node (device) available nearby broadcasting receiver service.
+ * As devices(retreiver's service) are discovered, an entry it put in NetworkNode table with its
+ * ip address, endpoint url, time of discovery, time lost.
+ * The network nodes are removed when they are lost.
+ * All network nodes are likely to be purged when the application closes/restarts. TODO: verify
 */
 @Entity
 @Serializable
@@ -20,6 +24,8 @@ open class NetworkNode {
     var networkNodeEndpointUrl: String? = null
 
     var networkNodeDiscovered: Long = 0
+
+    var networkNodeLost: Long = 0
 
 
 

@@ -3,14 +3,15 @@ package com.ustadmobile.retriever
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import com.soywiz.klock.DateTime
 import com.ustadmobile.core.db.UmAppDatabase
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.controller.NetworkNodeController
-import java.io.IOException
 import java.net.InetAddress
-import java.net.ServerSocket
 import fi.iki.elonen.NanoHTTPD
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
 class RetrieverAndroidImpl(
@@ -25,6 +26,8 @@ class RetrieverAndroidImpl(
         database = DatabaseBuilder.databaseBuilder(applicationContext, UmAppDatabase::class,
             DBNAME).build()
         retreiverController = NetworkNodeController(applicationContext, database)
+
+        startNSD()
 
     }
 
@@ -41,7 +44,7 @@ class RetrieverAndroidImpl(
 
     private lateinit var server: NanoHTTPD
 
-    override fun startNSD() {
+    fun startNSD() {
 
         database = DatabaseBuilder.databaseBuilder(applicationContext,
             UmAppDatabase::class, DBNAME).build()
@@ -166,18 +169,19 @@ class RetrieverAndroidImpl(
             println("P2PManagerAndroid: host:port  "
                     + host + ":" + port)
 
-            //retreiverController = NetworkNodeController(applicationContext, database)
-
             val networkNode = NetworkNode()
             networkNode.networkNodeIPAddress = host.toString()
             networkNode.networkNodeEndpointUrl = "$host:$port"
+            networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
 
-            retreiverController?.addNewNode(networkNode)
-
-
-
-
+            GlobalScope.launch {
+                retreiverController?.addNewNode(networkNode)
+            }
         }
+    }
+
+    private fun addWatchList(fileOriginUrls: List<String>){
+
     }
 
     companion object {

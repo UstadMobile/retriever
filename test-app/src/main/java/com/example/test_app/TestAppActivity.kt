@@ -13,25 +13,21 @@ class TestAppActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTestAppBinding
 
+    private lateinit var retriever: RetrieverAndroidImpl
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         //Trying to init:
-        val retriever : RetrieverAndroidImpl = RetrieverAndroidImpl(applicationContext)
-        retriever.startNSD()
+        retriever  = RetrieverAndroidImpl(applicationContext)
 
-        DatabaseBuilder.databaseBuilder(applicationContext, UmAppDatabase::class, "dbname").build()
+        DatabaseBuilder.databaseBuilder(applicationContext, UmAppDatabase::class,
+            "dbname").build()
 
         setContentView(R.layout.activity_test_app)
-        setTitle("Retreiver Test")
-//
-//        binding = ActivityTestAppBinding.inflate(layoutInflater)
-//        setContentView(binding.root)
-
+        title = "Retriever Test"
 
         setSupportActionBar(findViewById(R.id.toolbar))
-
-
 
     }
 
