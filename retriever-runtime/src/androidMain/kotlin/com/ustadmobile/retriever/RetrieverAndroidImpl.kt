@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import com.soywiz.klock.DateTime
-import com.ustadmobile.core.db.UmAppDatabase
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.controller.NetworkNodeController
+import com.ustadmobile.retriever.db.RetrieverDatabase
 import java.net.InetAddress
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.GlobalScope
@@ -18,12 +18,12 @@ class RetrieverAndroidImpl(
     val applicationContext: Context
 ): Retriever {
 
-    var database: UmAppDatabase? = null
+    var database: RetrieverDatabase? = null
 
     private var retreiverController:NetworkNodeController? = null
 
     init {
-        database = DatabaseBuilder.databaseBuilder(applicationContext, UmAppDatabase::class,
+        database = DatabaseBuilder.databaseBuilder(applicationContext, RetrieverDatabase::class,
             DBNAME).build()
         retreiverController = NetworkNodeController(applicationContext, database)
 
@@ -47,7 +47,7 @@ class RetrieverAndroidImpl(
     fun startNSD() {
 
         database = DatabaseBuilder.databaseBuilder(applicationContext,
-            UmAppDatabase::class, DBNAME).build()
+            RetrieverDatabase::class, DBNAME).build()
 
         //Start nanohttpd server
         server = object : NanoHTTPD(listeningPort){}

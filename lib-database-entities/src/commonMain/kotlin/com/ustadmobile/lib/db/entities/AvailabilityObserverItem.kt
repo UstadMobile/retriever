@@ -15,13 +15,21 @@ import kotlinx.serialization.Serializable
 
 @Entity
 @Serializable
-open class AvailabilityWatchList {
+open class AvailabilityObserverItem {
 
     @PrimaryKey(autoGenerate = true)
-    var availabilityWatchListId: Long = 0
+    var aoiId: Long = 0
 
-    var availabilityWatchListOriginalUrl: String? = null
+    var aoiOriginalUrl: String? = null
 
-    var availabilityWatchListListenerUid: Int = 0
+    var aoiListenerUid: Int = 0
+
+    constructor(url: String, listenerUid: Int){
+        aoiOriginalUrl = url
+        aoiListenerUid = listenerUid
+    }
+    constructor(){
+
+    }
 
 }

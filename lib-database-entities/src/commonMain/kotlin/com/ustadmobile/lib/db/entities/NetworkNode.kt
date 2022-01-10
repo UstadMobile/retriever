@@ -27,6 +27,13 @@ open class NetworkNode {
 
     var networkNodeLost: Long = 0
 
+    constructor(ipAddress: String, endpointUrl: String, discovered: Long){
+        networkNodeIPAddress = ipAddress
+        networkNodeEndpointUrl = endpointUrl
+        networkNodeDiscovered = discovered
+    }
+
+    constructor()
 
 
 

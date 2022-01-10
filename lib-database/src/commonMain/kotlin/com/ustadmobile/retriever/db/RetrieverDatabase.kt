@@ -1,4 +1,4 @@
-package com.ustadmobile.core.db
+package com.ustadmobile.retriever.db
 
 import androidx.room.Database
 import com.ustadmobile.core.db.dao.*
@@ -6,12 +6,13 @@ import com.ustadmobile.door.*
 import com.ustadmobile.door.entities.*
 import com.ustadmobile.door.ext.DoorTag
 import com.ustadmobile.lib.db.entities.*
+import com.ustadmobile.retriever.db.dao.AvailabilityObserverItemDao
 import kotlin.js.JsName
 
 @Database(entities = [
 
     AvailabilityResponse::class,
-    AvailabilityWatchList::class,
+    AvailabilityObserverItem::class,
     NetworkNode::class,
 
     SyncNode::class,
@@ -26,7 +27,7 @@ import kotlin.js.JsName
     //#DOORDB_TRACKER_ENTITIES
 
 ], version = 1)
-abstract class UmAppDatabase : DoorDatabase() {
+abstract class RetrieverDatabase : DoorDatabase() {
 
 
 
@@ -40,10 +41,9 @@ abstract class UmAppDatabase : DoorDatabase() {
     @JsName("networkNodeDao")
     abstract val networkNodeDao : NetworkNodeDao
 
-    @JsName("syncNodeDao")
-    abstract val syncNodeDao: SyncNodeDao
+    @JsName("availabilityObserverItemDao")
+    abstract val availabilityObserverItemDao: AvailabilityObserverItemDao
 
-    abstract val syncresultDao: SyncResultDao
 
     //TODO: DO NOT REMOVE THIS COMMENT!
     //#DOORDB_SYNCDAO

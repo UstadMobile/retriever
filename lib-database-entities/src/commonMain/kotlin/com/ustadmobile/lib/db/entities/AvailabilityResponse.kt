@@ -24,8 +24,6 @@ open class AvailabilityResponse {
 
     var availabilityOriginUrl: String? = null
 
-    var availabilityWatchListUid: Long = 0
-
     var availabilityAvailable: Boolean = false
 
     var availabilityResponseTimeLogged: Long = 0

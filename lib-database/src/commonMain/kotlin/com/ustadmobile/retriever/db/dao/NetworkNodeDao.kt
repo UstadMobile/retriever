@@ -7,7 +7,6 @@ import com.ustadmobile.door.annotation.Repository
 import com.ustadmobile.lib.db.entities.NetworkNode
 
 @Dao
-@Repository
 abstract class NetworkNodeDao: BaseDao<NetworkNode> {
 
 
@@ -17,7 +16,7 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     abstract suspend fun findAllByEndpointUrl(endpointUrl: String): List<NetworkNode>
 
     @Query("""
-        SELECT * FROM NetworkNode where networkNodeEndpointUrl = :endpointUrl DESC networkNodeDiscovered LIMIT 1
+        SELECT * FROM NetworkNode where networkNodeEndpointUrl = :endpointUrl ORDER BY networkNodeDiscovered DESC LIMIT 1
     """)
     abstract suspend fun findByEndpointUrl(endpointUrl: String): NetworkNode?
 

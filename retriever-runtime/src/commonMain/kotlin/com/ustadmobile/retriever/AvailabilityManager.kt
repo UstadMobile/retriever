@@ -1,10 +1,12 @@
 package com.ustadmobile.retriever
 
-import com.ustadmobile.core.db.UmAppDatabase
-import com.ustadmobile.door.ext.concurrentSafeListOf
 
-import com.ustadmobile.lib.db.entities.AvailabilityResponse
+import com.ustadmobile.door.ext.concurrentSafeListOf
+import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
+import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
+
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.RetrieverDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,13 +14,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.jvm.Volatile
 import kotlin.math.min
 
-//TODO: can't call UmAppDatabase
-class AvailabilityManager(database: UmAppDatabase) {
+class AvailabilityManager(val database: RetrieverDatabase) {
 
-    val numProcessors: Int = DEFAULT_NUM_PROCESSORS
+    private val numProcessors: Int = DEFAULT_NUM_PROCESSORS
     val maxItemAttempts: Int = DEFAULT_NUM_RETRIES
 
     /**
@@ -26,11 +28,24 @@ class AvailabilityManager(database: UmAppDatabase) {
      * processor, one new item will be started.
      */
     private val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
-    private val activeJobItemIds = concurrentSafeListOf<Long>()
+    private val activeNetworkNodeIds = concurrentSafeListOf<Long>()
+
+    private val nextListenerId = AtomicInteger(1)
+
+    private var listenerToUrl: MutableMap<Int, String> = mutableMapOf()
 
 
     fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver){
         //TODO this
+
+        //Insert into WatchList with the observer uid
+
+        availabilityObserver.originUrls.forEach {
+            database.availabilityObserverItemDao.insert(AvailabilityObserverItem(
+                it,
+                nextListenerId.incrementAndGet()))
+            listenerToUrl[nextListenerId.get()] = it
+        }
 
 
 
@@ -43,39 +58,32 @@ class AvailabilityManager(database: UmAppDatabase) {
 
     @ExperimentalCoroutinesApi
     @Volatile
-    private var jobItemProducer : ReceiveChannel<AvailabilityEvent>? = null
+    private var jobItemProducer : ReceiveChannel<AvailabilityCheckJob>? = null
 
+    data class AvailabilityCheckJob(val networkNodeUid: Long, val fileUrls: List<String>)
 
     @ExperimentalCoroutinesApi
-    private fun CoroutineScope.findAvailability(availabilityObserver: AvailabilityObserver) =
-            produce<AvailabilityEvent> {
+    private fun CoroutineScope.produceJobs() = produce<AvailabilityCheckJob> {
         var done: Boolean = false
 
         do{
             checkQueueSignalChannel.receive()
-            val numProcessorsAvailable = numProcessors - activeJobItemIds.size
+            val numProcessorsAvailable = numProcessors - activeNetworkNodeIds.size
 
 
-            val allNodes: List<NetworkNode> = database.networkNodeDao.findAllActiveNodes()
+            //Get all available items(files) that are pending (no response of)
+            val pendingItems : List<AvailabilityObserverItemWithNetworkNode> =
+                database.availabilityObserverItemDao.findPendingItems()
 
-            val numJobsToAdd = min(numProcessorsAvailable, allNodes.size)
-
-            for(i in 0 until numJobsToAdd){
-                val nodeUid = allNodes[i].networkNodeId
-                activeJobItemIds += nodeUid
-
-                //database.
-                //TODO: Find availability response for every node
-                //Request node a list and get back a response available/not
-                // build AvailabilityEvent object
-                val availabilityEvent: AvailabilityEvent = AvailabilityEvent(mapOf(), nodeUid)
-
-                send(availabilityEvent)
-
+            //Use kotlin to group by networknode uid
+            val itemsByNetworkNodeId = pendingItems.groupBy {
+                it.networkNodeId
+            }.forEach {
+                send(AvailabilityCheckJob(it.key, it.value.map { it.aoiOriginalUrl?:"" } ))
             }
 
             //TODO: Check how to properly update done
-            done = activeJobItemIds.size == allNodes.size
+            done = true
 
 
         }while(!done)
@@ -86,25 +94,30 @@ class AvailabilityManager(database: UmAppDatabase) {
     /**
      * To emit availability changed events
      */
-    private fun CoroutineScope.callAvailabilityEvent(id: Int,
-                                         channel: ReceiveChannel<AvailabilityEvent>){
+    private suspend fun CoroutineScope.launchProcessor(
+        id: Int,
+        channel: ReceiveChannel<AvailabilityCheckJob>
+    ){
 
+        //TODO
         for(item in channel){
+            //Runs the request to node
+            //Creates entries in AvailabilityResponse according to the request to the node
+            //Calls the observer method
 
-            //Call onAvailabilityChanged
-            item.observer.onAvailabilityChanged(item)
         }
     }
 
 
-    suspend fun runJob(availabilityObserver: AvailabilityObserver): Boolean{
+    //Auto run externally
+    suspend fun runJob(): Boolean{
         withContext(Dispatchers.Default) {
-            val availability = findAvailability(availabilityObserver).also {
+            val availability = produceJobs().also {
                 jobItemProducer = it
             }
 
             repeat(numProcessors) {
-                callAvailabilityEvent(it, availability)
+                launchProcessor(it, availability)
             }
 
             checkQueueSignalChannel.send(true)

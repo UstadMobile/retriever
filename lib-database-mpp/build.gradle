@@ -1,0 +1,58 @@
+
+plugins {
+    id 'org.jetbrains.kotlin.multiplatform'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+}
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+group rootProject.group
+version rootProject.version
+
+kotlin {
+    jvm {
+        compilations.main.kotlinOptions {
+            // Setup the Kotlin compiler options for the 'main' compilation:
+            jvmTarget = "$version_kotlin_jvmTarget"
+        }
+
+        compilations.test.kotlinOptions {
+            // Setup the Kotlin compiler options for the 'main' compilation:
+            jvmTarget = "$version_kotlin_jvmTarget"
+        }
+    }
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation "org.jetbrains.kotlin:kotlin-stdlib-common:$version_kotlin"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version_coroutines"
+                implementation "io.ktor:ktor-client-core:$version_ktor"
+                implementation "io.ktor:ktor-client-json:$version_ktor"
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$version_kotlinx_serialization"
+                implementation "io.github.aakira:napier:$version_napier"
+                implementation project(":lib-database")
+                implementation project(":lib-database-entities")
+                implementation "com.ustadmobile.door:door-runtime:$version_door"
+                implementation "com.ustadmobile.door:room-annotations:$version_door"
+            }
+        }
+
+        jvmMain {
+            kotlin.srcDir("build/generated/source/door")
+
+
+            dependencies {
+                implementation project(":lib-database")
+                implementation "io.ktor:ktor-client-okhttp:$version_ktor"
+                implementation "io.ktor:ktor-client-gson:$version_ktor"
+                implementation "io.github.aakira:napier-jvm:$version_napier"
+            }
+        }
+
+    }
+
+}
+
+assemble.dependsOn(":lib-database:build")
