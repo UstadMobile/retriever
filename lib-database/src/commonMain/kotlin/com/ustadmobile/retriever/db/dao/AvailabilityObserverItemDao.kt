@@ -10,19 +10,24 @@ import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
 abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
 
     //Return a list of AvailabilityObserverItem and NetworkNodeId for all Items without an availability resposne
-    @Query("""
-        SELECT AvailabilityObserverItem.* , NetworkNode.networkNodeId
+    @Query(QUERY_FINDPENDINGITEMS)
+    abstract suspend fun findPendingItems(): List<AvailabilityObserverItemWithNetworkNode>
+
+    @Query(QUERY_FINDPENDINGITEMS)
+    abstract fun findPendingItemsAsync(): List<AvailabilityObserverItemWithNetworkNode>
+
+   companion object{
+       const val QUERY_FINDPENDINGITEMS= """
+         SELECT AvailabilityObserverItem.* , NetworkNode.networkNodeId
           FROM AvailabilityObserverItem 
                JOIN NetworkNode ON NetworkNode.networkNodeId = NetworkNode.networkNodeId 
          WHERE NOT EXISTS (
-                SELECT AvailabilityResponse.availabilityUid 
+                SELECT AvailabilityResponse.availabilityResponseUid 
                   FROM AvailabilityResponse 
                  WHERE AvailabilityResponse.availabilityNetworkNode = NetworkNode.networkNodeId
                    AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
-                )   
-    """)
-    abstract suspend fun findPendingItems(): List<AvailabilityObserverItemWithNetworkNode>
-
+                )  """
+   }
 
 
 }

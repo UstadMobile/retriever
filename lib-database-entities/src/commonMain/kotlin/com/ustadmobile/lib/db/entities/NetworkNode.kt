@@ -33,6 +33,12 @@ open class NetworkNode {
         networkNodeDiscovered = discovered
     }
 
+    constructor(ipAddress: String, endpointUrl: String, discovered: Long, id: Long){
+        networkNodeIPAddress = ipAddress
+        networkNodeEndpointUrl = endpointUrl
+        networkNodeDiscovered = discovered
+        networkNodeId = id
+    }
     constructor()
 
 

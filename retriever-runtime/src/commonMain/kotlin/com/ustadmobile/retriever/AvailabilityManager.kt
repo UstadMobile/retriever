@@ -2,26 +2,24 @@ package com.ustadmobile.retriever
 
 
 import com.ustadmobile.door.ext.concurrentSafeListOf
+import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
-
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.lib.db.entities.AvailabilityResponse
+import com.ustadmobile.lib.db.entities.FileAvailabilityWithListener
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
-import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.jvm.Volatile
-import kotlin.math.min
 
-class AvailabilityManager(val database: RetrieverDatabase) {
+class AvailabilityManager(
+    val database: RetrieverDatabase,
+    val availabilityChecker: AvailabilityChecker) {
 
     private val numProcessors: Int = DEFAULT_NUM_PROCESSORS
-    val maxItemAttempts: Int = DEFAULT_NUM_RETRIES
 
     /**
      * Sending anything on this channel will result in one queue check. If there is an available
@@ -30,63 +28,58 @@ class AvailabilityManager(val database: RetrieverDatabase) {
     private val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
     private val activeNetworkNodeIds = concurrentSafeListOf<Long>()
 
-    private val nextListenerId = AtomicInteger(1)
-
-    private var listenerToUrl: MutableMap<Int, String> = mutableMapOf()
-
-
-    fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver){
-        //TODO this
-
-        //Insert into WatchList with the observer uid
-
-        availabilityObserver.originUrls.forEach {
-            database.availabilityObserverItemDao.insert(AvailabilityObserverItem(
-                it,
-                nextListenerId.incrementAndGet()))
-            listenerToUrl[nextListenerId.get()] = it
-        }
-
-
-
-    }
-
-    fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver){
-
-        //TODO this:
-    }
-
     @ExperimentalCoroutinesApi
     @Volatile
     private var jobItemProducer : ReceiveChannel<AvailabilityCheckJob>? = null
 
-    data class AvailabilityCheckJob(val networkNodeUid: Long, val fileUrls: List<String>)
+
+    data class AvailabilityCheckJob(val networkNodeId: Long, val fileUrls: List<String>)
+
+    private val availabilityObserverAtomicId = AtomicInteger(0)
+    private val availabilityObservers = mutableMapOf<Int, AvailabilityObserver>()
+
+
+    suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver){
+
+        //Put the availability observer id and its observer
+        val listenerUid = availabilityObserverAtomicId.incrementAndGet()
+        availabilityObservers[listenerUid] = availabilityObserver
+
+        database.availabilityObserverItemDao.insertList(
+            availabilityObserver.urls2.map { AvailabilityObserverItem(it, listenerUid) }
+        )
+
+    }
+
+    suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver){
+
+        val keyToRemove =
+            availabilityObservers.entries.firstOrNull{it.value == availabilityObserver}?.key
+        // TODO: Delete AvailabilityObserverItem corresponding to the key and map
+        availabilityObservers.remove(keyToRemove)
+    }
 
     @ExperimentalCoroutinesApi
     private fun CoroutineScope.produceJobs() = produce<AvailabilityCheckJob> {
-        var done: Boolean = false
 
         do{
             checkQueueSignalChannel.receive()
             val numProcessorsAvailable = numProcessors - activeNetworkNodeIds.size
 
-
             //Get all available items(files) that are pending (no response of)
             val pendingItems : List<AvailabilityObserverItemWithNetworkNode> =
                 database.availabilityObserverItemDao.findPendingItems()
 
+            print("AvailabilityManager: produceJobs(): " + pendingItems.size + " pendingItems.")
+
             //Use kotlin to group by networknode uid
-            val itemsByNetworkNodeId = pendingItems.groupBy {
+            pendingItems.groupBy {
                 it.networkNodeId
             }.forEach {
                 send(AvailabilityCheckJob(it.key, it.value.map { it.aoiOriginalUrl?:"" } ))
             }
 
-            //TODO: Check how to properly update done
-            done = true
-
-
-        }while(!done)
+        }while(isActive)
 
     }
 
@@ -97,20 +90,45 @@ class AvailabilityManager(val database: RetrieverDatabase) {
     private suspend fun CoroutineScope.launchProcessor(
         id: Int,
         channel: ReceiveChannel<AvailabilityCheckJob>
-    ){
+    ) = launch{
 
-        //TODO
+
+        //Runs checkAvailability (that checks availability and populates AvailabilityResponse)
+        // for every node id
         for(item in channel){
-            //Runs the request to node
-            //Creates entries in AvailabilityResponse according to the request to the node
-            //Calls the observer method
+            println("AvailabilityManager: item networkid: " +  item.networkNodeId)
 
+            //Returns result<String, Boolean> and networkNodeId
+            val availabilityCheckerResult : AvailabilityCheckerResult=
+                availabilityChecker.checkAvailability(item.networkNodeId, item.fileUrls)
+
+            // Add to AvailabilityResponse table
+            val currentTime = systemTimeInMillis()
+            val allResponses = availabilityCheckerResult.result.map {
+                AvailabilityResponse(item.networkNodeId, it.key, it.value, currentTime)
+            }
+
+            database.availabilityResponseDao.insertList(allResponses)
+
+            val affectedResult: List<FileAvailabilityWithListener> =
+                database.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime)
+            affectedResult.groupBy {
+                it.listenerUid
+            }.forEach {
+                val fileAvailabilityResultMap = it.value.map {
+                    it.fileUrl to it.available
+                }.toMap()
+                availabilityObservers[it.key]?.onAvailabilityChanged(
+                    AvailabilityEvent(fileAvailabilityResultMap, item.networkNodeId)
+                )
+            }
         }
     }
 
 
     //Auto run externally
     suspend fun runJob(): Boolean{
+
         withContext(Dispatchers.Default) {
             val availability = produceJobs().also {
                 jobItemProducer = it
@@ -129,7 +147,6 @@ class AvailabilityManager(val database: RetrieverDatabase) {
 
     companion object{
         const val DEFAULT_NUM_PROCESSORS = 10
-        const val DEFAULT_NUM_RETRIES = 5
 
     }
 }

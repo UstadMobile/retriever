@@ -24,7 +24,7 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     @Query("""
         SELECT * FROM NetworkNode WHERE networkNodeLost = 0
     """)
-    abstract suspend fun findAllActiveNodes(): List<NetworkNode>
+    abstract fun findAllActiveNodes(): List<NetworkNode>
 
     @Update
     abstract suspend fun updateAsync(networkNode: NetworkNode)

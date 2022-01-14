@@ -7,6 +7,7 @@ import com.ustadmobile.door.entities.*
 import com.ustadmobile.door.ext.DoorTag
 import com.ustadmobile.lib.db.entities.*
 import com.ustadmobile.retriever.db.dao.AvailabilityObserverItemDao
+import com.ustadmobile.retriever.db.dao.AvailabilityResponseDao
 import kotlin.js.JsName
 
 @Database(entities = [
@@ -43,6 +44,9 @@ abstract class RetrieverDatabase : DoorDatabase() {
 
     @JsName("availabilityObserverItemDao")
     abstract val availabilityObserverItemDao: AvailabilityObserverItemDao
+
+    @JsName("availabilityResponseDao")
+    abstract val availabilityResponseDao: AvailabilityResponseDao
 
 
     //TODO: DO NOT REMOVE THIS COMMENT!

@@ -55,6 +55,7 @@ ext {
     version_sqlite_jdbc = "3.36.0.3"
     version_kodein_di = "7.9.0"
     version_kotlin_mockito = "4.0.0"
+    version_mockito_inline = "4.2.0"
     version_mockwebserver = "4.9.3"
     version_android_room = "2.4.0-rc01"
     version_androidx_lifecycle = "2.3.1"

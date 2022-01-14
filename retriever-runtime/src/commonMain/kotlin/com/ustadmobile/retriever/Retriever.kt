@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever
 
-interface Retriever {
+interface Retriever{
 
     //retriever.retrieve(RetrieverRequest("http://something.file"), SHA256ChecksumProvider("aabbccddee"))
     //    .saveTo(dirPath)

@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.ustadmobile.door.annotation.*
 import kotlinx.serialization.Serializable
+import kotlin.math.log
 
 /**
  * Availability Response table
@@ -18,7 +19,7 @@ import kotlinx.serialization.Serializable
 open class AvailabilityResponse {
 
     @PrimaryKey(autoGenerate = true)
-    var availabilityUid: Long = 0
+    var availabilityResponseUid: Long = 0
 
     var availabilityNetworkNode: Long = 0
 
@@ -31,4 +32,12 @@ open class AvailabilityResponse {
     var availabilityResponseTimeUpdated: Long = 0
 
 
+    constructor()
+    constructor(networkNodeUid: Long, originUrl: String, available: Boolean, logged: Long){
+        availabilityNetworkNode = networkNodeUid
+        availabilityOriginUrl = originUrl
+        availabilityAvailable = available
+        availabilityResponseTimeLogged = logged
+
+    }
 }

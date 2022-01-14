@@ -71,6 +71,7 @@ kotlin {
                 implementation "org.jetbrains.kotlin:kotlin-test:$version_kotlin"
                 implementation "org.jetbrains.kotlin:kotlin-test-junit:$version_kotlin"
                 implementation "org.mockito.kotlin:mockito-kotlin:$version_kotlin_mockito"
+                implementation "org.mockito:mockito-inline:$version_mockito_inline"
                 implementation "junit:junit:$version_junit"
 
                 implementation project(":lib-database-mpp")

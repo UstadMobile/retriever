@@ -6,6 +6,7 @@ import android.net.nsd.NsdServiceInfo
 import com.soywiz.klock.DateTime
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.checksumproviders.OriginServerChecksumProvider
 import com.ustadmobile.retriever.controller.NetworkNodeController
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import java.net.InetAddress
@@ -64,13 +65,15 @@ class RetrieverAndroidImpl(
             registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
         }
 
-
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
 
     }
 
     override fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall {
         //TODO("Not yet implemented")
+        // 1. Make requests to every node with a list of request urls
+        // 2. Build RetrieverCall return it
+
         return RetrieverCall()
     }
 
