@@ -118,32 +118,18 @@ class TestAvailabilityManager {
             }.thenReturn(AvailabilityCheckerResult(mutableMapNode5, 5))
         }
 
-        availabilityManager = AvailabilityManager(db, availabilityChecker)
-
         availabilityObserver = mock<AvailabilityObserver>(defaultAnswer = CALLS_REAL_METHODS){
             on{urls2}.thenReturn(testOriginUrls)
         }
-    }
 
-//    @Test
-//    fun givenNetworkNodesAroudAndFilesRequested_thenAvailabilityCheckerCalledForNodeAndOriginFile(){
-//
-//        db = spy(DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb").build())
-//
-//        availabilityObserverItemDaoSpy = spy(db.availabilityObserverItemDao)
-//        whenever(db.availabilityObserverItemDao).thenReturn(availabilityObserverItemDaoSpy)
-//        availabilityManager = AvailabilityManager(db, availabilityChecker)
-//
-//
-//        GlobalScope.launch {
-//            availabilityManager.addAvailabilityObserver(availabilityObserver)
-//            availabilityManager.runJob()
-//        }
-//        verifyBlocking(availabilityObserverItemDaoSpy, timeout(2000)){
-//            findPendingItems()
-//        }
-//
-//    }
+        availabilityManager = AvailabilityManager(db, availabilityChecker)
+
+        db = spy(DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb").build())
+
+        availabilityObserverItemDaoSpy = spy(db.availabilityObserverItemDao)
+        whenever(db.availabilityObserverItemDao).thenReturn(availabilityObserverItemDaoSpy)
+        availabilityManager = AvailabilityManager(db, availabilityChecker)
+    }
 
     @Test
     fun givenNetworkNodeAroundAndFilesRequested_thenRightInfoGottenFromDbAndObserverCalled(){
@@ -152,6 +138,10 @@ class TestAvailabilityManager {
         GlobalScope.launch {
             availabilityManager.addAvailabilityObserver(availabilityObserver)
             availabilityManager.runJob()
+        }
+
+        verifyBlocking(availabilityObserverItemDaoSpy, timeout(2000)){
+            findPendingItems()
         }
 
         verifyBlocking(availabilityObserver, timeout(5000).times(testOriginUrls.size)){
