@@ -54,13 +54,19 @@ class TestRequestResponder {
             on {initParameter(PARAM_DB_INDEX, RetrieverDatabase::class.java)}.thenReturn(db)
         }
 
-        val mockSession = mock<NanoHTTPD.IHTTPSession>{
+        val mockSessionAvailable = mock<NanoHTTPD.IHTTPSession>{
             on { parameters }.thenReturn(
                 mutableMapOf(PARAM_FILE_REQUEST_URL to listOf("http://path.to/file1"))
             )
         }
 
-        val response = responder.get(mockUriResource, mutableMapOf(), mockSession)
+        val mockSessionUnavailable = mock<NanoHTTPD.IHTTPSession>{
+            on { parameters }.thenReturn(
+                mutableMapOf(PARAM_FILE_REQUEST_URL to listOf("http://path.to/file42"))
+            )
+        }
+
+        val response = responder.get(mockUriResource, mutableMapOf(), mockSessionAvailable)
 
         Assert.assertNotNull("Response is not null", response)
 
@@ -72,6 +78,19 @@ class TestRequestResponder {
                 }.type
             )
         Assert.assertEquals("Node has file", 1, responseEntryList.size)
+
+        val responseUnavailable = responder.get(mockUriResource, mutableMapOf(), mockSessionUnavailable)
+
+        Assert.assertNotNull("Response is not null", responseUnavailable)
+
+        val responseStrUnavailable = String(responseUnavailable.data.readBytes())
+        val responseEntryListUnavailable = Gson().fromJson<List<AvailableFile>>(
+            responseStrUnavailable,
+            object: TypeToken<List<AvailableFile>>(){
+
+            }.type
+        )
+        Assert.assertEquals("Node has not found the file", 0, responseEntryListUnavailable.size)
 
     }
 
