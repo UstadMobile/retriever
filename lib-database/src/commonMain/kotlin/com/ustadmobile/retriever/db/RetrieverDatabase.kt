@@ -8,6 +8,7 @@ import com.ustadmobile.door.ext.DoorTag
 import com.ustadmobile.lib.db.entities.*
 import com.ustadmobile.retriever.db.dao.AvailabilityObserverItemDao
 import com.ustadmobile.retriever.db.dao.AvailabilityResponseDao
+import com.ustadmobile.retriever.db.dao.AvailableFileDao
 import kotlin.js.JsName
 
 @Database(entities = [
@@ -15,6 +16,7 @@ import kotlin.js.JsName
     AvailabilityResponse::class,
     AvailabilityObserverItem::class,
     NetworkNode::class,
+    AvailableFile::class,
 
     SyncNode::class,
     //Door Helper entities
@@ -48,6 +50,8 @@ abstract class RetrieverDatabase : DoorDatabase() {
     @JsName("availabilityResponseDao")
     abstract val availabilityResponseDao: AvailabilityResponseDao
 
+    @JsName("availableFileDao")
+    abstract val availableFileDao: AvailableFileDao
 
     //TODO: DO NOT REMOVE THIS COMMENT!
     //#DOORDB_SYNCDAO

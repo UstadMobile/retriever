@@ -37,6 +37,16 @@ kotlin {
                 implementation "com.soywiz.korlibs.klock:klock:$version_klock"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version_coroutines"
 
+                implementation "io.ktor:ktor-gson:$version_ktor"
+                implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
+                implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
+
+            }
+        }
+
+        commonJvmMain{
+            dependencies{
+
             }
         }
         commonTest {
@@ -53,6 +63,8 @@ kotlin {
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
                 implementation project(':lib-database')
                 implementation project(':lib-database-entities')
+
+
             }
         }
 
@@ -93,6 +105,9 @@ dependencies {
     implementation "io.github.aakira:napier:$version_napier"
     testImplementation "junit:junit:$version_junit"
 
+    implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
+    implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
+    
 
 }
 
