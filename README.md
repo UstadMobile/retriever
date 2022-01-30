@@ -92,7 +92,7 @@ response:
 Retrieval:
 
 ```
-GET /endpoint/singular?url=https://myserver.com/otherfile
+GET /endpoint/singular?originUrl=https://myserver.com/otherfile
 
 response: 
 [data]

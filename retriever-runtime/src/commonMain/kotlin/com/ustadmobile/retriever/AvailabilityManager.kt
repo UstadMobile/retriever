@@ -17,7 +17,8 @@ import kotlin.jvm.Volatile
 
 class AvailabilityManager(
     val database: RetrieverDatabase,
-    val availabilityChecker: AvailabilityChecker) {
+    val availabilityChecker: AvailabilityChecker
+) {
 
     private val numProcessors: Int = DEFAULT_NUM_PROCESSORS
 

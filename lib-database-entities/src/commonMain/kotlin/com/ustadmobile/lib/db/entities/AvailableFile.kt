@@ -12,23 +12,21 @@ import kotlinx.serialization.Serializable
 @Serializable
 open class AvailableFile {
 
-    @PrimaryKey(autoGenerate = true)
-    var availableFileUid: Long = 0
-
     /**
-     * Unique url of the file.
+     * Origin URL for this file
      */
-    var availableFileUrl: String? = null
+    @PrimaryKey
+    var afOriginUrl: String? = null
 
     /**
      * Location of the file locally on this node
      */
-    var availableFileLocation: String? = null
+    var afFilePath: String? = null
 
     constructor(){}
 
     constructor(fileUrl: String, location: String){
-        availableFileUrl = fileUrl
-        availableFileLocation = location
+        afOriginUrl = fileUrl
+        afFilePath = location
     }
 }

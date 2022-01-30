@@ -46,9 +46,15 @@ kotlin {
 
         commonJvmMain{
             dependencies{
-
+                implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
+                implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
             }
         }
+
+        jvmMain {
+            dependsOn commonJvmMain
+        }
+
         commonTest {
             dependencies {
                 implementation kotlin('test-common')
@@ -56,6 +62,7 @@ kotlin {
             }
         }
         androidMain{
+            dependsOn commonJvmMain
             dependencies {
                 // Room (annotation processing takes place only on lib-database-android to improve build times)
                 implementation "androidx.room:room-runtime:$version_android_room"
