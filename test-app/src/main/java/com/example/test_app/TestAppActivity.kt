@@ -1,28 +1,44 @@
 package com.example.test_app
 
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.example.test_app.databinding.ActivityTestAppBinding
-import com.ustadmobile.core.db.UmAppDatabase
 import com.ustadmobile.door.DatabaseBuilder
+import com.ustadmobile.retriever.Retriever.Companion.DBNAME
 import com.ustadmobile.retriever.RetrieverAndroidImpl
+import com.ustadmobile.retriever.controller.TestAppActivityController
+import com.ustadmobile.retriever.db.RetrieverDatabase
 
-class TestAppActivity : AppCompatActivity() {
+interface ClickAddFile{
+    fun onClickAddFile()
+    fun clearFileList()
+}
+
+class TestAppActivity : AppCompatActivity(), ClickAddFile {
 
     private lateinit var binding: ActivityTestAppBinding
 
     private lateinit var retriever: RetrieverAndroidImpl
 
+    private lateinit var controller: TestAppActivityController
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //Trying to init:
+        //Init database, start NetworkServiceDiscovery
+
+        val database = DatabaseBuilder.databaseBuilder(
+            applicationContext,
+            RetrieverDatabase::class,
+            DBNAME
+        ).build()
         retriever  = RetrieverAndroidImpl(applicationContext)
 
-        DatabaseBuilder.databaseBuilder(applicationContext, UmAppDatabase::class,
-            "dbname").build()
+        controller = TestAppActivityController(applicationContext, database)
 
         setContentView(R.layout.activity_test_app)
         title = "Retriever Test"
@@ -46,5 +62,16 @@ class TestAppActivity : AppCompatActivity() {
             R.id.action_settings -> true
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onClickAddFile() {
+        //Add file via presenter
+        controller.addRandomFile()
+
+    }
+
+    override fun clearFileList() {
+        //Remove all files via presenter
+        controller.clearAllFiles()
     }
 }

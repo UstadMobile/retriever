@@ -1,5 +1,6 @@
 package com.ustadmobile.lib.db.entities
 
+import androidx.annotation.NonNull
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.ustadmobile.door.annotation.*
@@ -18,12 +19,14 @@ import kotlin.math.log
 @Serializable
 open class AvailabilityResponse {
 
-    @PrimaryKey(autoGenerate = true)
-    var availabilityResponseUid: Long = 0
+//    @PrimaryKey(autoGenerate = true)
+//    var availabilityResponseUid: Long = 0
 
+    @NonNull
     var availabilityNetworkNode: Long = 0
 
-    var availabilityOriginUrl: String? = null
+    @NonNull
+    var availabilityOriginUrl: String = ""
 
     var availabilityAvailable: Boolean = false
 

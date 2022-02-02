@@ -22,7 +22,7 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
           FROM AvailabilityObserverItem 
                JOIN NetworkNode ON NetworkNode.networkNodeId = NetworkNode.networkNodeId 
          WHERE NOT EXISTS (
-                SELECT AvailabilityResponse.availabilityResponseUid 
+                SELECT AvailabilityResponse.availabilityOriginUrl 
                   FROM AvailabilityResponse 
                  WHERE AvailabilityResponse.availabilityNetworkNode = NetworkNode.networkNodeId
                    AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl

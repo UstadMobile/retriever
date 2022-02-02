@@ -84,7 +84,7 @@ ext {
     version_android_compile_sdk = 31
     version_android_target_sdk = 31
 
-    version_door = "0.0.40as"
+    version_door = "0.0.46x"
     //pre replication sync : version_door = "0.0.32t"
     version_junit = "4.13"
 

@@ -12,10 +12,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 open class AvailableFile {
 
+    @PrimaryKey(autoGenerate = true)
+    var availableFileUid: Long = 0
+
     /**
      * Origin URL for this file
      */
-    @PrimaryKey
+    //@PrimaryKey
     var afOriginUrl: String? = null
 
     /**
@@ -28,5 +31,9 @@ open class AvailableFile {
     constructor(fileUrl: String, location: String){
         afOriginUrl = fileUrl
         afFilePath = location
+    }
+
+    fun getFileName(): String{
+        return afOriginUrl?.substring(0, afOriginUrl?.lastIndexOf("/")?:0).toString()
     }
 }

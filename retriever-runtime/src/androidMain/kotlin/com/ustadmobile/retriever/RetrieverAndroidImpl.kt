@@ -6,7 +6,6 @@ import android.net.nsd.NsdServiceInfo
 import com.soywiz.klock.DateTime
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.retriever.checksumproviders.OriginServerChecksumProvider
 import com.ustadmobile.retriever.controller.NetworkNodeController
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import java.net.InetAddress
@@ -16,17 +15,20 @@ import kotlinx.coroutines.launch
 
 
 class RetrieverAndroidImpl(
-    val applicationContext: Context
+    private val applicationContext: Context
 ): Retriever {
 
     var database: RetrieverDatabase? = null
 
-    private var retreiverController:NetworkNodeController? = null
+    private var retrieverController: NetworkNodeController? = null
 
     init {
-        database = DatabaseBuilder.databaseBuilder(applicationContext, RetrieverDatabase::class,
-            DBNAME).build()
-        retreiverController = NetworkNodeController(applicationContext, database)
+        database = DatabaseBuilder.databaseBuilder(
+                applicationContext,
+                RetrieverDatabase::class,
+                DBNAME
+            ).build()
+        retrieverController = NetworkNodeController(applicationContext, database)
 
         startNSD()
 
@@ -47,8 +49,11 @@ class RetrieverAndroidImpl(
 
     fun startNSD() {
 
-        database = DatabaseBuilder.databaseBuilder(applicationContext,
-            RetrieverDatabase::class, DBNAME).build()
+//        database = DatabaseBuilder.databaseBuilder(
+//                applicationContext,
+//                RetrieverDatabase::class,
+//                DBNAME
+//            ).build()
 
         //Start nanohttpd server
         server = object : NanoHTTPD(listeningPort){}
@@ -178,7 +183,7 @@ class RetrieverAndroidImpl(
             networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
 
             GlobalScope.launch {
-                retreiverController?.addNewNode(networkNode)
+                retrieverController?.addNewNode(networkNode)
             }
         }
     }

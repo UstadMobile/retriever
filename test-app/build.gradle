@@ -6,12 +6,23 @@ plugins {
 android {
     compileSdkVersion 31
 
+    buildFeatures {
+        dataBinding true
+    }
+
+    dexOptions {
+        javaMaxHeapSize "2g"
+    }
+
+
     defaultConfig {
         applicationId "com.example.test_app"
         minSdkVersion 23
         targetSdkVersion 31
         versionCode 1
         versionName "1.0"
+
+        multiDexEnabled true
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
@@ -40,6 +51,9 @@ ext{
 }
 
 dependencies {
+    implementation project(":retriever-runtime")
+    implementation project(':lib-database-android')
+    implementation project(":lib-database-entities")
 
     implementation 'androidx.appcompat:appcompat:1.0.0'
     implementation 'com.google.android.material:material:1.0.0'
@@ -48,10 +62,8 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
-    implementation project(":retriever-runtime")
     implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
-    implementation project(':lib-database-android')
-    implementation project(":lib-database-entities")
+
     // Room (annotation processing takes place only on lib-database-android to improve build times)
     implementation "androidx.room:room-runtime:$version_android_room"
     implementation "com.ustadmobile.door:door-runtime:$version_door"

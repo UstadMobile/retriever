@@ -26,5 +26,9 @@ abstract class AvailableFileDao: BaseDao<AvailableFile> {
     """)
     abstract fun findAllAvailableFiles(): List<AvailableFile>
 
+    @Query("""
+        DELETE FROM AvailableFile
+    """)
+    abstract fun removeAllAvailableFiles()
 
 }

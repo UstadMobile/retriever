@@ -69,7 +69,6 @@ kotlin {
                 implementation project(':lib-database-android')
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
                 implementation project(':lib-database')
-                implementation project(':lib-database-entities')
 
 
             }
@@ -110,10 +109,9 @@ kotlin {
 dependencies {
     implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
     implementation "io.github.aakira:napier:$version_napier"
-    testImplementation "junit:junit:$version_junit"
-
-    implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
     implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
+
+    testImplementation "junit:junit:$version_junit"
     
 
 }

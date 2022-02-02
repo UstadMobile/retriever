@@ -6,4 +6,8 @@ interface Retriever{
     //    .saveTo(dirPath)
     fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall
 
+    companion object{
+        const val DBNAME: String = "retreiverdb"
+    }
+
 }

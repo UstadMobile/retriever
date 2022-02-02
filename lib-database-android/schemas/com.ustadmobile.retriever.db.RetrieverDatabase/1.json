@@ -1,0 +1,401 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "7a551c9493c4712e36601bcc3d304075",
+    "entities": [
+      {
+        "tableName": "AvailabilityResponse",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`availabilityNetworkNode` INTEGER NOT NULL, `availabilityOriginUrl` TEXT NOT NULL, `availabilityAvailable` INTEGER NOT NULL, `availabilityResponseTimeLogged` INTEGER NOT NULL, `availabilityResponseTimeUpdated` INTEGER NOT NULL, PRIMARY KEY(`availabilityOriginUrl`, `availabilityNetworkNode`))",
+        "fields": [
+          {
+            "fieldPath": "availabilityNetworkNode",
+            "columnName": "availabilityNetworkNode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availabilityOriginUrl",
+            "columnName": "availabilityOriginUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availabilityAvailable",
+            "columnName": "availabilityAvailable",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availabilityResponseTimeLogged",
+            "columnName": "availabilityResponseTimeLogged",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availabilityResponseTimeUpdated",
+            "columnName": "availabilityResponseTimeUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "availabilityOriginUrl",
+            "availabilityNetworkNode"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "AvailabilityObserverItem",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`aoiId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `aoiOriginalUrl` TEXT, `aoiListenerUid` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "aoiId",
+            "columnName": "aoiId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "aoiOriginalUrl",
+            "columnName": "aoiOriginalUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "aoiListenerUid",
+            "columnName": "aoiListenerUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "aoiId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "NetworkNode",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`networkNodeId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `networkNodeIPAddress` TEXT, `networkNodeEndpointUrl` TEXT, `networkNodeDiscovered` INTEGER NOT NULL, `networkNodeLost` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "networkNodeId",
+            "columnName": "networkNodeId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "networkNodeIPAddress",
+            "columnName": "networkNodeIPAddress",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "networkNodeEndpointUrl",
+            "columnName": "networkNodeEndpointUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "networkNodeDiscovered",
+            "columnName": "networkNodeDiscovered",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "networkNodeLost",
+            "columnName": "networkNodeLost",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "networkNodeId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "AvailableFile",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`availableFileUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `afOriginUrl` TEXT, `afFilePath` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "availableFileUid",
+            "columnName": "availableFileUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "afOriginUrl",
+            "columnName": "afOriginUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "afFilePath",
+            "columnName": "afFilePath",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "availableFileUid"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "SyncNode",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`nodeClientId` INTEGER NOT NULL, PRIMARY KEY(`nodeClientId`))",
+        "fields": [
+          {
+            "fieldPath": "nodeClientId",
+            "columnName": "nodeClientId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "nodeClientId"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "SqliteChangeSeqNums",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sCsnTableId` INTEGER NOT NULL, `sCsnNextLocal` INTEGER NOT NULL, `sCsnNextPrimary` INTEGER NOT NULL, PRIMARY KEY(`sCsnTableId`))",
+        "fields": [
+          {
+            "fieldPath": "sCsnTableId",
+            "columnName": "sCsnTableId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sCsnNextLocal",
+            "columnName": "sCsnNextLocal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sCsnNextPrimary",
+            "columnName": "sCsnNextPrimary",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "sCsnTableId"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [
+          {
+            "name": "index_SqliteChangeSeqNums_sCsnNextLocal",
+            "unique": false,
+            "columnNames": [
+              "sCsnNextLocal"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_SqliteChangeSeqNums_sCsnNextLocal` ON `${TABLE_NAME}` (`sCsnNextLocal`)"
+          },
+          {
+            "name": "index_SqliteChangeSeqNums_sCsnNextPrimary",
+            "unique": false,
+            "columnNames": [
+              "sCsnNextPrimary"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_SqliteChangeSeqNums_sCsnNextPrimary` ON `${TABLE_NAME}` (`sCsnNextPrimary`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "UpdateNotification",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`pnUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `pnDeviceId` INTEGER NOT NULL, `pnTableId` INTEGER NOT NULL, `pnTimestamp` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "pnUid",
+            "columnName": "pnUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pnDeviceId",
+            "columnName": "pnDeviceId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pnTableId",
+            "columnName": "pnTableId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pnTimestamp",
+            "columnName": "pnTimestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "pnUid"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_UpdateNotification_pnDeviceId_pnTableId",
+            "unique": true,
+            "columnNames": [
+              "pnDeviceId",
+              "pnTableId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_UpdateNotification_pnDeviceId_pnTableId` ON `${TABLE_NAME}` (`pnDeviceId`, `pnTableId`)"
+          },
+          {
+            "name": "index_UpdateNotification_pnDeviceId_pnTimestamp",
+            "unique": false,
+            "columnNames": [
+              "pnDeviceId",
+              "pnTimestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_UpdateNotification_pnDeviceId_pnTimestamp` ON `${TABLE_NAME}` (`pnDeviceId`, `pnTimestamp`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "ChangeLog",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`chTableId` INTEGER NOT NULL, `chEntityPk` INTEGER NOT NULL, `chType` INTEGER NOT NULL, PRIMARY KEY(`chTableId`, `chEntityPk`))",
+        "fields": [
+          {
+            "fieldPath": "chTableId",
+            "columnName": "chTableId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chEntityPk",
+            "columnName": "chEntityPk",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chType",
+            "columnName": "chType",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "chTableId",
+            "chEntityPk"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "ZombieAttachmentData",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`zaUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `zaTableId` INTEGER NOT NULL, `zaPrimaryKey` INTEGER NOT NULL, `zaMd5` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "zaUid",
+            "columnName": "zaUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zaTableId",
+            "columnName": "zaTableId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zaPrimaryKey",
+            "columnName": "zaPrimaryKey",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zaMd5",
+            "columnName": "zaMd5",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "zaUid"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "DoorNode",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`nodeId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `auth` TEXT, `rel` INTEGER NOT NULL DEFAULT 2)",
+        "fields": [
+          {
+            "fieldPath": "nodeId",
+            "columnName": "nodeId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "auth",
+            "columnName": "auth",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "rel",
+            "columnName": "rel",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "2"
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "nodeId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7a551c9493c4712e36601bcc3d304075')"
+    ]
+  }
+}
