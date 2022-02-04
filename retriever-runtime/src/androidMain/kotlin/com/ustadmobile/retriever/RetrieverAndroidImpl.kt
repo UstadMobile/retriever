@@ -28,6 +28,7 @@ class RetrieverAndroidImpl(
                 RetrieverDatabase::class,
                 DBNAME
             ).build()
+        println("Database created $database")
         retrieverController = NetworkNodeController(applicationContext, database)
 
         startNSD()

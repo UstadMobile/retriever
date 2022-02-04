@@ -102,7 +102,7 @@ payload:
 ["https://myserver.com/somebigfile", "https://myserver.com/otherfile"]
 
 response:
-tarball containing each requested url (in the same order as requested)
+zip containing each requested url (in the same order as requested)
 
 ```
 

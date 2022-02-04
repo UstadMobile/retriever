@@ -31,14 +31,9 @@ class TestAppActivity : AppCompatActivity(), ClickAddFile {
 
         //Init database, start NetworkServiceDiscovery
 
-        val database = DatabaseBuilder.databaseBuilder(
-            applicationContext,
-            RetrieverDatabase::class,
-            DBNAME
-        ).build()
         retriever  = RetrieverAndroidImpl(applicationContext)
 
-        controller = TestAppActivityController(applicationContext, database)
+        //controller = TestAppActivityController(applicationContext, database)
 
         setContentView(R.layout.activity_test_app)
         title = "Retriever Test"

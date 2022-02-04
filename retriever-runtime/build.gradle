@@ -32,8 +32,8 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-common')
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
-                implementation project(':lib-database')
-                implementation project(':lib-database-entities')
+                compileOnly project(':lib-database')
+                compileOnly project(':lib-database-entities')
                 implementation "com.soywiz.korlibs.klock:klock:$version_klock"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version_coroutines"
 
@@ -68,7 +68,6 @@ kotlin {
                 implementation "androidx.room:room-runtime:$version_android_room"
                 implementation project(':lib-database-android')
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
-                implementation project(':lib-database')
 
 
             }
@@ -83,7 +82,9 @@ kotlin {
 
         jvmTest {
             dependencies {
-
+                implementation project(":lib-database-mpp")
+                implementation project(":lib-database-entities")
+                implementation project(":lib-database")
 
 
                 implementation "org.jetbrains.kotlin:kotlin-test:$version_kotlin"
@@ -91,10 +92,6 @@ kotlin {
                 implementation "org.mockito.kotlin:mockito-kotlin:$version_kotlin_mockito"
                 implementation "org.mockito:mockito-inline:$version_mockito_inline"
                 implementation "junit:junit:$version_junit"
-
-                implementation project(":lib-database-mpp")
-                implementation project(":lib-database-entities")
-                implementation project(":lib-database")
 
                 implementation "com.github.h-thurow:simple-jndi:$version_simple_jndi"
                 implementation "org.apache.commons:commons-pool2:$version_apache_commons_pool2"
