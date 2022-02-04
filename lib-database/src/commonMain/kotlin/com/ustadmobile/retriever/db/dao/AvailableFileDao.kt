@@ -3,6 +3,8 @@ package com.ustadmobile.retriever.db.dao
 import androidx.room.Dao
 import androidx.room.Query
 import com.ustadmobile.core.db.dao.BaseDao
+import com.ustadmobile.door.DoorDataSourceFactory
+import com.ustadmobile.door.annotation.SqliteOnly
 import com.ustadmobile.lib.db.entities.AvailableFile
 
 @Dao
@@ -30,5 +32,12 @@ abstract class AvailableFileDao: BaseDao<AvailableFile> {
         DELETE FROM AvailableFile
     """)
     abstract fun removeAllAvailableFiles()
+
+
+    @Query("""
+        SELECT * FROM AvailableFile
+    """)
+    @SqliteOnly
+    abstract fun findAllAvailableFilesLive(): DoorDataSourceFactory<Int, AvailableFile>
 
 }

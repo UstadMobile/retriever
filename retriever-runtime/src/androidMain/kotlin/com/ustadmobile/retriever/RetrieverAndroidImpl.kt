@@ -13,12 +13,9 @@ import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
+class RetrieverAndroidImpl(private val applicationContext: Context): Retriever {
 
-class RetrieverAndroidImpl(
-    private val applicationContext: Context
-): Retriever {
-
-    var database: RetrieverDatabase? = null
+    var database: RetrieverDatabase
 
     private var retrieverController: NetworkNodeController? = null
 
@@ -28,10 +25,9 @@ class RetrieverAndroidImpl(
                 RetrieverDatabase::class,
                 DBNAME
             ).build()
-        println("Database created $database")
         retrieverController = NetworkNodeController(applicationContext, database)
 
-        startNSD()
+        //startNSD()
 
     }
 
@@ -41,20 +37,14 @@ class RetrieverAndroidImpl(
 
     private lateinit var nsdManager: NsdManager
 
-    private val SERVICE_TYPE = "_ustadretriever._tcp"
-    private val SERVICE_NAME = "UstadRetriever"
+    private var SERVICE_TYPE = "_ustadretriever._tcp"
+    private var SERVICE_NAME = "UstadRetriever"
 
-    private var listeningPort: Int = 4242
+    var listeningPort: Int = 42424
 
     private lateinit var server: NanoHTTPD
 
     fun startNSD() {
-
-//        database = DatabaseBuilder.databaseBuilder(
-//                applicationContext,
-//                RetrieverDatabase::class,
-//                DBNAME
-//            ).build()
 
         //Start nanohttpd server
         server = object : NanoHTTPD(listeningPort){}

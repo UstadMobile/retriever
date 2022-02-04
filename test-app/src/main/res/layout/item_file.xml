@@ -19,7 +19,6 @@
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackground">
 
-        <!-- TODO: Make this show the class picture when it is available -->
         <androidx.appcompat.widget.AppCompatImageView
             app:srcCompat="@drawable/ic_baseline_insert_drive_file_24"
             android:id="@+id/item_file_icon"

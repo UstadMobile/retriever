@@ -6,8 +6,16 @@
     <data>
 
         <variable
+            name="port"
+            type="Integer" />
+
+        <variable
             name="listener"
             type="com.example.test_app.ClickAddFile" />
+
+        <variable name="controller"
+            type="com.ustadmobile.retriever.controller.TestAppActivityController"
+            />
 
     </data>
 
@@ -59,14 +67,27 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:padding="16dp"
+                android:paddingTop="16dp"
+                android:paddingStart="16dp"
+                android:paddingBottom="16dp"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/app_bar"
-                android:text="Listening and serving"
-                tools:text="Listening and serving " />
+                android:text="Listening and serving on port"
+                tools:text="Listening and serving on port " />
+
+            <TextView
+                android:id="@+id/port_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                android:text="@{port.toString()}"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                app:layout_constraintStart_toEndOf="@id/status_text"
+                app:layout_constraintTop_toBottomOf="@+id/app_bar"
+                tools:text="1234" />
 
             <TextView
 
@@ -81,6 +102,8 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/status_text"
                 tools:text="Local Files" />
+
+
 
             <Button
                 android:id="@+id/button_addfile"
@@ -127,7 +150,6 @@
                 android:padding="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-
                 app:layout_constraintTop_toBottomOf="@+id/local_files_heading"
                 tools:itemCount="5"
                 tools:listitem="@layout/item_file" />

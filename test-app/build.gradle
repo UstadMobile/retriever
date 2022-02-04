@@ -67,4 +67,6 @@ dependencies {
     // Room (annotation processing takes place only on lib-database-android to improve build times)
     implementation "androidx.room:room-runtime:$version_android_room"
     implementation "com.ustadmobile.door:door-runtime:$version_door"
+
+    implementation "androidx.paging:paging-runtime:$version_androidx_paging"
 }

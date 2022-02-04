@@ -34,6 +34,7 @@ open class AvailableFile {
     }
 
     fun getFileName(): String{
-        return afOriginUrl?.substring(0, afOriginUrl?.lastIndexOf("/")?:0).toString()
+        return afOriginUrl?:"-"
+        //return afOriginUrl?.substring(0, afOriginUrl?.lastIndexOf("/")?:0).toString()
     }
 }
