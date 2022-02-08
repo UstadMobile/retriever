@@ -33,7 +33,7 @@
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:padding="16dp"
+            android:padding="4dp"
             android:text="@{availableFile.getFileName()}"
             app:layout_constraintBottom_toBottomOf="@+id/item_file_icon"
             app:layout_constraintEnd_toEndOf="parent"

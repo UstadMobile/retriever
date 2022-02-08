@@ -7,7 +7,7 @@
 
         <variable
             name="port"
-            type="Integer" />
+            type="String" />
 
         <variable
             name="listener"
@@ -22,48 +22,30 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/nsv"
+        android:id="@+id/single_nsv"
         >
 
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/cl1"
+            android:id="@+id/single_cl1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
 
             <com.google.android.material.appbar.AppBarLayout
-                android:id="@+id/app_bar"
+                android:id="@+id/single_app_bar"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/app_bar_height"
+                android:text="Retriever Test"
                 android:fitsSystemWindows="true"
                 app:layout_constraintTop_toTopOf="parent"
                 android:theme="@style/Theme.Retriever.AppBarOverlay">
-
-                <com.google.android.material.appbar.CollapsingToolbarLayout
-                    android:id="@+id/toolbar_layout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fitsSystemWindows="true"
-                    app:contentScrim="?attr/colorPrimary"
-                    app:layout_scrollFlags="scroll|exitUntilCollapsed"
-                    app:toolbarId="@+id/toolbar">
-
-                    <androidx.appcompat.widget.Toolbar
-                        android:id="@+id/toolbar"
-                        android:layout_width="match_parent"
-                        android:layout_height="?attr/actionBarSize"
-                        app:layout_collapseMode="pin"
-                        app:popupTheme="@style/Theme.Retriever.PopupOverlay" />
-
-                </com.google.android.material.appbar.CollapsingToolbarLayout>
-
 
             </com.google.android.material.appbar.AppBarLayout>
 
 
             <TextView
-                android:id="@+id/status_text"
+                android:id="@+id/single_status_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -72,12 +54,12 @@
                 android:paddingBottom="16dp"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/app_bar"
-                android:text="Listening and serving on port"
-                tools:text="Listening and serving on port " />
+                app:layout_constraintTop_toBottomOf="@+id/single_app_bar"
+                android:text="Listening and serving on"
+                tools:text="Listening and serving on" />
 
             <TextView
-                android:id="@+id/port_number"
+                android:id="@+id/single_port_number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -85,13 +67,13 @@
                 android:paddingBottom="16dp"
                 android:text="@{port.toString()}"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                app:layout_constraintStart_toEndOf="@id/status_text"
-                app:layout_constraintTop_toBottomOf="@+id/app_bar"
+                app:layout_constraintStart_toEndOf="@id/single_status_text"
+                app:layout_constraintTop_toBottomOf="@+id/single_app_bar"
                 tools:text="1234" />
 
             <TextView
 
-                android:id="@+id/local_files_heading"
+                android:id="@+id/single_local_files_heading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -100,13 +82,13 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                 android:textColor="@color/black"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/status_text"
+                app:layout_constraintTop_toBottomOf="@+id/single_status_text"
                 tools:text="Local Files" />
 
 
 
             <Button
-                android:id="@+id/button_addfile"
+                android:id="@+id/single_button_addfile"
                 style="@android:style/Widget.Material.Button.Small"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -114,11 +96,11 @@
                 android:layout_marginEnd="8dp"
                 android:onClick="@{() -> listener.onClickAddFile()}"
                 android:text="Add file"
-                app:layout_constraintEnd_toStartOf="@+id/button_clear"
-                app:layout_constraintTop_toBottomOf="@+id/status_text" />
+                app:layout_constraintEnd_toStartOf="@+id/single_button_clear"
+                app:layout_constraintTop_toBottomOf="@+id/single_status_text" />
 
             <Button
-                android:id="@+id/button_clear"
+                android:id="@+id/single_button_clear"
                 style="@android:style/Widget.Material.Button.Small"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -127,7 +109,7 @@
                 android:onClick="@{() -> listener.clearFileList()}"
                 android:text="Clear"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/status_text" />
+                app:layout_constraintTop_toBottomOf="@+id/single_status_text" />
 
             <View
                 android:layout_width="0dp"
@@ -139,10 +121,10 @@
                 android:paddingHorizontal="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/local_files_heading" />
+                app:layout_constraintTop_toBottomOf="@id/single_local_files_heading" />
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/local_files"
+                android:id="@+id/single_local_files"
                 android:layout_width="0dp"
                 android:layout_height="200dp"
                 android:layout_marginStart="16dp"
@@ -150,13 +132,26 @@
                 android:padding="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/local_files_heading"
+                app:layout_constraintTop_toBottomOf="@+id/single_local_files_heading"
                 tools:itemCount="5"
                 tools:listitem="@layout/item_file" />
 
 
+            <Button
+                android:id="@+id/single_button_retrieve"
+                style="@android:style/Widget.Material.Button.Small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:layout_marginEnd="8dp"
+                android:onClick="@{() -> listener.refreshRemoteFiles()}"
+                android:text="Retrieve"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/single_local_files" />
+
+
             <TextView
-                android:id="@+id/remote_files_heading"
+                android:id="@+id/single_remote_files_heading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -165,7 +160,7 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                 android:textColor="@color/black"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/local_files"
+                app:layout_constraintTop_toBottomOf="@+id/single_local_files"
                 tools:text="Remote Files" />
 
             <View
@@ -178,10 +173,10 @@
                 android:paddingHorizontal="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/remote_files_heading" />
+                app:layout_constraintTop_toBottomOf="@id/single_remote_files_heading" />
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/remote_files"
+                android:id="@+id/single_remote_files"
                 android:layout_width="0dp"
                 android:layout_height="200dp"
                 android:layout_marginStart="16dp"
@@ -190,7 +185,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
 
-                app:layout_constraintTop_toBottomOf="@+id/remote_files_heading"
+                app:layout_constraintTop_toBottomOf="@+id/single_remote_files_heading"
                 tools:itemCount="5"
                 tools:listitem="@layout/item_file" />
 

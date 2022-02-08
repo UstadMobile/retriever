@@ -18,7 +18,6 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
         session: NanoHTTPD.IHTTPSession
     ): NanoHTTPD.Response {
 
-        //TODO: Actual work
         val db = uriResource.initParameter(PARAM_DB_INDEX, RetrieverDatabase::class.java)
 
         urlParams[PARAM_FILE_REQUEST_URL]?: newBadRequestResponse("No file url requested.")
@@ -40,7 +39,8 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
         urlParams: MutableMap<String, String>?,
         session: NanoHTTPD.IHTTPSession?
     ): NanoHTTPD.Response {
-        TODO("Not yet implemented")
+        return NanoHTTPD.newFixedLengthResponse(
+            NanoHTTPD.Response.Status.NOT_FOUND, "application/json", Gson().toJson(""))
     }
 
     override fun post(
@@ -48,7 +48,8 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
         urlParams: MutableMap<String, String>?,
         session: NanoHTTPD.IHTTPSession?
     ): NanoHTTPD.Response {
-        TODO("Not yet implemented")
+        return NanoHTTPD.newFixedLengthResponse(
+            NanoHTTPD.Response.Status.NOT_FOUND, "application/json", Gson().toJson(""))
     }
 
     override fun delete(
@@ -56,7 +57,8 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
         urlParams: MutableMap<String, String>?,
         session: NanoHTTPD.IHTTPSession?
     ): NanoHTTPD.Response {
-        TODO("Not yet implemented")
+        return NanoHTTPD.newFixedLengthResponse(
+            NanoHTTPD.Response.Status.NOT_FOUND, "application/json", Gson().toJson(""))
     }
 
     override fun other(
@@ -65,7 +67,8 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
         urlParams: MutableMap<String, String>?,
         session: NanoHTTPD.IHTTPSession?
     ): NanoHTTPD.Response {
-        TODO("Not yet implemented")
+        return NanoHTTPD.newFixedLengthResponse(
+            NanoHTTPD.Response.Status.NOT_FOUND, "application/json", Gson().toJson(""))
     }
 
     companion object{

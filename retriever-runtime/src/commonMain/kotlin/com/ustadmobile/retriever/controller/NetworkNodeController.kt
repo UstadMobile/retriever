@@ -27,9 +27,16 @@ class NetworkNodeController(val context: Any, val db: RetrieverDatabase?) {
         }
     }
 
-    suspend fun updateNetworkNodeLost(networkNode: NetworkNode){
-        //TODO: Handle node lost
+    suspend fun updateNetworkNodeLost(endpointUrl: String){
 
+        //Check if exists, if does, remove it/ update lost?
+        if(!db?.networkNodeDao?.findAllByEndpointUrl(endpointUrl).isNullOrEmpty()){
+            val nodeToDelete: NetworkNode? = db?.networkNodeDao?.findByEndpointUrl(endpointUrl)
+            if(nodeToDelete != null){
+                nodeToDelete.networkNodeLost = DateTime.nowUnixLong()
+                db?.networkNodeDao?.update(nodeToDelete)
+            }
+        }
 
     }
 

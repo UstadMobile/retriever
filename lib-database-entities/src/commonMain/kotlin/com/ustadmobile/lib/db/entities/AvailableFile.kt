@@ -26,6 +26,11 @@ open class AvailableFile {
      */
     var afFilePath: String? = null
 
+    /**
+     * The file size.
+     */
+    var afFileSize: Long = 0
+
     constructor(){}
 
     constructor(fileUrl: String, location: String){

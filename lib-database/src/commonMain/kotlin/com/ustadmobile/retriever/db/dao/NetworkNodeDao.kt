@@ -3,7 +3,7 @@ package com.ustadmobile.core.db.dao
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Update
-import com.ustadmobile.door.annotation.Repository
+import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.lib.db.entities.NetworkNode
 
 @Dao
@@ -25,6 +25,13 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
         SELECT * FROM NetworkNode WHERE networkNodeLost = 0
     """)
     abstract fun findAllActiveNodes(): List<NetworkNode>
+
+
+    @Query("""
+        SELECT * FROM NetworkNode WHERE networkNodeLost = 0
+    """)
+    abstract fun findAllActiveNodesLive(): DoorDataSourceFactory<Int, NetworkNode>
+
 
     @Update
     abstract suspend fun updateAsync(networkNode: NetworkNode)

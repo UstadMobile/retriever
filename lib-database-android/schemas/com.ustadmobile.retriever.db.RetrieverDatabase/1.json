@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "7a551c9493c4712e36601bcc3d304075",
+    "identityHash": "2243e4f563819dcb5fe0251bf778e815",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -127,7 +127,7 @@
       },
       {
         "tableName": "AvailableFile",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`availableFileUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `afOriginUrl` TEXT, `afFilePath` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`availableFileUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `afOriginUrl` TEXT, `afFilePath` TEXT, `afFileSize` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "availableFileUid",
@@ -146,6 +146,12 @@
             "columnName": "afFilePath",
             "affinity": "TEXT",
             "notNull": false
+          },
+          {
+            "fieldPath": "afFileSize",
+            "columnName": "afFileSize",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -395,7 +401,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7a551c9493c4712e36601bcc3d304075')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2243e4f563819dcb5fe0251bf778e815')"
     ]
   }
 }

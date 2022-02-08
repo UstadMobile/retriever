@@ -8,12 +8,14 @@ import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.controller.NetworkNodeController
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.responder.EmbeddedHTTPD
+import com.ustadmobile.retriever.view.RetrieverViewCallback
 import java.net.InetAddress
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-class RetrieverAndroidImpl(private val applicationContext: Context): Retriever {
+class RetrieverAndroidImpl(private val applicationContext: Context, val view: RetrieverViewCallback): Retriever {
 
     var database: RetrieverDatabase
 
@@ -47,7 +49,7 @@ class RetrieverAndroidImpl(private val applicationContext: Context): Retriever {
     fun startNSD() {
 
         //Start nanohttpd server
-        server = object : NanoHTTPD(listeningPort){}
+        server = object : EmbeddedHTTPD(listeningPort){}
         server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
 
 
@@ -63,12 +65,19 @@ class RetrieverAndroidImpl(private val applicationContext: Context): Retriever {
 
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
 
+
     }
 
     override fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall {
         //TODO("Not yet implemented")
-        // 1. Make requests to every node with a list of request urls
+        // 1. Make requests to every node with a list of request urls to request responder
         // 2. Build RetrieverCall return it
+
+        retrieverRequests.forEach{
+            //Make request
+
+        }
+
 
         return RetrieverCall()
     }
@@ -110,7 +119,7 @@ class RetrieverAndroidImpl(private val applicationContext: Context): Retriever {
 
         override fun onDiscoveryStarted(p0: String?) {
             //Discovery started
-            println("P2PManagerAndroid: Discovery Started..")
+            //println("P2PManagerAndroid: Discovery Started..")
         }
 
         override fun onDiscoveryStopped(p0: String?) {
@@ -118,31 +127,51 @@ class RetrieverAndroidImpl(private val applicationContext: Context): Retriever {
         }
 
         override fun onServiceFound(service: NsdServiceInfo) {
-            println("P2PManagerAndroid: onServiceFound: " + service.serviceName)
-            println("P2PManagerAndroid: onServiceFound: "
-                    + service.serviceName)
-
             when {
                 !service.serviceType.startsWith(SERVICE_TYPE) -> {
-                    println("Unknown Service Type: ${service.serviceType}")
                     println("P2PManagerAndroid: Unknown Service Type: " + service.serviceType)
                 }
                 service.serviceName == mServiceName -> {
-                    println("P2PManagerAndroid: Same machine: $mServiceName")
-                    println( "P2PManagerAndroid: onServiceFound: "
-                            + service.serviceName)
+//                    println("P2PManagerAndroid: Same machine: $mServiceName")
                 }
 
                 service.serviceName.contains(SERVICE_NAME) -> {
                     nsdManager.resolveService(service, resolveListener)
-                    println("P2PManagerAndroid: contains service name :" + service.serviceName
-                            + " .. resolving..")
                 }
             }
         }
 
-        override fun onServiceLost(p0: NsdServiceInfo?) {
-            println("P2PManagerAndroid: onServiceLost.")
+        override fun onServiceLost(service: NsdServiceInfo?) {
+            //TODO: Enable with testing
+            println("P2PManagerAndroid: Lost peer.")
+            //nsdManager.resolveService(service, resolveLostListener)
+        }
+    }
+
+    private val resolveLostListener = object : NsdManager.ResolveListener {
+
+        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+            // Called when the resolve fails. Use the error code to debug.
+            println( "P2PManagerAndroid: Lost Resolve failed: $errorCode")
+        }
+
+        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+
+            if (serviceInfo.serviceName == mServiceName) {
+                //println("P2PManagerAndroid: Same IP ")
+                return
+            }
+            mService = serviceInfo
+            val port: Int = serviceInfo.port
+            val host: InetAddress = serviceInfo.host
+
+            println("P2PManagerAndroid: Lost Peer: $host:$port")
+
+
+            GlobalScope.launch {
+                //retrieverController?.addNewNode(networkNode)
+                retrieverController?.updateNetworkNodeLost("$host:$port")
+            }
         }
     }
 
@@ -154,19 +183,17 @@ class RetrieverAndroidImpl(private val applicationContext: Context): Retriever {
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-            println( "P2PManagerAndroid: Resolve Succeeded. $serviceInfo")
+            //println( "P2PManagerAndroid: Resolve Succeeded. $serviceInfo")
 
             if (serviceInfo.serviceName == mServiceName) {
-                println( "P2PManagerAndroid: Same IP.")
-                println("P2PManagerAndroid: Same IP ")
+                //println("P2PManagerAndroid: Same IP ")
                 return
             }
             mService = serviceInfo
             val port: Int = serviceInfo.port
             val host: InetAddress = serviceInfo.host
 
-            println("P2PManagerAndroid: host:port  "
-                    + host + ":" + port)
+            println("P2PManagerAndroid: Found Peer: $host:$port")
 
             val networkNode = NetworkNode()
             networkNode.networkNodeIPAddress = host.toString()
