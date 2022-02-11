@@ -142,13 +142,13 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
         }
 
         override fun onServiceLost(service: NsdServiceInfo?) {
-            //TODO: Enable with testing
             println("P2PManagerAndroid: Lost peer.")
-            //nsdManager.resolveService(service, resolveLostListener)
+            nsdManager.resolveService(service, ResolveLostListener(retrieverController))
         }
     }
 
-    private val resolveLostListener = object : NsdManager.ResolveListener {
+    private class ResolveLostListener(val retrieverController: NetworkNodeController?) :
+        NsdManager.ResolveListener {
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
@@ -157,19 +157,12 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
 
-            if (serviceInfo.serviceName == mServiceName) {
-                //println("P2PManagerAndroid: Same IP ")
-                return
-            }
-            mService = serviceInfo
             val port: Int = serviceInfo.port
             val host: InetAddress = serviceInfo.host
 
             println("P2PManagerAndroid: Lost Peer: $host:$port")
 
-
             GlobalScope.launch {
-                //retrieverController?.addNewNode(networkNode)
                 retrieverController?.updateNetworkNodeLost("$host:$port")
             }
         }

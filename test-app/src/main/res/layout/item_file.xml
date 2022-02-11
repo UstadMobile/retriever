@@ -5,6 +5,7 @@
 
     <data>
         <import type="com.ustadmobile.lib.db.entities.AvailableFile"/>
+        <import type="android.text.format.Formatter"/>
 
         <import type="android.view.View"/>
 
@@ -20,26 +21,42 @@
         android:background="?attr/selectableItemBackground">
 
         <androidx.appcompat.widget.AppCompatImageView
-            app:srcCompat="@drawable/ic_baseline_insert_drive_file_24"
             android:id="@+id/item_file_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="18dp"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:srcCompat="@drawable/ic_baseline_insert_drive_file_24" />
 
+
+        <TextView
+            android:id="@+id/item_file_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:paddingLeft="8dp"
+            android:paddingTop="8dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="0dp"
+            android:text="@{availableFile.getFileName()}"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/item_file_icon"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Potato.txt" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:padding="4dp"
-            android:text="@{availableFile.getFileName()}"
-            app:layout_constraintBottom_toBottomOf="@+id/item_file_icon"
+            android:layout_marginStart="8dp"
+            android:text="@{availableFile.getFileSize()}"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/item_file_icon"
-            app:layout_constraintTop_toTopOf="@+id/item_file_icon"
-            tools:text="Potato.txt" />
+            app:layout_constraintStart_toStartOf="@+id/item_file_name"
+            app:layout_constraintTop_toBottomOf="@+id/item_file_name"
+            tools:text="2MB" />
 
 
 

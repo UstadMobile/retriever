@@ -21,7 +21,7 @@ class BottomNavActivity : AppCompatActivity(), RetrieverViewCallback {
         retriever.startNSD()
 
 
-        val localFragment = ComingSoonFragment()
+        val localFragment = LocalFileListFragment(retriever)
         val scanFragment = ComingSoonFragment()
         val nodesFragment = NodeListFragment(retriever)
 

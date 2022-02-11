@@ -22,6 +22,7 @@ class NetworkNodeController(val context: Any, val db: RetrieverDatabase?) {
                     networkNode.networkNodeEndpointUrl?:"")
             if(netWorkNodeToUpdate != null){
                 netWorkNodeToUpdate.networkNodeDiscovered = DateTime.nowUnixLong()
+                netWorkNodeToUpdate.networkNodeLost = 0
                 db?.networkNodeDao?.update(netWorkNodeToUpdate)
             }
         }
