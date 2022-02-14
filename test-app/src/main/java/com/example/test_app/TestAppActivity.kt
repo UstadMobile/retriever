@@ -26,7 +26,8 @@ interface ClickAddFile{
     fun refreshRemoteFiles()
 }
 
-class TestAppActivity : AppCompatActivity(), ClickAddFile, TestAppView, RetrieverViewCallback {
+class TestAppActivity : AppCompatActivity(), ClickAddFile, TestAppView, RetrieverViewCallback,
+        FileListener{
 
     private lateinit var binding: ActivityTestAppSingleBinding
 
@@ -75,8 +76,8 @@ class TestAppActivity : AppCompatActivity(), ClickAddFile, TestAppView, Retrieve
         localFilesRv.layoutManager = LinearLayoutManager(applicationContext)
         remoteFilesRv.layoutManager = LinearLayoutManager(applicationContext)
 
-        localFilesRecyclerAdapter = FilesRecyclerAdapter()
-        remoteFilesRecyclerAdapter = FilesRecyclerAdapter()
+        localFilesRecyclerAdapter = FilesRecyclerAdapter(this)
+        remoteFilesRecyclerAdapter = FilesRecyclerAdapter(this)
 
         localFilesRv.adapter = localFilesRecyclerAdapter
         binding.singleLocalFiles.adapter = localFilesRecyclerAdapter
@@ -154,4 +155,12 @@ class TestAppActivity : AppCompatActivity(), ClickAddFile, TestAppView, Retrieve
             binding.port = value?:""
             field = value
         }
+
+    override fun deleteFile(availableFile: AvailableFile) {
+
+    }
+
+    override fun handleClickFile(availableFile: AvailableFile) {
+
+    }
 }

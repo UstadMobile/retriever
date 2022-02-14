@@ -3,4 +3,15 @@
     <string name="test_title">Testing the library (wip)</string>
     <string name="large_text"></string>
     <string name="action_settings">Settings</string>
+    <string name="enter_url">Enter a URL to save it locally"</string>
+    <string name="enter_url_to_scan">Enter a URL to scan it"</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="quick_fill">Quick fill url with:</string>
+    <string name="clear">Clear</string>
+    <string name="download">Download</string>
+    <string name="available_nodes">Available on %1$s nodes</string>
+    <string name="scan_title">Add a URL to search for available local nodes that have the file</string>
+    <string name="scan">Scan</string>
+    <string name="add_url">Add URL</string>
 </resources>

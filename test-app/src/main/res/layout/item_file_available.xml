@@ -10,12 +10,12 @@
         <import type="android.view.View"/>
 
         <variable
-            name="availableFile"
-            type="com.ustadmobile.lib.db.entities.AvailableFile" />
+            name="availableFileWithNumNodes"
+            type="com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes" />
         
         <variable
             name="listener"
-            type="com.example.test_app.FileListener" />
+            type="com.example.test_app.WatchListListener" />
 
     </data>
 
@@ -41,12 +41,12 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:onClick="@{() -> listener.handleClickFile(availableFile)}"
+            android:onClick="@{() -> listener.handleClickFile(availableFileWithNumNodes)}"
             android:paddingLeft="8dp"
             android:paddingTop="8dp"
             android:paddingRight="8dp"
             android:paddingBottom="0dp"
-            android:text="@{availableFile.getFileName()}"
+            android:text="@{availableFileWithNumNodes.getFileName()}"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             app:layout_constraintEnd_toStartOf="@+id/item_schedule_secondary_menu_imageview"
             app:layout_constraintStart_toEndOf="@+id/item_file_icon"
@@ -57,11 +57,11 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@{availableFile.getFileSize()}"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@{@string/available_nodes(availableFileWithNumNodes.numNodes)}"
+            app:layout_constraintEnd_toStartOf="@+id/item_schedule_secondary_menu_imageview"
             app:layout_constraintStart_toStartOf="@+id/item_file_name"
             app:layout_constraintTop_toBottomOf="@+id/item_file_name"
-            tools:text="2MB" />
+            tools:text="Available on 2 nodes" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/item_schedule_secondary_menu_imageview"
@@ -73,7 +73,7 @@
             app:srcCompat="@drawable/ic_baseline_delete_24"
             android:contentDescription="delete"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:onClick="@{() -> listener.deleteFile(availableFile)}" />
+            android:onClick="@{() -> listener.deleteFile(availableFileWithNumNodes)}" />
 
 
 

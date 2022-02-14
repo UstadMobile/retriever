@@ -22,7 +22,7 @@ class BottomNavActivity : AppCompatActivity(), RetrieverViewCallback {
 
 
         val localFragment = LocalFileListFragment(retriever)
-        val scanFragment = ComingSoonFragment()
+        val scanFragment = ScanFileListFragment(retriever)
         val nodesFragment = NodeListFragment(retriever)
 
         setCurrentFragment(localFragment, "Local")

@@ -8,7 +8,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.test_app.databinding.ItemFileBinding
 import com.ustadmobile.lib.db.entities.AvailableFile
 
-class FilesRecyclerAdapter:
+interface FileListener{
+    fun deleteFile(availableFile: AvailableFile)
+    fun handleClickFile(availableFile: AvailableFile)
+}
+
+
+class FilesRecyclerAdapter(val fileListener: FileListener):
     PagedListAdapter<
             AvailableFile,
             FilesRecyclerAdapter.FilesRecyclerViewHolder>
@@ -22,6 +28,7 @@ class FilesRecyclerAdapter:
             LayoutInflater.from(parent.context),
             parent,
             false)
+        itemBinding.listener = fileListener
         return FilesRecyclerViewHolder(itemBinding)
     }
 

@@ -33,6 +33,11 @@ abstract class AvailableFileDao: BaseDao<AvailableFile> {
     """)
     abstract fun removeAllAvailableFiles()
 
+    @Query("""
+        DELETE FROM AvailableFile WHERE availableFileUid = :uid
+    """)
+    abstract suspend fun removeFile(uid: Long )
+
 
     @Query("""
         SELECT * FROM AvailableFile
