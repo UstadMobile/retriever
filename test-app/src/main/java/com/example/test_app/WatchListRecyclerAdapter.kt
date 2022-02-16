@@ -44,13 +44,13 @@ class WatchListRecyclerAdapter(val fileListener: WatchListListener):
             : DiffUtil.ItemCallback<AvailabilityFileWithNumNodes>() {
             override fun areItemsTheSame(oldItem: AvailabilityFileWithNumNodes,
                                          newItem: AvailabilityFileWithNumNodes): Boolean {
-                return oldItem.aoiId == newItem.aoiId
+                return oldItem.aoiId == newItem.aoiId && oldItem.numNodes == newItem.numNodes
             }
 
             override fun areContentsTheSame(oldItem: AvailabilityFileWithNumNodes,
                                             newItem: AvailabilityFileWithNumNodes): Boolean {
                 return oldItem.aoiId == newItem.aoiId &&
-                        oldItem.aoiId == newItem.aoiId
+                        oldItem.numNodes == newItem.numNodes
             }
 
         }

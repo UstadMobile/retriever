@@ -1,9 +1,13 @@
 package com.example.test_app
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
@@ -17,7 +21,7 @@ import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.NodeListController
 import com.ustadmobile.retriever.view.NodeListView
 
-class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeListView{
+class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeListView, NodeListener{
 
 
     private lateinit var controller: NodeListController
@@ -44,7 +48,7 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeLis
         nodeListRecyclerView = root.findViewById(R.id.fragment_node_list_rv)
         nodeListRecyclerView.layoutManager = LinearLayoutManager(context)
 
-        nodeListRecyclerAdapter = NodeListRecyclerAdapter()
+        nodeListRecyclerAdapter = NodeListRecyclerAdapter(this)
 
         nodeListRecyclerView.adapter = nodeListRecyclerAdapter
 
@@ -63,6 +67,14 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeLis
             field = value
             nodeListLiveData?.observe(this, nodeListObserver)
         }
+
+    override fun onClickNode(node: NetworkNode) {
+        val clipboard: ClipboardManager? = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager?
+        val clip = ClipData.newPlainText("", node.networkNodeEndpointUrl)
+        clipboard?.setPrimaryClip(clip)
+
+        Toast.makeText(context, "Endpoint copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
 
 
 }

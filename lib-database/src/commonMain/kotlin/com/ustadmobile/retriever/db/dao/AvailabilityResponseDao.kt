@@ -13,6 +13,11 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
     abstract fun findAllListenersAndAvailabilityByTime(time: Long):
             List<FileAvailabilityWithListener>
 
+    @Query("""
+        DELETE FROM AvailabilityResponse
+    """)
+    abstract suspend fun clearAllResponses()
+
    companion object{
 
        const val QUERY_FIND_LISTENER_TO_URL= """

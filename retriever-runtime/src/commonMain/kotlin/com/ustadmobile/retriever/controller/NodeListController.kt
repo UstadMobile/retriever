@@ -9,10 +9,6 @@ import kotlinx.coroutines.launch
 class NodeListController(context: Any, val db: RetrieverDatabase, val view: NodeListView) {
 
     fun onCreate(){
-        GlobalScope.launch {
-            val allNodes = db.networkNodeDao.findAllActiveNodes()
-            println("P2PManager: Number of nodes: " + allNodes.size)
-        }
         view.nodeList = db.networkNodeDao.findAllActiveNodesLive()
     }
 

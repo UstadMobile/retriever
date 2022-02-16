@@ -12,6 +12,10 @@
             name="node"
             type="com.ustadmobile.lib.db.entities.NetworkNode" />
 
+        <variable
+            name="listener"
+            type="com.example.test_app.NodeListener" />
+
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -37,6 +41,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
             android:padding="4dp"
+            android:onClick="@{() -> listener.onClickNode(node)}"
             android:text="@{node.networkNodeEndpointUrl}"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             app:layout_constraintBottom_toBottomOf="@+id/item_file_icon"

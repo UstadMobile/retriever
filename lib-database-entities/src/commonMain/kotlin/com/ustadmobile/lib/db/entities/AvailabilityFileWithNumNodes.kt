@@ -1,6 +1,6 @@
 package com.ustadmobile.lib.db.entities
 
-class AvailabilityFileWithNumNodes: AvailabilityObserverItem() {
+class AvailabilityFileWithNumNodes: AvailabilityObserverItemWithNetworkNode() {
 
     var numNodes: Int = 0
 

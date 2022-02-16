@@ -5,6 +5,8 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import com.google.gson.Gson
 import com.ustadmobile.lib.db.entities.AvailableFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class RequestResponder:RouterNanoHTTPD.UriResponder{
 
@@ -73,6 +75,6 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
 
     companion object{
         const val PARAM_FILE_REQUEST_URL = "fileUrl"
-        const val PARAM_DB_INDEX = 0
+        const val   PARAM_DB_INDEX = 0
     }
 }

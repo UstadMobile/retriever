@@ -36,4 +36,9 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     @Update
     abstract suspend fun updateAsync(networkNode: NetworkNode)
 
+    @Query("""
+        DELETE FROM NetworkNode
+    """)
+    abstract suspend fun clearAllNodes()
+
 }

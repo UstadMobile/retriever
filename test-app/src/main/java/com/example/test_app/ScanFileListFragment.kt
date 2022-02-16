@@ -48,9 +48,7 @@ class ScanFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Sca
         }
     }
 
-    private var fabClicked: Boolean = false
-
-    val permissionLauncher = registerForActivityResult(
+    private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
@@ -86,7 +84,11 @@ class ScanFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Sca
 
         watchListRecyclerView.adapter = watchListRecyclerAdapter
 
-        controller = ScanFileListController(requireContext(), retriever.database, this)
+        controller = ScanFileListController(
+            requireContext(),
+            retriever.database,
+            this,
+            retriever)
         controller.onCreate()
 
         return rootView
@@ -128,8 +130,8 @@ class ScanFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Sca
         builder.setView(dialogView)
         builder.setTitle(R.string.enter_url_to_scan)
         builder.setPositiveButton(R.string.scan) { dialog, which ->
-            //TODO: Add file to watch list
-
+            //TODO: check
+            controller.addUrlToScan(urlEditText.text.toString())
             dialog.dismiss()
         }
 

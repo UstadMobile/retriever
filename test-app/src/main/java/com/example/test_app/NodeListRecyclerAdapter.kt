@@ -8,7 +8,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.test_app.databinding.ItemNetworknodeBinding
 import com.ustadmobile.lib.db.entities.NetworkNode
 
-class NodeListRecyclerAdapter:
+interface NodeListener{
+    fun onClickNode(node: NetworkNode)
+}
+
+class NodeListRecyclerAdapter(val listener: NodeListener):
     PagedListAdapter<
             NetworkNode,
             NodeListRecyclerAdapter.NodeListRecyclerViewHolder>
@@ -22,6 +26,7 @@ class NodeListRecyclerAdapter:
             LayoutInflater.from(parent.context),
             parent,
             false)
+        itemBinding.listener = listener
         return NodeListRecyclerViewHolder(itemBinding)
     }
 

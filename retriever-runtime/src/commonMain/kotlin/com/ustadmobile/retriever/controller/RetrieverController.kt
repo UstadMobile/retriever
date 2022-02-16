@@ -8,7 +8,7 @@ import com.ustadmobile.lib.db.entities.NetworkNode
 /**
  * Db work
  */
-class NetworkNodeController(val context: Any, val db: RetrieverDatabase?) {
+class RetrieverController(val context: Any, val db: RetrieverDatabase?) {
 
     suspend fun addNewNode(networkNode: NetworkNode){
 

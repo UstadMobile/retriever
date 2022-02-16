@@ -19,6 +19,13 @@ abstract class AvailableFileDao: BaseDao<AvailableFile> {
 
     @Query("""
         SELECT * FROM AvailableFile 
+         WHERE afOriginUrl = :fileUrl
+    """)
+    abstract suspend fun isFileAvailableAsync(fileUrl: String): List<AvailableFile>
+
+
+    @Query("""
+        SELECT * FROM AvailableFile 
          WHERE afOriginUrl = :originUrl
     """)
     abstract fun findAvailableFile(originUrl: String): AvailableFile?

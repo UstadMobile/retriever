@@ -49,7 +49,10 @@ class LocalFileListController(
             conn.getContentLengthLong()
         } catch (e: IOException) {
             throw RuntimeException(e)
-        } finally {
+        } catch (e: Throwable){
+            e.printStackTrace()
+            return 0
+        }finally {
             conn?.disconnect()
         }
     }
@@ -61,8 +64,8 @@ class LocalFileListController(
         GlobalScope.launch {
             db?.availableFileDao?.insert(
                 AvailableFile(
-                    "https://path.to/the/file" + rn + ".txt",
-                    "file://path.to/the/file" + rn + ".txt",
+                    "https://path.to/the/file$rn.txt",
+                    "file://path.to/the/file$rn.txt",
                     rs
                 )
             )

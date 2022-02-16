@@ -3,10 +3,14 @@ package com.ustadmobile.retriever
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.soywiz.klock.DateTime
 import com.ustadmobile.door.DatabaseBuilder
+import com.ustadmobile.lib.db.entities.AvailabilityResponse
+import com.ustadmobile.lib.db.entities.AvailableFile
 import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.retriever.controller.NetworkNodeController
+import com.ustadmobile.retriever.controller.RetrieverController
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.responder.EmbeddedHTTPD
 import com.ustadmobile.retriever.view.RetrieverViewCallback
@@ -14,12 +18,15 @@ import java.net.InetAddress
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
 
 class RetrieverAndroidImpl(private val applicationContext: Context, val view: RetrieverViewCallback): Retriever {
 
     var database: RetrieverDatabase
 
-    private var retrieverController: NetworkNodeController? = null
+    private var retrieverController: RetrieverController? = null
 
     init {
         database = DatabaseBuilder.databaseBuilder(
@@ -27,8 +34,9 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
                 RetrieverDatabase::class,
                 DBNAME
             ).build()
-        retrieverController = NetworkNodeController(applicationContext, database)
+        retrieverController = RetrieverController(applicationContext, database)
 
+        //TODO: Can't access some variables here
         //startNSD()
 
     }
@@ -48,8 +56,14 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
 
     fun startNSD() {
 
+        //TODO: Check if already running
+        GlobalScope.launch {
+            database.networkNodeDao.clearAllNodes()
+            database.availabilityResponseDao.clearAllResponses()
+        }
+
         //Start nanohttpd server
-        server = object : EmbeddedHTTPD(listeningPort){}
+        server = object : EmbeddedHTTPD(listeningPort, database){}
         server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
 
 
@@ -73,11 +87,61 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
         // 1. Make requests to every node with a list of request urls to request responder
         // 2. Build RetrieverCall return it
 
-        retrieverRequests.forEach{
+        val activeNodes: List<NetworkNode> = database.networkNodeDao.findAllActiveNodes()
+        val allRequestsAvailabilityResponses : List<AvailabilityResponse> = retrieverRequests.flatMap{
             //Make request
+            val thisRequest: RetrieverRequest = it
 
+            val requestAvailabilityResponses : List<AvailabilityResponse> =
+                activeNodes.map{
+                    var nodeEndpoint = it.networkNodeEndpointUrl?:""
+                    nodeEndpoint = if(nodeEndpoint.startsWith("/")){
+                        nodeEndpoint.substring(1, nodeEndpoint.length)
+                    }else{
+                        nodeEndpoint
+                    }
+                    nodeEndpoint = if(nodeEndpoint.startsWith("http")){
+                        nodeEndpoint
+                    }else{
+                        "https://$nodeEndpoint"
+                    }
+
+                    val url = URL(nodeEndpoint)
+                    var connection: HttpURLConnection? = null
+                    val fileAvailable: Boolean = try {
+                        connection = url.openConnection() as HttpURLConnection
+                        val responseStr = connection.inputStream.bufferedReader().readText()
+                        val responseEntryList = Gson().fromJson<List<AvailableFile>>(
+                            responseStr,
+                            object: TypeToken<List<AvailableFile>>(){
+                            }.type
+                        )
+
+                        responseEntryList.isNotEmpty()
+
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        false
+                    } catch (e: Throwable){
+                        e.printStackTrace()
+                        false
+                    }finally {
+                        connection?.disconnect()
+                    }
+
+                    AvailabilityResponse(
+                        it.networkNodeId,
+                        thisRequest.originUrl,
+                        fileAvailable,
+                        DateTime.nowUnixLong())
+            }
+            requestAvailabilityResponses
         }
 
+        //Add these responses to the database
+        GlobalScope.launch {
+            database.availabilityResponseDao.insertList(allRequestsAvailabilityResponses)
+        }
 
         return RetrieverCall()
     }
@@ -147,7 +211,7 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
         }
     }
 
-    private class ResolveLostListener(val retrieverController: NetworkNodeController?) :
+    private class ResolveLostListener(val retrieverController: RetrieverController?) :
         NsdManager.ResolveListener {
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {

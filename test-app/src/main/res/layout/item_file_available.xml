@@ -32,7 +32,7 @@
             android:layout_marginTop="18dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_baseline_insert_drive_file_24" />
+            app:srcCompat="@drawable/ic_baseline_find_in_page_24" />
 
 
         <TextView

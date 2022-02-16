@@ -1,6 +1,7 @@
 package com.ustadmobile.retriever.responder
 
 
+import com.ustadmobile.retriever.db.RetrieverDatabase
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
 import java.io.InputStream
@@ -8,10 +9,11 @@ import java.io.OutputStream
 import java.util.*
 import kotlin.jvm.JvmOverloads
 
+
 /**
  * Embedded HTTP Server
  */
-open class EmbeddedHTTPD @JvmOverloads constructor(portNum: Int) : RouterNanoHTTPD(portNum) {
+open class EmbeddedHTTPD @JvmOverloads constructor(portNum: Int, db: RetrieverDatabase) : RouterNanoHTTPD(portNum) {
 
     private val id: Int
 
@@ -50,7 +52,7 @@ open class EmbeddedHTTPD @JvmOverloads constructor(portNum: Int) : RouterNanoHTT
         idCounter++
 
         addRoute("/:${RequestResponder.PARAM_FILE_REQUEST_URL}/",
-            RequestResponder::class.java)
+            RequestResponder::class.java, db)
 
     }
 

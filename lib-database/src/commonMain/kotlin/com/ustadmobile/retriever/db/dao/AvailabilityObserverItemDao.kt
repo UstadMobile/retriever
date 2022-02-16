@@ -3,6 +3,8 @@ package com.ustadmobile.retriever.db.dao
 import androidx.room.Dao
 import androidx.room.Query
 import com.ustadmobile.core.db.dao.BaseDao
+import com.ustadmobile.door.DoorDataSourceFactory
+import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
 
@@ -16,6 +18,14 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
     @Query(QUERY_FINDPENDINGITEMS)
     abstract fun findPendingItemsAsync(): List<AvailabilityObserverItemWithNetworkNode>
 
+    @Query(Companion.QUERY_GET_WATCHLIST_WITH_NUM_NODES)
+    abstract fun getWatchListLive(): DoorDataSourceFactory<Int, AvailabilityFileWithNumNodes>
+
+    @Query("""
+        DELETE FROM AvailabilityObserverItem WHERE aoiId = :uid
+    """)
+    abstract suspend fun removeFromWatchList(uid: Long)
+
    companion object{
        const val QUERY_FINDPENDINGITEMS= """
          SELECT AvailabilityObserverItem.* , NetworkNode.networkNodeId
@@ -27,6 +37,24 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
                  WHERE AvailabilityResponse.availabilityNetworkNode = NetworkNode.networkNodeId
                    AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
                 )  """
+
+
+       const val QUERY_GET_WATCHLIST_WITH_NUM_NODES= """
+            SELECT
+                AvailabilityObserverItem.* ,
+                0 as networkNodeId,
+                (SELECT
+                    COUNT(DISTINCT AvailabilityResponse.availabilityNetworkNode)      
+                FROM
+                    AvailabilityResponse                                  
+                    LEFT JOIN NetworkNode ON NetworkNode.networkNodeId = AvailabilityResponse.availabilityNetworkNode
+                WHERE
+                    AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
+                    AND NetworkNode.networkNodeLost = 0
+                ) as numNodes                    
+            FROM
+                AvailabilityObserverItem
+        """
    }
 
 
