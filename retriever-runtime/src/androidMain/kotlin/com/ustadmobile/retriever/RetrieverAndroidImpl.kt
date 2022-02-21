@@ -13,6 +13,7 @@ import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.controller.RetrieverController
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.responder.EmbeddedHTTPD
+import com.ustadmobile.retriever.responder.RequestResponder
 import com.ustadmobile.retriever.view.RetrieverViewCallback
 import java.net.InetAddress
 import fi.iki.elonen.NanoHTTPD
@@ -103,9 +104,13 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
                     nodeEndpoint = if(nodeEndpoint.startsWith("http")){
                         nodeEndpoint
                     }else{
-                        "https://$nodeEndpoint"
+                        "http://$nodeEndpoint"
                     }
 
+                    nodeEndpoint = nodeEndpoint + "/" +
+                        RequestResponder.PARAM_FILE_REQUEST_URL + "?" +
+                        RequestResponder.PARAM_FILE_REQUEST_URL + "=" +
+                        thisRequest.originUrl
                     val url = URL(nodeEndpoint)
                     var connection: HttpURLConnection? = null
                     val fileAvailable: Boolean = try {
