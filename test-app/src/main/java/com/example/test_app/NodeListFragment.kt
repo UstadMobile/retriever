@@ -69,7 +69,7 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl):
 
         val rootView: View
 
-        binding = FragmentNodeListBinding.inflate(inflater, container false).also {
+        binding = FragmentNodeListBinding.inflate(inflater, container, false).also {
             rootView = it.root
             it.listener = this
         }
