@@ -22,6 +22,8 @@ import androidx.lifecycle.Observer
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.test_app.databinding.FragmentNodeListBinding
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.NetworkNode
@@ -34,7 +36,8 @@ import java.util.regex.Pattern
 interface ClickAddNode{
     fun clickAddNote()
 }
-class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeListView, NodeListener{
+class NodeListFragment(val retriever: RetrieverAndroidImpl):
+    Fragment(), NodeListView, NodeListener, ClickAddNode{
 
 
     private lateinit var controller: NodeListController
@@ -55,14 +58,24 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeLis
     private var BLUETOOTHSERVICEUUID = 0x123abcL
     var SERVICE_NAME = "UstadRetriever"
 
+    private lateinit var binding: FragmentNodeListBinding
+    private var fabClicked: Boolean = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
 
-        val root = inflater.inflate(R.layout.fragment_node_list, container, false)
-        nodeListRecyclerView = root.findViewById(R.id.fragment_node_list_rv)
+        val rootView: View
+
+        binding = FragmentNodeListBinding.inflate(inflater, container false).also {
+            rootView = it.root
+            it.listener = this
+        }
+
+
+        nodeListRecyclerView = rootView.findViewById(R.id.fragment_node_list_rv)
         nodeListRecyclerView.layoutManager = LinearLayoutManager(context)
 
         nodeListRecyclerAdapter = NodeListRecyclerAdapter(this)
@@ -72,10 +85,32 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeLis
         controller = NodeListController(requireContext(), retriever.database, this)
         controller.onCreate()
 
+        val fab : FloatingActionButton = rootView.findViewById(R.id.fragment_node_list_fab_add)
+
+        fab.setOnClickListener{
+
+            if(fabClicked){
+                fab.animate().rotation(-90f)
+                showFabItems(rootView, View.GONE)
+            }else{
+                fab.animate().rotation(45f)
+                showFabItems(rootView, View.VISIBLE)
+                fabClicked = true
+            }
+        }
+
         checkBluetooth()
-        return root
+        return rootView
+    }
 
-
+    private fun showFabItems(view: View, visibility: Int){
+        if(visibility == View.VISIBLE){
+            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_fab_bt).show()
+            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_bt_tv).show()
+        }else{
+            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_fab_bt).visibility = visibility
+            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_bt_tv).visibility = visibility
+        }
     }
 
     private fun checkBluetooth(){
@@ -176,6 +211,10 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeLis
         clipboard?.setPrimaryClip(clip)
 
         Toast.makeText(context, "Endpoint copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun clickAddNote() {
+        checkBluetooth()
     }
 
 

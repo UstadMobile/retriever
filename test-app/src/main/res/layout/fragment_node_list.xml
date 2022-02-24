@@ -74,7 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            android:visibility="visible"
+            android:visibility="gone"
             android:layout_marginStart="8dp"
             android:onClick="@{() -> listener.clickAddNote()}"
             android:padding="16dp"
@@ -90,7 +90,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:text="@string/add_bluetooth_node"
-            android:visibility="visible"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/fragment_node_list_fab_bt"
             app:layout_constraintEnd_toStartOf="@id/fragment_node_list_fab_bt"
             app:layout_constraintTop_toTopOf="@+id/fragment_node_list_fab_bt" />
