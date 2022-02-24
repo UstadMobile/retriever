@@ -58,7 +58,7 @@ class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Lo
 
     private var fabClicked: Boolean = false
 
-    val permissionLauncher = registerForActivityResult(
+    private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {

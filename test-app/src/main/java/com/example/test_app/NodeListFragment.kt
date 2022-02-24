@@ -1,13 +1,21 @@
 package com.example.test_app
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
+import android.app.Activity
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.companion.AssociationRequest
+import android.companion.BluetoothDeviceFilter
+import android.companion.BluetoothLeDeviceFilter
+import android.companion.CompanionDeviceManager
+import android.content.*
 import android.os.Bundle
+import android.os.ParcelUuid
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
@@ -20,7 +28,12 @@ import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.NodeListController
 import com.ustadmobile.retriever.view.NodeListView
+import java.util.*
+import java.util.regex.Pattern
 
+interface ClickAddNode{
+    fun clickAddNote()
+}
 class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeListView, NodeListener{
 
 
@@ -37,6 +50,10 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeLis
             nodeListRecyclerAdapter?.submitList(t)
         }
     }
+
+    private val BT_ON_REQUEST_CODE = 87
+    private var BLUETOOTHSERVICEUUID = 0x123abcL
+    var SERVICE_NAME = "UstadRetriever"
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,9 +72,94 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl): Fragment(), NodeLis
         controller = NodeListController(requireContext(), retriever.database, this)
         controller.onCreate()
 
+        checkBluetooth()
         return root
 
 
+    }
+
+    private fun checkBluetooth(){
+        val bluetoothManager: BluetoothManager =
+            context?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+
+        val bluetoothAdapter: BluetoothAdapter = bluetoothManager.adapter
+
+        if(!bluetoothAdapter.isEnabled){
+            val enableBluetoothIntent: Intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+
+            val requestLaunch = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
+                result -> if(result.resultCode == Activity.RESULT_OK){
+                    startCompanionDevicePairing()
+                }
+            }
+            requestLaunch.launch(enableBluetoothIntent)
+
+        }else{
+            startCompanionDevicePairing()
+        }
+    }
+
+    private val deviceManager: CompanionDeviceManager by lazy {
+        context?.getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
+    }
+
+
+    fun startCompanionDevicePairing(){
+
+        //Device filter
+        val bluetoothDeviceFilter: BluetoothDeviceFilter = BluetoothDeviceFilter.Builder()
+            //.setNamePattern(Pattern.compile("My device"))
+            //.addServiceUuid(ParcelUuid(UUID(0x123abcL, -1L)), null)
+            .build()
+
+        //Request
+        val pairingRequest: AssociationRequest = AssociationRequest.Builder()
+            .addDeviceFilter(bluetoothDeviceFilter)
+            .setSingleDevice(false)
+            .build()
+
+        val allAssociations = deviceManager.associations
+
+        deviceManager.associate(pairingRequest,
+            object: CompanionDeviceManager.Callback() {
+
+                override fun onDeviceFound(chooserLauncher: IntentSender) {
+                    println("P2P Test1")
+                    //show
+                    startIntentSenderForResult(
+                        chooserLauncher,
+                        BT_ON_REQUEST_CODE,
+                        null, 0, 0, 0,null)
+
+                    println("P2P Retriever: Found bluetooth device.")
+                }
+
+                override fun onFailure(error: CharSequence?) {
+                    println("P2P Retriever : Failed association device Manager")
+                }
+
+            }, null)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when(requestCode){
+            BT_ON_REQUEST_CODE ->when(resultCode){
+                Activity.RESULT_OK ->{
+                    val deviceToPair: BluetoothDevice? =
+                        data?.getParcelableExtra(CompanionDeviceManager.EXTRA_DEVICE)
+
+                    if(deviceToPair?.address != null) {
+                        controller.addNetworkNode(NetworkNode(
+                            deviceToPair.name + ":" +deviceToPair.address,
+                            deviceToPair.address,
+                            System.currentTimeMillis()
+                        ))
+                    }
+                    println("P2P selected")
+                }
+            }else -> super.onActivityResult(requestCode, resultCode, data)
+
+        }
     }
 
     override var nodeList: DoorDataSourceFactory<Int, NetworkNode>? = null

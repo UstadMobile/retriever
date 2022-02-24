@@ -2,7 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.test_app">
 
+    <!-- To save files from the Local bottom nav screen -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <!-- To scan for devices locally using bluetooth -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <!-- To use the Companion Device pairing to scan for nearby devices using bluetooth primarily -->
+    <uses-feature android:name="android.software.companion_device_setup"/>
+
 
     <application
         android:allowBackup="true"

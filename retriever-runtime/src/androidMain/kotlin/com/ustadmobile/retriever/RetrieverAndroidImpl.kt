@@ -1,8 +1,18 @@
 package com.ustadmobile.retriever
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.companion.AssociationRequest
+import android.companion.BluetoothDeviceFilter
+import android.companion.BluetoothLeDeviceFilter
+import android.companion.CompanionDeviceManager
 import android.content.Context
+import android.content.Intent
+import android.content.IntentSender
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import android.os.ParcelUuid
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.soywiz.klock.DateTime
@@ -22,8 +32,12 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.*
+import java.util.regex.Pattern
 
-class RetrieverAndroidImpl(private val applicationContext: Context, val view: RetrieverViewCallback): Retriever {
+class RetrieverAndroidImpl(
+    private val applicationContext: Context,
+    val view: RetrieverViewCallback): Retriever {
 
     var database: RetrieverDatabase
 
@@ -49,7 +63,8 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
     private lateinit var nsdManager: NsdManager
 
     private var SERVICE_TYPE = "_ustadretriever._tcp"
-    private var SERVICE_NAME = "UstadRetriever"
+    var SERVICE_NAME = "UstadRetriever"
+    private var BLUETOOTHSERVICEUUID = 0x424abcL
 
     var listeningPort: Int = 42424
 
@@ -83,18 +98,22 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
 
     }
 
+    /**
+     * Called when bluetooth is available
+     */
+    fun startCompanionDevicePairing(){
+
+
+
+    }
+
     override fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall {
-        //TODO("Not yet implemented")
-        // 1. Make requests to every node with a list of request urls to request responder
-        // 2. Build RetrieverCall return it
 
         val activeNodes: List<NetworkNode> = database.networkNodeDao.findAllActiveNodes()
-        val allRequestsAvailabilityResponses : List<AvailabilityResponse> = retrieverRequests.flatMap{
-            //Make request
+        val allRequestResponses : List<AvailabilityResponse> = retrieverRequests.flatMap{
             val thisRequest: RetrieverRequest = it
 
-            val requestAvailabilityResponses : List<AvailabilityResponse> =
-                activeNodes.map{
+            val requestResponses : List<AvailabilityResponse> = activeNodes.map{
                     var nodeEndpoint = it.networkNodeEndpointUrl?:""
                     nodeEndpoint = if(nodeEndpoint.startsWith("/")){
                         nodeEndpoint.substring(1, nodeEndpoint.length)
@@ -111,9 +130,11 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
                         RequestResponder.PARAM_FILE_REQUEST_URL + "?" +
                         RequestResponder.PARAM_FILE_REQUEST_URL + "=" +
                         thisRequest.originUrl
-                    val url = URL(nodeEndpoint)
+
+
                     var connection: HttpURLConnection? = null
                     val fileAvailable: Boolean = try {
+                        val url = URL(nodeEndpoint)
                         connection = url.openConnection() as HttpURLConnection
                         val responseStr = connection.inputStream.bufferedReader().readText()
                         val responseEntryList = Gson().fromJson<List<AvailableFile>>(
@@ -121,9 +142,7 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
                             object: TypeToken<List<AvailableFile>>(){
                             }.type
                         )
-
                         responseEntryList.isNotEmpty()
-
                     } catch (e: IOException) {
                         e.printStackTrace()
                         false
@@ -140,12 +159,13 @@ class RetrieverAndroidImpl(private val applicationContext: Context, val view: Re
                         fileAvailable,
                         DateTime.nowUnixLong())
             }
-            requestAvailabilityResponses
+
+            requestResponses
         }
 
-        //Add these responses to the database
+        //Add these AvailabilityResponse responses to the database
         GlobalScope.launch {
-            database.availabilityResponseDao.insertList(allRequestsAvailabilityResponses)
+            database.availabilityResponseDao.insertList(allRequestResponses)
         }
 
         return RetrieverCall()
