@@ -23,5 +23,11 @@ class NodeListController(context: Any, val db: RetrieverDatabase, val view: Node
         }
     }
 
+    fun deleteNode(networkNode: NetworkNode){
+        GlobalScope.launch {
+            db.networkNodeDao.deleteNetworkNode(networkNode.networkNodeId)
+        }
+    }
+
 
 }

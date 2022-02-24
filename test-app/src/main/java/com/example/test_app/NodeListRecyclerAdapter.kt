@@ -10,6 +10,7 @@ import com.ustadmobile.lib.db.entities.NetworkNode
 
 interface NodeListener{
     fun onClickNode(node: NetworkNode)
+    fun onDeleteNode(node: NetworkNode)
 }
 
 class NodeListRecyclerAdapter(val listener: NodeListener):

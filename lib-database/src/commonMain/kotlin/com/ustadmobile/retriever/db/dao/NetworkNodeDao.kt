@@ -33,6 +33,12 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     abstract fun findAllActiveNodesLive(): DoorDataSourceFactory<Int, NetworkNode>
 
 
+    @Query("""
+        DELETE FROM NetworkNode WHERE networkNodeId = :uid
+    """)
+    abstract suspend fun deleteNetworkNode(uid: Long)
+
+
     @Update
     abstract suspend fun updateAsync(networkNode: NetworkNode)
 

@@ -102,15 +102,15 @@ class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Lo
 
         fab.setOnClickListener {
 
-            if (fabClicked) {
+            fabClicked = if (fabClicked) {
                 fab.animate().rotation(-90f)
                 showFabItems(rootView, View.GONE)
-                fabClicked = false
+                false
 
             } else {
                 fab.animate().rotation(45f)
                 showFabItems(rootView, View.VISIBLE)
-                fabClicked = true
+                true
             }
         }
         return rootView

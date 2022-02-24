@@ -14,6 +14,7 @@ import android.os.ParcelUuid
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -89,28 +90,28 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl):
 
         fab.setOnClickListener{
 
-            if(fabClicked){
+            fabClicked = if(fabClicked){
                 fab.animate().rotation(-90f)
                 showFabItems(rootView, View.GONE)
+                false
             }else{
                 fab.animate().rotation(45f)
                 showFabItems(rootView, View.VISIBLE)
-                fabClicked = true
+                true
             }
         }
 
-        checkBluetooth()
+        //checkBluetooth()
         return rootView
     }
 
     private fun showFabItems(view: View, visibility: Int){
         if(visibility == View.VISIBLE){
             view.findViewById<FloatingActionButton>(R.id.fragment_node_list_fab_bt).show()
-            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_bt_tv).show()
         }else{
-            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_fab_bt).visibility = visibility
-            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_bt_tv).visibility = visibility
+            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_fab_bt).hide()
         }
+        view.findViewById<TextView>(R.id.fragment_node_list_bt_tv).visibility = visibility
     }
 
     private fun checkBluetooth(){
@@ -211,6 +212,10 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl):
         clipboard?.setPrimaryClip(clip)
 
         Toast.makeText(context, "Endpoint copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onDeleteNode(node: NetworkNode) {
+        controller.deleteNode(node)
     }
 
     override fun clickAddNote() {
