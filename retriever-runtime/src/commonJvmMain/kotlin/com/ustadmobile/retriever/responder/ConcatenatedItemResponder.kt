@@ -9,14 +9,11 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import java.io.File
-import java.io.FileInputStream
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
 import java.util.*
 import java.util.zip.ZipEntry
 import com.ustadmobile.retriever.ext.totalZipSize
 import kotlinx.coroutines.*
+import java.io.*
 
 class ConcatenatedItemResponder : RouterNanoHTTPD.UriResponder{
 
@@ -48,6 +45,11 @@ class ConcatenatedItemResponder : RouterNanoHTTPD.UriResponder{
 
         val jsonArray: List<JsonElement> = Json.decodeFromString(JsonArray.serializer(), jsonText)
         val originUrlList : List<String> = jsonArray.map { (it as JsonPrimitive).content }
+        if(originUrlList.isEmpty()) {
+            return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST, "text/plain",
+                "Empty list urls to retrieve")
+        }
+
         val db: RetrieverDatabase = uriResource.initParameter(RetrieverDatabase::class.java)
         val locallyStoredFiles = originUrlList.chunked(100).flatMap {
             db.locallyStoredFileDao.findAvailableFilesByUrlList(it)
@@ -85,17 +87,23 @@ class ConcatenatedItemResponder : RouterNanoHTTPD.UriResponder{
         val pipedIn = PipedInputStream(pipedOutputStream)
 
         GlobalScope.launch {
-            ZipOutputStream(pipedOutputStream).use { zipOut ->
-                zipOut.setMethod(ZipOutputStream.STORED)
-                locallyStoredFilesSorted.forEach { storedFile ->
-                    //TODO: use something real for name
-                    zipOut.putNextEntry(zipEntries[storedFile.lsfOriginUrl!!]!!)
-                    FileInputStream(File(storedFile.lsfFilePath!!)).use { fileIn ->
-                        fileIn.copyTo(zipOut)
+            try {
+                ZipOutputStream(pipedOutputStream).use { zipOut ->
+                    zipOut.setMethod(ZipOutputStream.STORED)
+                    locallyStoredFilesSorted.forEach { storedFile ->
+                        zipOut.putNextEntry(zipEntries[storedFile.lsfOriginUrl!!]!!)
+                        FileInputStream(File(storedFile.lsfFilePath!!)).use { fileIn ->
+                            fileIn.copyTo(zipOut)
+                        }
+                        zipOut.closeEntry()
                     }
-                    zipOut.closeEntry()
                 }
+            }catch(e: IOException) {
+                pipedOutputStream.close()
+                pipedIn.close()
+                throw e
             }
+
         }
 
         val totalSize = zipEntries.values.toList().totalZipSize(null)

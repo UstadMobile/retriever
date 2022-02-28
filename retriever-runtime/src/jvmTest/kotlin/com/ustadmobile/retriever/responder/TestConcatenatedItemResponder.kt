@@ -73,12 +73,8 @@ class TestConcatenatedItemResponder {
     }
 
 
-    @Test
-    fun givenValidRequestWhereAllFilesAvailable_whenPostCalled_thenShouldReturnZipInOrder() {
-        val responder = ConcatenatedItemResponder()
-
-        val urlsToRetrieve = listOf("http://cats.com/cat-pic0.jpg", "http://cats.com/overlay.gif")
-        val mockUriSession = mock<NanoHTTPD.IHTTPSession> {
+    private fun makeMockUriSession(urlsToRetrieve: List<String>) : NanoHTTPD.IHTTPSession {
+        return mock {
             on { uri }.thenReturn("/retriever/")
             on { parseBody(any()) }.thenAnswer { invocation ->
                 val map = invocation.arguments[0] as MutableMap<String, String>
@@ -88,6 +84,14 @@ class TestConcatenatedItemResponder {
             }
             on {method}.thenReturn(NanoHTTPD.Method.POST)
         }
+    }
+
+    @Test
+    fun givenValidRequestWhereAllFilesAvailable_whenPostCalled_thenShouldReturnZipInOrder() {
+        val responder = ConcatenatedItemResponder()
+
+        val urlsToRetrieve = listOf("http://cats.com/cat-pic0.jpg", "http://cats.com/overlay.gif")
+        val mockUriSession = makeMockUriSession(urlsToRetrieve)
 
         val response = responder.post(mockUriResource, mutableMapOf(), mockUriSession)
 
@@ -117,12 +121,48 @@ class TestConcatenatedItemResponder {
 
     @Test
     fun givenInvalidRequestWithAFileNotAvailable_whenPostCalled_thenShouldRespondBadRequest() {
-        //TODO
+        val responder = ConcatenatedItemResponder()
+
+        val urlsToRetrieve = listOf("http://cats.com/cat-pic0.jpg", "http://othersite.com/otherfile.gif")
+
+        val mockUriSession = makeMockUriSession(urlsToRetrieve)
+
+        val response = responder.post(mockUriResource, mutableMapOf(), mockUriSession)
+
+        Assert.assertEquals("Invalid request where one file is not available returns bad request",
+            NanoHTTPD.Response.Status.BAD_REQUEST, response.status)
     }
 
     @Test
     fun givenInvalidRequestWithNoFilesRequested_whenPostCalled_thenShouldRespondBadRequest() {
-        //TODO
+        val responder = ConcatenatedItemResponder()
+
+        val urlsToRetrieve = listOf<String>()
+
+        val mockUriSession = makeMockUriSession(urlsToRetrieve)
+
+        val response = responder.post(mockUriResource, mutableMapOf(), mockUriSession)
+
+        Assert.assertEquals("Invalid request where one file is not available returns bad request",
+            NanoHTTPD.Response.Status.BAD_REQUEST, response.status)
+    }
+
+    @Test
+    fun givenCorruptDataInStoredFile_whenPostCalled_thenResponseShouldBeCutShort() {
+        val responder = ConcatenatedItemResponder()
+
+        catPicFile.writeText("This is corrupt data")
+
+        val urlsToRetrieve = listOf("http://cats.com/cat-pic0.jpg", "http://cats.com/overlay.gif")
+        val mockUriSession = makeMockUriSession(urlsToRetrieve)
+
+        val response = responder.post(mockUriResource, mutableMapOf(), mockUriSession)
+
+        Assert.assertEquals("Response status is 200 OK", NanoHTTPD.Response.Status.OK, response.status)
+
+        val contentLen = response.getHeader("content-length")!!.toInt()
+        val responseBytes = response.data.readBytes()
+        Assert.assertTrue("Response was cut short", responseBytes.size < contentLen)
     }
 
 
