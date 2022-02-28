@@ -101,7 +101,6 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl):
             }
         }
 
-        //checkBluetooth()
         return rootView
     }
 
