@@ -11,47 +11,47 @@ import kotlin.math.round
 
 @Entity
 @Serializable
-open class AvailableFile {
+open class LocallyStoredFile() {
 
     @PrimaryKey(autoGenerate = true)
-    var availableFileUid: Long = 0
+    var locallyStoredFileUid: Long = 0
 
     /**
      * Origin URL for this file
      */
     //@PrimaryKey
-    var afOriginUrl: String? = null
+    var lsfOriginUrl: String? = null
 
     /**
-     * Location of the file locally on this node
+     * Location of the file locally on this node. This should be the ordinary file path as per
+     * File.absolutePath
      */
-    var afFilePath: String? = null
+    var lsfFilePath: String? = null
 
     /**
      * The file size.
      */
-    var afFileSize: Long = 0
+    var lsfFileSize: Long = 0
 
-    constructor(){}
+    /**
+     * The CRC32 of the file (used when serving over zip)
+     */
+    var lsfCrc32: Long = 0
 
-    constructor(fileUrl: String, location: String){
-        afOriginUrl = fileUrl
-        afFilePath = location
-    }
-
-    constructor(fileUrl: String, location: String, size: Long){
-        afOriginUrl = fileUrl
-        afFilePath = location
-        afFileSize = size
+    constructor(originUrl: String, filePath: String, size: Long, crc32: Long) : this() {
+        lsfOriginUrl = originUrl
+        lsfFilePath = filePath
+        lsfFileSize = size
+        lsfCrc32 = crc32
     }
 
     fun getFileName(): String{
-        return afOriginUrl?:"-"
+        return lsfOriginUrl?:"-"
         //return afOriginUrl?.substring(0, afOriginUrl?.lastIndexOf("/")?:0).toString()
     }
 
     fun getFileSize(): String{
-        return formatFileSize(afFileSize)
+        return formatFileSize(lsfFileSize)
     }
 
     fun formatFileSize(fileSize: Long): String {

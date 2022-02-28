@@ -20,7 +20,11 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     """)
     abstract suspend fun findByEndpointUrl(endpointUrl: String): NetworkNode?
 
-
+    @Query("""
+        DELETE FROM NetworkNode
+              WHERE networkNodeEndpointUrl = :endpointUrl
+    """)
+    abstract suspend fun deleteByEndpointUrl(endpointUrl: String)
     @Query("""
         SELECT * FROM NetworkNode WHERE networkNodeLost = 0
     """)

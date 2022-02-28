@@ -1,6 +1,8 @@
 plugins {
     id 'org.jetbrains.kotlin.multiplatform'
+    id 'kotlinx-atomicfu'
     id 'com.android.library'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 group 'com.ustadmobile.retriever'
@@ -32,10 +34,12 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-common')
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$version_kotlinx_serialization"
                 compileOnly project(':lib-database')
                 compileOnly project(':lib-database-entities')
                 implementation "com.soywiz.korlibs.klock:klock:$version_klock"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version_coroutines"
+                implementation "org.jetbrains.kotlinx:atomicfu:$version_atomicfu"
 
                 implementation "io.ktor:ktor-gson:$version_ktor"
                 implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
@@ -61,6 +65,7 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
+
         androidMain{
             dependsOn commonJvmMain
             dependencies {
@@ -69,18 +74,9 @@ kotlin {
                 implementation project(':lib-database-android')
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
                 implementation "androidx.paging:paging-runtime:$version_androidx_paging"
-
-
-
             }
         }
 
-        commonTest {
-            dependencies {
-                implementation kotlin('test-common')
-                implementation kotlin('test-annotations-common')
-            }
-        }
 
         jvmTest {
             dependencies {

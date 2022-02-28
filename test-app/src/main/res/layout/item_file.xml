@@ -4,14 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <import type="com.ustadmobile.lib.db.entities.AvailableFile"/>
+        <import type="com.ustadmobile.lib.db.entities.LocallyStoredFile"/>
         <import type="android.text.format.Formatter"/>
 
         <import type="android.view.View"/>
 
         <variable
             name="availableFile"
-            type="com.ustadmobile.lib.db.entities.AvailableFile" />
+            type="com.ustadmobile.lib.db.entities.LocallyStoredFile" />
         
         <variable
             name="listener"

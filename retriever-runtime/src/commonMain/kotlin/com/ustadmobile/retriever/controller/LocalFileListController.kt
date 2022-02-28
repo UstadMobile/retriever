@@ -1,13 +1,11 @@
 package com.ustadmobile.retriever.controller
 
-import com.ustadmobile.lib.db.entities.AvailableFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.view.LocalFileListView
-import com.ustadmobile.retriever.view.NodeListView
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.IOException
-import java.lang.RuntimeException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -15,16 +13,17 @@ import java.net.URL
 class LocalFileListController(
     context: Any,
     val db: RetrieverDatabase,
-    val view: LocalFileListView) {
+    val view: LocalFileListView
+) {
 
     fun onCreate(){
-        view.localFileList = db.availableFileDao.findAllAvailableFilesLive()
+        view.localFileList = db.locallyStoredFileDao.findAllAvailableFilesLive()
     }
 
 
-    fun deleteFile(availableFile: AvailableFile){
+    fun deleteFile(availableFile: LocallyStoredFile){
         GlobalScope.launch {
-            db.availableFileDao?.removeFile(availableFile.availableFileUid)
+            db.locallyStoredFileDao?.removeFile(availableFile.locallyStoredFileUid)
         }
     }
 
@@ -37,7 +36,7 @@ class LocalFileListController(
             }else{
                 size
             }
-            db?.availableFileDao?.insert(AvailableFile(url, localPath, fileSize))
+            db?.locallyStoredFileDao?.insert(LocallyStoredFile(url, localPath, fileSize, -1))
         }
     }
 
@@ -62,11 +61,12 @@ class LocalFileListController(
         val rn = (1..5).random()
         val rs = (1..10000000).random().toLong()
         GlobalScope.launch {
-            db?.availableFileDao?.insert(
-                AvailableFile(
+            db?.locallyStoredFileDao?.insert(
+                LocallyStoredFile(
                     "https://path.to/the/file$rn.txt",
                     "file://path.to/the/file$rn.txt",
-                    rs
+                    rs,
+                    -1
                 )
             )
         }

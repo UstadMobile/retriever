@@ -6,17 +6,17 @@ import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.test_app.databinding.ItemFileBinding
-import com.ustadmobile.lib.db.entities.AvailableFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFile
 
 interface FileListener{
-    fun deleteFile(availableFile: AvailableFile)
-    fun handleClickFile(availableFile: AvailableFile)
+    fun deleteFile(availableFile: LocallyStoredFile)
+    fun handleClickFile(availableFile: LocallyStoredFile)
 }
 
 
 class FilesRecyclerAdapter(val fileListener: FileListener):
     PagedListAdapter<
-            AvailableFile,
+            LocallyStoredFile,
             FilesRecyclerAdapter.FilesRecyclerViewHolder>
         (DIFF_CALLBACK){
 
@@ -40,17 +40,17 @@ class FilesRecyclerAdapter(val fileListener: FileListener):
 
     companion object {
 
-        val DIFF_CALLBACK: DiffUtil.ItemCallback<AvailableFile> = object
-            : DiffUtil.ItemCallback<AvailableFile>() {
-            override fun areItemsTheSame(oldItem: AvailableFile,
-                                         newItem: AvailableFile): Boolean {
-                return oldItem.availableFileUid == newItem.availableFileUid
+        val DIFF_CALLBACK: DiffUtil.ItemCallback<LocallyStoredFile> = object
+            : DiffUtil.ItemCallback<LocallyStoredFile>() {
+            override fun areItemsTheSame(oldItem: LocallyStoredFile,
+                                         newItem: LocallyStoredFile): Boolean {
+                return oldItem.locallyStoredFileUid == newItem.locallyStoredFileUid
             }
 
-            override fun areContentsTheSame(oldItem: AvailableFile,
-                                            newItem: AvailableFile): Boolean {
-                return oldItem.availableFileUid == newItem.availableFileUid &&
-                        oldItem.availableFileUid == newItem.availableFileUid
+            override fun areContentsTheSame(oldItem: LocallyStoredFile,
+                                            newItem: LocallyStoredFile): Boolean {
+                return oldItem.locallyStoredFileUid == newItem.locallyStoredFileUid &&
+                        oldItem.locallyStoredFileUid == newItem.locallyStoredFileUid
             }
 
         }

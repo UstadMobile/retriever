@@ -10,7 +10,7 @@ import org.mockito.kotlin.mock
 import com.ustadmobile.retriever.responder.RequestResponder.Companion.PARAM_FILE_REQUEST_URL
 import com.ustadmobile.retriever.responder.RequestResponder.Companion.PARAM_DB_INDEX
 import com.google.gson.reflect.TypeToken
-import com.ustadmobile.lib.db.entities.AvailableFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFile
 
 
 class TestRequestResponder {
@@ -18,12 +18,12 @@ class TestRequestResponder {
     private lateinit var db: RetrieverDatabase
     private lateinit var context: Any
 
-    private val availableFilesToInsert: List<AvailableFile> = listOf(
-        AvailableFile("http://path.to/file1", "http://local.path.to/file1"),
-        AvailableFile("http://path.to/file2", "http://local.path.to/file2"),
-        AvailableFile("http://path.to/file3", "http://local.path.to/file3"),
-        AvailableFile("http://path.to/file4", "http://local.path.to/file4"),
-        AvailableFile("http://path.to/file5", "http://local.path.to/file5"),
+    private val availableFilesToInsert: List<LocallyStoredFile> = listOf(
+        LocallyStoredFile("http://path.to/file1", "http://local.path.to/file1", 0 , 0),
+        LocallyStoredFile("http://path.to/file2", "http://local.path.to/file2", 0 , 0),
+        LocallyStoredFile("http://path.to/file3", "http://local.path.to/file3", 0 , 0),
+        LocallyStoredFile("http://path.to/file4", "http://local.path.to/file4", 0 , 0),
+        LocallyStoredFile("http://path.to/file5", "http://local.path.to/file5", 0 , 0),
 
     )
 
@@ -35,17 +35,15 @@ class TestRequestResponder {
         db.clearAllTables()
 
         //Add Available files
-        if(db.availableFileDao.findAllAvailableFiles().isEmpty()){
-            db.availableFileDao.insertList(availableFilesToInsert)
+        if(db.locallyStoredFileDao.findAllAvailableFiles().isEmpty()){
+            db.locallyStoredFileDao.insertList(availableFilesToInsert)
         }
 
     }
 
-    @Test
-    fun test_Test(){
-        Assert.assertEquals(1,1)
-    }
-
+    /**
+     * TODO: Split this into two separate tests
+     */
     @Test
     fun givenRequestResponder_whenGetRequestMade_thenShouldReturnResponse(){
         val responder = RequestResponder()
@@ -71,9 +69,9 @@ class TestRequestResponder {
         Assert.assertNotNull("Response is not null", response)
 
         val responseStr = String(response.data.readBytes())
-        val responseEntryList = Gson().fromJson<List<AvailableFile>>(
+        val responseEntryList = Gson().fromJson<List<LocallyStoredFile>>(
                 responseStr,
-                object: TypeToken<List<AvailableFile>>(){
+                object: TypeToken<List<LocallyStoredFile>>(){
 
                 }.type
             )
@@ -84,9 +82,9 @@ class TestRequestResponder {
         Assert.assertNotNull("Response is not null", responseUnavailable)
 
         val responseStrUnavailable = String(responseUnavailable.data.readBytes())
-        val responseEntryListUnavailable = Gson().fromJson<List<AvailableFile>>(
+        val responseEntryListUnavailable = Gson().fromJson<List<LocallyStoredFile>>(
             responseStrUnavailable,
-            object: TypeToken<List<AvailableFile>>(){
+            object: TypeToken<List<LocallyStoredFile>>(){
 
             }.type
         )

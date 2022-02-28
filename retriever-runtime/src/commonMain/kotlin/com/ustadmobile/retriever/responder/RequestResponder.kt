@@ -3,10 +3,8 @@ package com.ustadmobile.retriever.responder
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
 import com.google.gson.Gson
-import com.ustadmobile.lib.db.entities.AvailableFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
 class RequestResponder:RouterNanoHTTPD.UriResponder{
 
@@ -24,7 +22,7 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
 
         urlParams[PARAM_FILE_REQUEST_URL]?: newBadRequestResponse("No file url requested.")
         val fileUrl: String?  = session.parameters.get(PARAM_FILE_REQUEST_URL)?.firstOrNull()?.toString()
-        val fileAvailability: List<AvailableFile> = db.availableFileDao.isFileAvailable(fileUrl?:"")
+        val fileAvailability: List<LocallyStoredFile> = db.locallyStoredFileDao.isFileAvailable(fileUrl?:"")
 
         val status = if (fileAvailability.isEmpty())
             NanoHTTPD.Response.Status.NOT_FOUND

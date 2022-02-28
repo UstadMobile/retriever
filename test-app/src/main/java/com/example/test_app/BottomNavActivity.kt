@@ -5,10 +5,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.ustadmobile.retriever.RetrieverAndroidImpl
-import com.ustadmobile.retriever.view.RetrieverViewCallback
 
 
-class BottomNavActivity : AppCompatActivity(), RetrieverViewCallback {
+class BottomNavActivity : AppCompatActivity(){
 
     private lateinit var retriever: RetrieverAndroidImpl
 
@@ -45,8 +44,4 @@ class BottomNavActivity : AppCompatActivity(), RetrieverViewCallback {
         }
     }
 
-    override var hostAndPort: String? = null
-        set(value) {
-            field = value
-        }
 }

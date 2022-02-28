@@ -8,10 +8,13 @@ import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.db.dao.AvailabilityObserverItemDao
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.CALLS_REAL_METHODS
 import org.mockito.kotlin.*
+import kotlin.random.Random
 
 /**
  * JVM Test
@@ -31,6 +34,8 @@ class TestAvailabilityManager {
 
     private lateinit var availabilityObserverItemDaoSpy: AvailabilityObserverItemDao
 
+    private lateinit var onAvailabilityChanged: OnAvailabilityChanged
+
     private val testOriginUrls: List<String> = listOf(
         "http://path.to/file1",
         "http://path.to/file2",
@@ -47,41 +52,9 @@ class TestAvailabilityManager {
         NetworkNode("100.1.1.5", "100.1.1.5:8081/", DateTime.nowUnixLong(), 5)
     )
 
-    private val mutableMapNode1: Map<String, Boolean> = mutableMapOf(
-        "http://path.to/file1" to true,
-        "http://path.to/file2" to false,
-        "http://path.to/file3" to true,
-        "http://path.to/file4" to false,
-        "http://path.to/file5" to false,
-    )
-    private val mutableMapNode2: Map<String, Boolean> = mutableMapOf(
-        "http://path.to/file1" to false,
-        "http://path.to/file2" to true,
-        "http://path.to/file3" to false,
-        "http://path.to/file4" to true,
-        "http://path.to/file5" to true,
-    )
-    private val mutableMapNode3: Map<String, Boolean> = mutableMapOf(
-        "http://path.to/file1" to false,
-        "http://path.to/file2" to true,
-        "http://path.to/file3" to false,
-        "http://path.to/file4" to false,
-        "http://path.to/file5" to false,
-    )
-    private val mutableMapNode4: Map<String, Boolean> = mutableMapOf(
-        "http://path.to/file1" to true,
-        "http://path.to/file2" to false,
-        "http://path.to/file3" to true,
-        "http://path.to/file4" to false,
-        "http://path.to/file5" to false,
-    )
-    private val mutableMapNode5: Map<String, Boolean> = mutableMapOf(
-        "http://path.to/file1" to true,
-        "http://path.to/file2" to false,
-        "http://path.to/file3" to true,
-        "http://path.to/file4" to false,
-        "http://path.to/file5" to true,
-    )
+    private val nodeAvailabilityMaps = (0..4).map {
+        (1..5).map { "http://path.to/file$it" to (it.mod(2) == 0) }.toMap()
+    }
 
     @Before
     fun setup(){
@@ -97,42 +70,21 @@ class TestAvailabilityManager {
 
         // Mock AvailabilityChecker
         availabilityChecker = mock {
-            onBlocking {
-                checkAvailability(eq(1), any())
-            }.thenReturn(AvailabilityCheckerResult(mutableMapNode1, 1))
-
-            onBlocking {
-                checkAvailability(eq(2), any())
-            }.thenReturn(AvailabilityCheckerResult(mutableMapNode2, 2))
-
-            onBlocking {
-                checkAvailability(eq(3), any())
-            }.thenReturn(AvailabilityCheckerResult(mutableMapNode3, 3))
-
-            onBlocking {
-                checkAvailability(eq(4), any())
-            }.thenReturn(AvailabilityCheckerResult(mutableMapNode4, 4))
-
-            onBlocking {
-                checkAvailability(eq(5), any())
-            }.thenReturn(AvailabilityCheckerResult(mutableMapNode5, 5))
+            (1..5).forEach {
+                onBlocking {
+                    checkAvailability(eq(it.toLong()), any())
+                }.thenReturn(AvailabilityCheckerResult(nodeAvailabilityMaps[it - 1], it.toLong()))
+            }
         }
 
-        availabilityObserver = mock<AvailabilityObserver>(defaultAnswer = CALLS_REAL_METHODS){
-            on{urls2}.thenReturn(testOriginUrls)
-        }
+        onAvailabilityChanged = mock { }
+        availabilityObserver = AvailabilityObserver(testOriginUrls, onAvailabilityChanged)
 
-        availabilityManager = AvailabilityManager(db, availabilityChecker)
-
-        db = spy(DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb").build())
-
-        availabilityObserverItemDaoSpy = spy(db.availabilityObserverItemDao)
-        whenever(db.availabilityObserverItemDao).thenReturn(availabilityObserverItemDaoSpy)
         availabilityManager = AvailabilityManager(db, availabilityChecker)
     }
 
     @Test
-    fun givenNetworkNodeAroundAndFilesRequested_thenRightInfoGottenFromDbAndObserverCalled(){
+    fun givenNetworkNodesDiscoveredAndFilesRequested_thenRightInfoGottenFromDbAndObserverCalled(){
 
 
         GlobalScope.launch {
@@ -140,13 +92,34 @@ class TestAvailabilityManager {
             availabilityManager.runJob()
         }
 
-        verifyBlocking(availabilityObserverItemDaoSpy, timeout(2000)){
-            findPendingItems()
+        runBlocking {
+            availabilityManager.addAvailabilityObserver(availabilityObserver)
         }
 
-        verifyBlocking(availabilityObserver, timeout(5000).times(testOriginUrls.size)){
-            onAvailabilityChanged(any())
+        defaultNetworkNodeList.forEach { networkNode ->
+            verify(onAvailabilityChanged, timeout(2000)).onAvailabilityChanged(argWhere {
+                it.networkNodeUid == networkNode.networkNodeId
+            })
         }
+
+        argumentCaptor<AvailabilityEvent> {
+            verify(onAvailabilityChanged, timeout(2000).times(defaultNetworkNodeList.size))
+                .onAvailabilityChanged(capture())
+
+            lastValue.originUrlsToAvailable.forEach { originUrlEntry ->
+                Assert.assertEquals(nodeAvailabilityMaps.any { it.get(originUrlEntry.key) == true },
+                    originUrlEntry.value)
+            }
+        }
+
+    }
+
+    fun givenActiveAvailabilityListener_whenNewNodeDiscovered_thenShouldSendRequestAndUpdate(){
+
+    }
+
+    fun givenActiveAvailabilityListener_whenNodeLost_thenShouldUpdateAvailability() {
+
     }
 
 }

@@ -2,8 +2,9 @@ package com.ustadmobile.retriever.responder
 
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.door.ext.writeToFile
-import com.ustadmobile.lib.db.entities.AvailableFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.ext.crc32
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
 import org.junit.Assert
@@ -41,8 +42,8 @@ class TestSingleItemResponder {
 
     @Test
     fun givenOriginUrlAvailable_whenGetCalled_thenShouldReturnDataMatchingOriginal() {
-        db.availableFileDao.insert(AvailableFile("http://cats.com/cat-pic0.jpg",
-            catPicFile.absolutePath))
+        db.locallyStoredFileDao.insert(LocallyStoredFile("http://cats.com/cat-pic0.jpg",
+            catPicFile.absolutePath, catPicFile.length(), catPicFile.crc32))
 
         val singleItemResponder = SingleItemResponder()
 
