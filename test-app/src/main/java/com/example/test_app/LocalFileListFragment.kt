@@ -26,7 +26,7 @@ import com.example.test_app.databinding.FragmentLocalFileListBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
-import com.ustadmobile.lib.db.entities.AvailableFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.LocalFileListController
 import com.ustadmobile.retriever.view.LocalFileListView
@@ -46,11 +46,11 @@ class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Lo
 
     private lateinit var localFileListRecyclerView: RecyclerView
 
-    private var localFileListLiveData: LiveData<PagedList<AvailableFile>>? = null
+    private var localFileListLiveData: LiveData<PagedList<LocallyStoredFile>>? = null
 
     private var localFileListRecyclerAdapter : FilesRecyclerAdapter? = null
 
-    private val localFileListObserver = Observer<PagedList<AvailableFile>?>{ t->
+    private val localFileListObserver = Observer<PagedList<LocallyStoredFile>?>{ t->
         run{
             localFileListRecyclerAdapter?.submitList(t)
         }
@@ -129,7 +129,7 @@ class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Lo
         view.findViewById<TextView>(R.id.fragment_local_file_list_url_tv).visibility = visibility
     }
 
-    override var localFileList: DoorDataSourceFactory<Int, AvailableFile>? = null
+    override var localFileList: DoorDataSourceFactory<Int, LocallyStoredFile>? = null
         set(value) {
             localFileListLiveData?.removeObserver(localFileListObserver)
             localFileListLiveData = value?.asRepositoryLiveData(retriever.database.availableFileDao)
@@ -196,13 +196,13 @@ class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Lo
     }
 
 
-    override fun deleteFile(availableFile: AvailableFile) {
+    override fun deleteFile(availableFile: LocallyStoredFile) {
         controller.deleteFile(availableFile)
     }
 
-    override fun handleClickFile(availableFile: AvailableFile) {
+    override fun handleClickFile(availableFile: LocallyStoredFile) {
         val clipboard: ClipboardManager? = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager?
-        val clip = ClipData.newPlainText("", availableFile.afOriginUrl)
+        val clip = ClipData.newPlainText("", availableFile.lsfOriginUrl)
         clipboard?.setPrimaryClip(clip)
 
         Toast.makeText(context, "URL copied to clipboard", Toast.LENGTH_SHORT).show()

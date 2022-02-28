@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever.responder
 
-import com.ustadmobile.lib.db.entities.AvailableFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
@@ -21,13 +21,13 @@ class SingleItemResponder : RouterNanoHTTPD.UriResponder{
             return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
                 "text/plain", "Bad Request: no origin url specified")
 
-        val availableFilePath: AvailableFile = db.availableFileDao.findAvailableFile(originUrl) ?:
+        val availableFilePath: LocallyStoredFile = db.locallyStoredFileDao.findAvailableFile(originUrl) ?:
             return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.NOT_FOUND,
                 "text/plain", "Not found: file with origin url = $originUrl")
 
         return FileResponder.newResponseFromFile(
             NanoHTTPD.Method.GET, uriResource, session,
-            FileResponder.FileSource(File(availableFilePath.afFilePath ?: ""))
+            FileResponder.FileSource(File(availableFilePath.lsfFilePath ?: ""))
         )
 
 

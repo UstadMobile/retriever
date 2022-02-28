@@ -1,7 +1,7 @@
 package com.ustadmobile.retriever
 
-abstract class AvailabilityObserver(val originUrls: List<String>){
+class AvailabilityObserver(val originUrls: List<String>, val onAvailabilityChanged: OnAvailabilityChanged){
 
-    abstract var urls2: List<String>
-    abstract fun onAvailabilityChanged(evt: AvailabilityEvent)
+
+
 }

@@ -8,11 +8,11 @@ import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
 import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.FileAvailabilityWithListener
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.jvm.Volatile
 
 class AvailabilityManager(
@@ -36,24 +36,23 @@ class AvailabilityManager(
 
     data class AvailabilityCheckJob(val networkNodeId: Long, val fileUrls: List<String>)
 
-    private val availabilityObserverAtomicId = AtomicInteger(0)
+    private val availabilityObserverAtomicId = atomic(0)
+
     private val availabilityObservers = mutableMapOf<Int, AvailabilityObserver>()
 
 
     suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver){
-
         //Put the availability observer id and its observer
         val listenerUid = availabilityObserverAtomicId.incrementAndGet()
         availabilityObservers[listenerUid] = availabilityObserver
 
         database.availabilityObserverItemDao.insertList(
-            availabilityObserver.urls2.map { AvailabilityObserverItem(it, listenerUid) }
+            availabilityObserver.originUrls.map { AvailabilityObserverItem(it, listenerUid) }
         )
 
     }
 
     suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver){
-
         val keyToRemove =
             availabilityObservers.entries.firstOrNull{it.value == availabilityObserver}?.key
         // TODO: Delete AvailabilityObserverItem corresponding to the key and map
@@ -119,9 +118,8 @@ class AvailabilityManager(
                 val fileAvailabilityResultMap = it.value.map {
                     it.fileUrl to it.available
                 }.toMap()
-                availabilityObservers[it.key]?.onAvailabilityChanged(
-                    AvailabilityEvent(fileAvailabilityResultMap, item.networkNodeId)
-                )
+                availabilityObservers[it.key]?.onAvailabilityChanged?.onAvailabilityChanged(
+                    AvailabilityEvent(fileAvailabilityResultMap, item.networkNodeId))
             }
         }
     }

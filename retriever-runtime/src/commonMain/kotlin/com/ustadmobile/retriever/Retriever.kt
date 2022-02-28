@@ -2,9 +2,11 @@ package com.ustadmobile.retriever
 
 interface Retriever{
 
-    //retriever.retrieve(RetrieverRequest("http://something.file"), SHA256ChecksumProvider("aabbccddee"))
-    //    .saveTo(dirPath)
     fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall
+
+    suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver)
+
+    suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver)
 
     companion object{
         const val DBNAME: String = "retreiverdb"
