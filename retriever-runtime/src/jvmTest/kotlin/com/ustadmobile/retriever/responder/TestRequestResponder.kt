@@ -19,11 +19,11 @@ class TestRequestResponder {
     private lateinit var context: Any
 
     private val availableFilesToInsert: List<LocallyStoredFile> = listOf(
-        LocallyStoredFile("http://path.to/file1", "http://local.path.to/file1"),
-        LocallyStoredFile("http://path.to/file2", "http://local.path.to/file2"),
-        LocallyStoredFile("http://path.to/file3", "http://local.path.to/file3"),
-        LocallyStoredFile("http://path.to/file4", "http://local.path.to/file4"),
-        LocallyStoredFile("http://path.to/file5", "http://local.path.to/file5"),
+        LocallyStoredFile("http://path.to/file1", "http://local.path.to/file1", 0 , 0),
+        LocallyStoredFile("http://path.to/file2", "http://local.path.to/file2", 0 , 0),
+        LocallyStoredFile("http://path.to/file3", "http://local.path.to/file3", 0 , 0),
+        LocallyStoredFile("http://path.to/file4", "http://local.path.to/file4", 0 , 0),
+        LocallyStoredFile("http://path.to/file5", "http://local.path.to/file5", 0 , 0),
 
     )
 

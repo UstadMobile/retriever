@@ -36,7 +36,7 @@ class LocalFileListController(
             }else{
                 size
             }
-            db?.locallyStoredFileDao?.insert(LocallyStoredFile(url, localPath, fileSize))
+            db?.locallyStoredFileDao?.insert(LocallyStoredFile(url, localPath, fileSize, -1))
         }
     }
 
@@ -65,7 +65,8 @@ class LocalFileListController(
                 LocallyStoredFile(
                     "https://path.to/the/file$rn.txt",
                     "file://path.to/the/file$rn.txt",
-                    rs
+                    rs,
+                    -1
                 )
             )
         }

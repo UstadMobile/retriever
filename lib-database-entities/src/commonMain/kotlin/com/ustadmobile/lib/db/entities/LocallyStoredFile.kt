@@ -11,7 +11,7 @@ import kotlin.math.round
 
 @Entity
 @Serializable
-open class LocallyStoredFile {
+open class LocallyStoredFile() {
 
     @PrimaryKey(autoGenerate = true)
     var locallyStoredFileUid: Long = 0
@@ -23,7 +23,8 @@ open class LocallyStoredFile {
     var lsfOriginUrl: String? = null
 
     /**
-     * Location of the file locally on this node
+     * Location of the file locally on this node. This should be the ordinary file path as per
+     * File.absolutePath
      */
     var lsfFilePath: String? = null
 
@@ -37,17 +38,11 @@ open class LocallyStoredFile {
      */
     var lsfCrc32: Long = 0
 
-    constructor(){}
-
-    constructor(originUrl: String, filePath: String){
-        lsfOriginUrl = originUrl
-        lsfFilePath = filePath
-    }
-
-    constructor(originUrl: String, filePath: String, size: Long){
+    constructor(originUrl: String, filePath: String, size: Long, crc32: Long) : this() {
         lsfOriginUrl = originUrl
         lsfFilePath = filePath
         lsfFileSize = size
+        lsfCrc32 = crc32
     }
 
     fun getFileName(): String{
