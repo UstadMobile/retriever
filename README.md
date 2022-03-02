@@ -70,20 +70,13 @@ Check availability:
 ```
 POST: /endpoint/availability
 payload:
-{
-   {
-    sourceUrl: "https://myserver.com/somebigfile"
-   },
-   {
-    sourceUrl: "https://myserver.com/otherfile"
-   }
-}
+[ "https://myserver.com/somebigfile", "https://myserver.com/otherfile"]
 
 response:
 {
   {
-     sourceUrl: "https://myserver.com/somebigfile"
-     sha256: "abc"
+     originUrl: "https://myserver.com/somebigfile",
+     sha256: "abc",
      size: 12121  
   }
 }
