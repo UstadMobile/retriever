@@ -48,11 +48,8 @@ class TestRequestResponder {
 
     }
 
-    /**
-     * TODO: Split this into two separate tests
-     */
     @Test
-    fun givenRequestResponder_whenGetRequestMade_thenShouldReturnResponse(){
+    fun givenRequestResponder_whenGetRequestMadeForAvailableFile_thenShouldReturnAvailableResponse(){
         val responder = RequestResponder()
 
         val mockUriResource = mock<RouterNanoHTTPD.UriResource> {
@@ -64,13 +61,6 @@ class TestRequestResponder {
                 mutableMapOf(PARAM_FILE_REQUEST_URL to listOf("http://path.to/file1"))
             )
         }
-
-        val mockSessionUnavailable = mock<NanoHTTPD.IHTTPSession>{
-            on { parameters }.thenReturn(
-                mutableMapOf(PARAM_FILE_REQUEST_URL to listOf("http://path.to/file42"))
-            )
-        }
-
         val response = responder.get(mockUriResource, mutableMapOf(), mockSessionAvailable)
 
         Assert.assertNotNull("Response is not null", response)
@@ -83,6 +73,22 @@ class TestRequestResponder {
                 }.type
             )
         Assert.assertEquals("Node has file", 1, responseEntryList.size)
+    }
+
+    @Test
+    fun givenRequestResponder_whenGetRequestMadeForUnavailableFile_thenShouldReturnNoResponse(){
+        val responder = RequestResponder()
+
+        val mockUriResource = mock<RouterNanoHTTPD.UriResource> {
+            on {initParameter(PARAM_DB_INDEX, RetrieverDatabase::class.java)}.thenReturn(db)
+        }
+
+
+        val mockSessionUnavailable = mock<NanoHTTPD.IHTTPSession>{
+            on { parameters }.thenReturn(
+                mutableMapOf(PARAM_FILE_REQUEST_URL to listOf("http://path.to/file42"))
+            )
+        }
 
         val responseUnavailable = responder.get(mockUriResource, mutableMapOf(), mockSessionUnavailable)
 
@@ -98,6 +104,7 @@ class TestRequestResponder {
         Assert.assertEquals("Node has not found the file", 0, responseEntryListUnavailable.size)
 
     }
+
 
     private fun makeMockUriSession(urlsToRetrieve: List<String>) : NanoHTTPD.IHTTPSession {
         return mock {
