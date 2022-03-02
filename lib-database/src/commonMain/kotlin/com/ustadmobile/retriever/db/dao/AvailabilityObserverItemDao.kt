@@ -28,7 +28,7 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
 
    companion object{
        const val QUERY_FINDPENDINGITEMS= """
-         SELECT AvailabilityObserverItem.* , NetworkNode.networkNodeId
+         SELECT AvailabilityObserverItem.* , NetworkNode.*
           FROM AvailabilityObserverItem 
                JOIN NetworkNode ON NetworkNode.networkNodeId = NetworkNode.networkNodeId 
          WHERE NOT EXISTS (
@@ -42,7 +42,6 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
        const val QUERY_GET_WATCHLIST_WITH_NUM_NODES= """
             SELECT
                 AvailabilityObserverItem.* ,
-                0 as networkNodeId,
                 (SELECT
                     COUNT(DISTINCT AvailabilityResponse.availabilityNetworkNode)      
                 FROM

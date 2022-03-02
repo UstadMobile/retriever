@@ -21,7 +21,6 @@ import kotlin.random.Random
  */
 class TestAvailabilityManager {
 
-
     private lateinit var db: RetrieverDatabase
 
     private lateinit var availabilityChecker: AvailabilityChecker
@@ -31,8 +30,6 @@ class TestAvailabilityManager {
     private lateinit var context: Any
 
     private lateinit var availabilityObserver: AvailabilityObserver
-
-    private lateinit var availabilityObserverItemDaoSpy: AvailabilityObserverItemDao
 
     private lateinit var onAvailabilityChanged: OnAvailabilityChanged
 
@@ -60,7 +57,8 @@ class TestAvailabilityManager {
     fun setup(){
         context = Any()
 
-        db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb").build()
+        db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb")
+            .build()
         db.clearAllTables()
 
         //Add Nodes
@@ -68,12 +66,14 @@ class TestAvailabilityManager {
             db.networkNodeDao.insertList(defaultNetworkNodeList)
         }
 
-        // Mock AvailabilityChecker
         availabilityChecker = mock {
-            (1..5).forEach {
+            (0..4).forEach {
                 onBlocking {
-                    checkAvailability(eq(it.toLong()), any())
-                }.thenReturn(AvailabilityCheckerResult(nodeAvailabilityMaps[it - 1], it.toLong()))
+                    checkAvailability(
+                        argThat{networkNodeId == defaultNetworkNodeList[it].networkNodeId} ,
+                        any())
+                }.thenReturn(AvailabilityCheckerResult(
+                    nodeAvailabilityMaps[it], defaultNetworkNodeList[it].networkNodeId))
             }
         }
 
@@ -86,28 +86,28 @@ class TestAvailabilityManager {
     @Test
     fun givenNetworkNodesDiscoveredAndFilesRequested_thenRightInfoGottenFromDbAndObserverCalled(){
 
-
+        //Add to the watch list and call runJob
         GlobalScope.launch {
             availabilityManager.addAvailabilityObserver(availabilityObserver)
             availabilityManager.runJob()
         }
 
-        runBlocking {
-            availabilityManager.addAvailabilityObserver(availabilityObserver)
-        }
-
+        //Verify for every node, onAvailabilityChanged was called
         defaultNetworkNodeList.forEach { networkNode ->
-            verify(onAvailabilityChanged, timeout(2000)).onAvailabilityChanged(argWhere {
+            verify(onAvailabilityChanged, timeout(2000))
+                .onAvailabilityChanged(argWhere {
                 it.networkNodeUid == networkNode.networkNodeId
             })
         }
 
+        //Verify for onAvailabilityChanged event was called for every Node and its result matches
+        // pre determined nodeAvailabilityMaps as defined.
         argumentCaptor<AvailabilityEvent> {
             verify(onAvailabilityChanged, timeout(2000).times(defaultNetworkNodeList.size))
                 .onAvailabilityChanged(capture())
 
             lastValue.originUrlsToAvailable.forEach { originUrlEntry ->
-                Assert.assertEquals(nodeAvailabilityMaps.any { it.get(originUrlEntry.key) == true },
+                Assert.assertEquals(nodeAvailabilityMaps.any { it[originUrlEntry.key] == true },
                     originUrlEntry.value)
             }
         }

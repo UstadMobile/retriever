@@ -3,10 +3,7 @@ package com.ustadmobile.retriever
 
 import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
-import com.ustadmobile.lib.db.entities.AvailabilityResponse
-import com.ustadmobile.lib.db.entities.FileAvailabilityWithListener
+import com.ustadmobile.lib.db.entities.*
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
@@ -34,28 +31,37 @@ class AvailabilityManager(
     private var jobItemProducer : ReceiveChannel<AvailabilityCheckJob>? = null
 
 
-    data class AvailabilityCheckJob(val networkNodeId: Long, val fileUrls: List<String>)
+    data class AvailabilityCheckJob(val networkNode: NetworkNode, val fileUrls: List<String>)
 
     private val availabilityObserverAtomicId = atomic(0)
 
     private val availabilityObservers = mutableMapOf<Int, AvailabilityObserver>()
 
-
-    suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver){
+    /**
+     * Adds an observer information to the watch list database(AvailabilityObserverItem)
+     */
+    fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver) : Int {
         //Put the availability observer id and its observer
         val listenerUid = availabilityObserverAtomicId.incrementAndGet()
         availabilityObservers[listenerUid] = availabilityObserver
 
-        database.availabilityObserverItemDao.insertList(
-            availabilityObserver.originUrls.map { AvailabilityObserverItem(it, listenerUid) }
-        )
+        GlobalScope.launch {
+            database.availabilityObserverItemDao.insertList(
+                availabilityObserver.originUrls.map { AvailabilityObserverItem(it, listenerUid) }
+            )
+        }
 
+        return listenerUid
     }
 
+    /**
+     * Remove observer information from the map and watchlist
+     */
     suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver){
         val keyToRemove =
             availabilityObservers.entries.firstOrNull{it.value == availabilityObserver}?.key
         // TODO: Delete AvailabilityObserverItem corresponding to the key and map
+
         availabilityObservers.remove(keyToRemove)
     }
 
@@ -72,17 +78,18 @@ class AvailabilityManager(
 
             print("AvailabilityManager: produceJobs(): " + pendingItems.size + " pendingItems.")
 
+            val grouped = pendingItems.groupBy { it.networkNode.networkNodeId }
+            println("grouped by networkid: " +grouped.size)
             //Use kotlin to group by networknode uid
-            pendingItems.groupBy {
-                it.networkNodeId
-            }.forEach {
-                send(AvailabilityCheckJob(it.key, it.value.map { it.aoiOriginalUrl?:"" } ))
+            pendingItems.groupBy { it.networkNode.networkNodeId }.forEach {
+                send(
+                    AvailabilityCheckJob(it.value.first().networkNode,
+                    it.value.map{it.aoiOriginalUrl?:""})
+                )
             }
 
         }while(isActive)
-
     }
-
 
     /**
      * To emit availability changed events
@@ -96,16 +103,16 @@ class AvailabilityManager(
         //Runs checkAvailability (that checks availability and populates AvailabilityResponse)
         // for every node id
         for(item in channel){
-            println("AvailabilityManager: item networkid: " +  item.networkNodeId)
+            println("AvailabilityManager: item networkid: " +  item.networkNode.networkNodeId)
 
             //Returns result<String, Boolean> and networkNodeId
             val availabilityCheckerResult : AvailabilityCheckerResult=
-                availabilityChecker.checkAvailability(item.networkNodeId, item.fileUrls)
+                availabilityChecker.checkAvailability(item.networkNode, item.fileUrls)
 
             // Add to AvailabilityResponse table
             val currentTime = systemTimeInMillis()
             val allResponses = availabilityCheckerResult.result.map {
-                AvailabilityResponse(item.networkNodeId, it.key, it.value, currentTime)
+                AvailabilityResponse(item.networkNode.networkNodeId, it.key, it.value, currentTime)
             }
 
             database.availabilityResponseDao.insertList(allResponses)
@@ -119,7 +126,7 @@ class AvailabilityManager(
                     it.fileUrl to it.available
                 }.toMap()
                 availabilityObservers[it.key]?.onAvailabilityChanged?.onAvailabilityChanged(
-                    AvailabilityEvent(fileAvailabilityResultMap, item.networkNodeId))
+                    AvailabilityEvent(fileAvailabilityResultMap, item.networkNode.networkNodeId))
             }
         }
     }

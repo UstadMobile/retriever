@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "2243e4f563819dcb5fe0251bf778e815",
+    "identityHash": "5c23f6495479283e1fadfac6d6bcee01",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -126,37 +126,43 @@
         "foreignKeys": []
       },
       {
-        "tableName": "AvailableFile",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`availableFileUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `afOriginUrl` TEXT, `afFilePath` TEXT, `afFileSize` INTEGER NOT NULL)",
+        "tableName": "LocallyStoredFile",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`locallyStoredFileUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `lsfOriginUrl` TEXT, `lsfFilePath` TEXT, `lsfFileSize` INTEGER NOT NULL, `lsfCrc32` INTEGER NOT NULL)",
         "fields": [
           {
-            "fieldPath": "availableFileUid",
-            "columnName": "availableFileUid",
+            "fieldPath": "locallyStoredFileUid",
+            "columnName": "locallyStoredFileUid",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "afOriginUrl",
-            "columnName": "afOriginUrl",
+            "fieldPath": "lsfOriginUrl",
+            "columnName": "lsfOriginUrl",
             "affinity": "TEXT",
             "notNull": false
           },
           {
-            "fieldPath": "afFilePath",
-            "columnName": "afFilePath",
+            "fieldPath": "lsfFilePath",
+            "columnName": "lsfFilePath",
             "affinity": "TEXT",
             "notNull": false
           },
           {
-            "fieldPath": "afFileSize",
-            "columnName": "afFileSize",
+            "fieldPath": "lsfFileSize",
+            "columnName": "lsfFileSize",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lsfCrc32",
+            "columnName": "lsfCrc32",
             "affinity": "INTEGER",
             "notNull": true
           }
         ],
         "primaryKey": {
           "columnNames": [
-            "availableFileUid"
+            "locallyStoredFileUid"
           ],
           "autoGenerate": true
         },
@@ -401,7 +407,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2243e4f563819dcb5fe0251bf778e815')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5c23f6495479283e1fadfac6d6bcee01')"
     ]
   }
 }

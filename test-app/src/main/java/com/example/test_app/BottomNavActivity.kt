@@ -4,19 +4,23 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
+import com.ustadmobile.retriever.RetrieverBuilderAndroid
 
 
 class BottomNavActivity : AppCompatActivity(){
 
-    private lateinit var retriever: RetrieverAndroidImpl
+    private lateinit var retriever: Retriever
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_botton_nav)
 
-        retriever = RetrieverAndroidImpl(applicationContext, this)
-        retriever.startNSD()
+        retriever = RetrieverBuilderAndroid
+            .builder(applicationContext, "UstadRetriever")
+            .build()
+        (retriever as RetrieverAndroidImpl).startNSD()
 
         val localFragment = LocalFileListFragment(retriever)
         val scanFragment = ScanFileListFragment(retriever)

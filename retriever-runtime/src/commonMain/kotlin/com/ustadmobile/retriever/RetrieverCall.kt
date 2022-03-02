@@ -1,4 +1,5 @@
 package com.ustadmobile.retriever
 
-class RetrieverCall {
+class RetrieverCall (val listenerUid: Int){
+
 }

@@ -40,13 +40,15 @@ class ConcatenatedItemResponder : RouterNanoHTTPD.UriResponder{
     ): NanoHTTPD.Response {
         //receive the list of files here
         val jsonText = session.receiveRequestBody()
-            ?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST, "text/plain",
+            ?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
+                "text/plain",
                 "No request body")
 
         val jsonArray: List<JsonElement> = Json.decodeFromString(JsonArray.serializer(), jsonText)
         val originUrlList : List<String> = jsonArray.map { (it as JsonPrimitive).content }
         if(originUrlList.isEmpty()) {
-            return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST, "text/plain",
+            return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
+                "text/plain",
                 "Empty list urls to retrieve")
         }
 

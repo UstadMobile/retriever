@@ -1,8 +1,11 @@
 package com.ustadmobile.lib.db.entities
 
+import androidx.room.Embedded
+
 open class AvailabilityObserverItemWithNetworkNode : AvailabilityObserverItem() {
 
-    var networkNodeId: Long = 0
+    @Embedded
+    var networkNode: NetworkNode = NetworkNode()
 
 
 }

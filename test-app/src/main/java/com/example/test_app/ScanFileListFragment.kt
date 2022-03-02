@@ -20,6 +20,7 @@ import com.example.test_app.databinding.FragmentScanFileListBinding
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.ScanFileListController
 import com.ustadmobile.retriever.view.ScanFileListView
@@ -29,7 +30,7 @@ interface ClickAddScan{
     fun onClickAddFromUrl()
 }
 
-class ScanFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), ScanFileListView,
+class ScanFileListFragment(val retriever: Retriever): Fragment(), ScanFileListView,
     ClickAddScan, WatchListListener {
 
     private lateinit var binding: FragmentScanFileListBinding
@@ -86,7 +87,7 @@ class ScanFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Sca
 
         controller = ScanFileListController(
             requireContext(),
-            retriever.database,
+            (retriever as RetrieverAndroidImpl).database,
             this,
             retriever)
         controller.onCreate()
@@ -99,7 +100,8 @@ class ScanFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Sca
     override var watchList: DoorDataSourceFactory<Int, AvailabilityFileWithNumNodes>? = null
         set(value) {
             watchListLiveData?.removeObserver(watchListObserver)
-            watchListLiveData = value?.asRepositoryLiveData(retriever.database.availableFileDao)
+            watchListLiveData = value?.asRepositoryLiveData(
+                (retriever as RetrieverAndroidImpl).database.locallyStoredFileDao)
             field = value
             watchListLiveData?.observe(this, watchListObserver)
         }

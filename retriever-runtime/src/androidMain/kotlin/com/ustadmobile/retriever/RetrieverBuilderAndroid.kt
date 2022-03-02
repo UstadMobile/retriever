@@ -4,7 +4,10 @@ import android.content.Context
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.retriever.db.RetrieverDatabase
 
-class RetrieverBuilder private constructor(
+/**
+ * Usage : RetrieverBuilder.builder(context, "serviceName").build()
+ */
+class RetrieverBuilderAndroid private constructor(
     private val context: Context,
     private val nsdServiceName: String,
 ){
@@ -13,15 +16,15 @@ class RetrieverBuilder private constructor(
         val db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class, DB_NAME)
             .build()
 
-        return RetrieverAndroidImpl(db, nsdServiceName, context, /* Add availability checker impl class here*/)
-
+        val availabilityChecker: AvailabilityCheckerAndroidImpl = AvailabilityCheckerAndroidImpl(db)
+        return RetrieverAndroidImpl(db, nsdServiceName, context, availabilityChecker)
 
     }
 
     companion object {
         private const val DB_NAME = "retrieverdb"
 
-        fun builder(context: Context, nsdServiceName: String) = RetrieverBuilder(context, nsdServiceName)
+        fun builder(context: Context, nsdServiceName: String) = RetrieverBuilderAndroid(context, nsdServiceName)
 
     }
 

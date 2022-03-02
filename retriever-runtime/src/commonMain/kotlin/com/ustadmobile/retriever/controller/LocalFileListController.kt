@@ -1,5 +1,6 @@
 package com.ustadmobile.retriever.controller
 
+import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.view.LocalFileListView
@@ -17,6 +18,7 @@ class LocalFileListController(
 ) {
 
     fun onCreate(){
+
         view.localFileList = db.locallyStoredFileDao.findAllAvailableFilesLive()
     }
 

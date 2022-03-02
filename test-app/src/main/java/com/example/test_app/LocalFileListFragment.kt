@@ -27,6 +27,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.LocalFileListController
 import com.ustadmobile.retriever.view.LocalFileListView
@@ -37,7 +38,7 @@ interface ClickAddLocalFile{
     fun onClickAddFromUrl()
 }
 
-class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), LocalFileListView,
+class LocalFileListFragment(val retriever: Retriever): Fragment(), LocalFileListView,
     ClickAddLocalFile, FileListener {
 
     private lateinit var binding: FragmentLocalFileListBinding
@@ -87,7 +88,6 @@ class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Lo
             it.listener = this
         }
 
-        //val root = inflater.inflate(R.layout.fragment_local_file_list, container, false)
         localFileListRecyclerView = rootView.findViewById(R.id.fragment_local_file_list_rv)
         localFileListRecyclerView.layoutManager = LinearLayoutManager(context)
 
@@ -95,7 +95,7 @@ class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Lo
 
         localFileListRecyclerView.adapter = localFileListRecyclerAdapter
 
-        controller = LocalFileListController(requireContext(), retriever.database, this)
+        controller = LocalFileListController(requireContext(), (retriever as RetrieverAndroidImpl).database, this)
         controller.onCreate()
 
         val fab: FloatingActionButton = rootView.findViewById(R.id.fragment_local_file_list_fab_add)
@@ -132,7 +132,9 @@ class LocalFileListFragment(val retriever: RetrieverAndroidImpl): Fragment(), Lo
     override var localFileList: DoorDataSourceFactory<Int, LocallyStoredFile>? = null
         set(value) {
             localFileListLiveData?.removeObserver(localFileListObserver)
-            localFileListLiveData = value?.asRepositoryLiveData(retriever.database.availableFileDao)
+            localFileListLiveData = value?.asRepositoryLiveData(
+                (retriever as RetrieverAndroidImpl).database.locallyStoredFileDao
+            )
             field = value
             localFileListLiveData?.observe(this, localFileListObserver)
         }

@@ -11,6 +11,10 @@ import com.ustadmobile.retriever.responder.RequestResponder.Companion.PARAM_FILE
 import com.ustadmobile.retriever.responder.RequestResponder.Companion.PARAM_DB_INDEX
 import com.google.gson.reflect.TypeToken
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import org.mockito.kotlin.any
 
 
 class TestRequestResponder {
@@ -24,6 +28,8 @@ class TestRequestResponder {
         LocallyStoredFile("http://path.to/file3", "http://local.path.to/file3", 0 , 0),
         LocallyStoredFile("http://path.to/file4", "http://local.path.to/file4", 0 , 0),
         LocallyStoredFile("http://path.to/file5", "http://local.path.to/file5", 0 , 0),
+        LocallyStoredFile("http://path.to/file6", "http://local.path.to/file6", 0 , 0),
+        LocallyStoredFile("http://path.to/file7", "http://local.path.to/file7", 0 , 0),
 
     )
 
@@ -38,6 +44,7 @@ class TestRequestResponder {
         if(db.locallyStoredFileDao.findAllAvailableFiles().isEmpty()){
             db.locallyStoredFileDao.insertList(availableFilesToInsert)
         }
+
 
     }
 
@@ -91,5 +98,55 @@ class TestRequestResponder {
         Assert.assertEquals("Node has not found the file", 0, responseEntryListUnavailable.size)
 
     }
+
+    private fun makeMockUriSession(urlsToRetrieve: List<String>) : NanoHTTPD.IHTTPSession {
+        return mock {
+            on { uri }.thenReturn("/retriever/")
+            on { parseBody(any()) }.thenAnswer { invocation ->
+                val map = invocation.arguments[0] as MutableMap<String, String>
+                val filesJson = JsonArray(urlsToRetrieve.map { JsonPrimitive(it) })
+                map["postData"] = Json.encodeToString(JsonArray.serializer(), filesJson)
+                Unit
+            }
+            on {method}.thenReturn(NanoHTTPD.Method.POST)
+        }
+    }
+
+    @Test
+    fun givenRequestResponder_whenPostRequestMade_thenShouldReturnResponse(){
+
+        val responder = RequestResponder()
+
+
+        val mockUriResource: RouterNanoHTTPD.UriResource = mock {
+            on { initParameter(com.ustadmobile.retriever.db.RetrieverDatabase::class.java) }.thenReturn(db)
+        }
+
+        val urlsToRetrieve = listOf("http://path.to/file1", "http://path.to/file2",
+            "http://path.to/nofile3", "http://path.to/nofile4",
+            "http://path.to/file3", "http://path.to/file4", "http://path.to/file5",
+            "http://path.to/nofile3", "http://path.to/nofile4",
+            "http://path.to/file6", "http://path.to/file7")
+
+        val mockUriSession = makeMockUriSession(urlsToRetrieve)
+        val response = responder.post(mockUriResource, mutableMapOf(), mockUriSession)
+
+        Assert.assertEquals("Response status is 200 OK", NanoHTTPD.Response.Status.OK,
+            response.status)
+
+        val responseStr = String(response.data.readBytes())
+        val responseEntryList = Gson().fromJson<List<RequestResponder.FileAvailableResponse>>(
+            responseStr,
+            object: TypeToken<List<RequestResponder.FileAvailableResponse>>(){
+
+            }.type
+        )
+        Assert.assertEquals("Node has response OK", 7, responseEntryList.size)
+
+
+
+
+    }
+
 
 }

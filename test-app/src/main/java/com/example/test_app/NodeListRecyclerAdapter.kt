@@ -33,7 +33,7 @@ class NodeListRecyclerAdapter(val listener: NodeListener):
 
     override fun onBindViewHolder(holder: NodeListRecyclerViewHolder, position: Int) {
         val item = getItem(position)
-        holder.itemBinding.node = item`
+        holder.itemBinding.node = item
     }
 
 

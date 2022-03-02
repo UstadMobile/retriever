@@ -5,6 +5,12 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import com.google.gson.Gson
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.ext.receiveRequestBody
+
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 
 class RequestResponder:RouterNanoHTTPD.UriResponder{
 
@@ -34,16 +40,47 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
             status, "application/json", gson.toJson(fileAvailability))
     }
 
-    override fun put(
-        uriResource: RouterNanoHTTPD.UriResource?,
-        urlParams: MutableMap<String, String>?,
-        session: NanoHTTPD.IHTTPSession?
-    ): NanoHTTPD.Response {
-        return NanoHTTPD.newFixedLengthResponse(
-            NanoHTTPD.Response.Status.NOT_FOUND, "application/json", Gson().toJson(""))
-    }
+    data class FileAvailableResponse(val originUrl: String, val sha256: String, val size: Long)
 
     override fun post(
+        uriResource: RouterNanoHTTPD.UriResource,
+        urlParams: MutableMap<String, String>,
+        session: NanoHTTPD.IHTTPSession
+    ): NanoHTTPD.Response {
+
+        //receive a set of file list
+        var jsonText = session.receiveRequestBody()
+            ?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
+            "text/plain",
+            "No request body")
+
+        val jsonArray: List<JsonElement> = Json.decodeFromString(JsonArray.serializer(), jsonText)
+        val fileUrlList : List<String> = jsonArray.map { (it as JsonPrimitive).content }
+        if(fileUrlList.isEmpty()) {
+            return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
+                "text/plain",
+                "Empty list urls to retrieve")
+        }
+
+        val db: RetrieverDatabase = uriResource.initParameter(RetrieverDatabase::class.java)
+        val locallyStoredFiles = fileUrlList.chunked(100).flatMap {
+            db.locallyStoredFileDao.findAvailableFilesByUrlList(it)
+        }
+
+
+        val availabilityResponseList: List<FileAvailableResponse> =
+            locallyStoredFiles.map {
+                FileAvailableResponse(it.lsfFilePath?:"", "sha256", it.lsfFileSize)
+            }
+
+        val gson = Gson()
+        return NanoHTTPD.newFixedLengthResponse(
+            NanoHTTPD.Response.Status.OK, "application/json", gson.toJson(availabilityResponseList))
+
+
+    }
+
+    override fun put(
         uriResource: RouterNanoHTTPD.UriResource?,
         urlParams: MutableMap<String, String>?,
         session: NanoHTTPD.IHTTPSession?

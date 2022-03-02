@@ -28,6 +28,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.NodeListController
 import com.ustadmobile.retriever.view.NodeListView
@@ -37,7 +38,7 @@ import java.util.regex.Pattern
 interface ClickAddNode{
     fun clickAddNote()
 }
-class NodeListFragment(val retriever: RetrieverAndroidImpl):
+class NodeListFragment(val retriever: Retriever):
     Fragment(), NodeListView, NodeListener, ClickAddNode{
 
 
@@ -56,8 +57,6 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl):
     }
 
     private val BT_ON_REQUEST_CODE = 87
-    private var BLUETOOTHSERVICEUUID = 0x123abcL
-    var SERVICE_NAME = "UstadRetriever"
 
     private lateinit var binding: FragmentNodeListBinding
     private var fabClicked: Boolean = false
@@ -83,7 +82,8 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl):
 
         nodeListRecyclerView.adapter = nodeListRecyclerAdapter
 
-        controller = NodeListController(requireContext(), retriever.database, this)
+        controller = NodeListController(
+            requireContext(), (retriever as RetrieverAndroidImpl).database, this)
         controller.onCreate()
 
         val fab : FloatingActionButton = rootView.findViewById(R.id.fragment_node_list_fab_add)
@@ -200,7 +200,7 @@ class NodeListFragment(val retriever: RetrieverAndroidImpl):
     override var nodeList: DoorDataSourceFactory<Int, NetworkNode>? = null
         set(value) {
             nodeListLiveData?.removeObserver(nodeListObserver)
-            nodeListLiveData = value?.asRepositoryLiveData(retriever.database.networkNodeDao)
+            nodeListLiveData = value?.asRepositoryLiveData((retriever as RetrieverAndroidImpl).database.networkNodeDao)
             field = value
             nodeListLiveData?.observe(this, nodeListObserver)
         }
