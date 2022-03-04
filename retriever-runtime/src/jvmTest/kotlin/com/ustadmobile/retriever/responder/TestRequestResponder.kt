@@ -124,9 +124,9 @@ class TestRequestResponder {
 
         val responder = RequestResponder()
 
-
         val mockUriResource: RouterNanoHTTPD.UriResource = mock {
-            on { initParameter(com.ustadmobile.retriever.db.RetrieverDatabase::class.java) }.thenReturn(db)
+            on { initParameter(RetrieverDatabase::class.java) }
+                .thenReturn(db)
         }
 
         val urlsToRetrieve = listOf("http://path.to/file1", "http://path.to/file2",
@@ -148,7 +148,8 @@ class TestRequestResponder {
 
             }.type
         )
-        Assert.assertEquals("Node has response OK", 7, responseEntryList.size)
+        Assert.assertEquals("Node has response OK", urlsToRetrieve.size, responseEntryList.size)
+
 
 
 

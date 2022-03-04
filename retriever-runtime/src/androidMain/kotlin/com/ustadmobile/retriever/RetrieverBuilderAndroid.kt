@@ -12,7 +12,7 @@ class RetrieverBuilderAndroid private constructor(
     private val nsdServiceName: String,
 ){
 
-    fun build() : Retriever {
+    fun build() : RetrieverCommon {
         val db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class, DB_NAME)
             .build()
 

@@ -3,6 +3,8 @@ package com.ustadmobile.retriever
 import com.soywiz.klock.DateTime
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 abstract class RetrieverCommon(
     protected val db: RetrieverDatabase,
@@ -12,30 +14,36 @@ abstract class RetrieverCommon(
 
     protected val availabilityManager = AvailabilityManager(db, availabilityChecker)
 
-    suspend fun addNewNode(networkNode: NetworkNode){
+    fun addNewNode(networkNode: NetworkNode){
 
-        //Check if doesn't already exist. Else update time discovered
-        if(db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl?:"").isNullOrEmpty()) {
-            networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
-            db.networkNodeDao.insert(networkNode)
-        }else{
-            val netWorkNodeToUpdate: NetworkNode? =
-                db.networkNodeDao.findByEndpointUrl(
-                    networkNode.networkNodeEndpointUrl?:"")
-            if(netWorkNodeToUpdate != null){
-                netWorkNodeToUpdate.networkNodeDiscovered = DateTime.nowUnixLong()
-                netWorkNodeToUpdate.networkNodeLost = 0
-                db.networkNodeDao.update(netWorkNodeToUpdate)
+        GlobalScope.launch {
+            //Check if doesn't already exist. Else update time discovered
+            if (db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl ?: "")
+                    .isNullOrEmpty()
+            ) {
+                networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
+                db.networkNodeDao.insert(networkNode)
+            } else {
+                val netWorkNodeToUpdate: NetworkNode? =
+                    db.networkNodeDao.findByEndpointUrl(
+                        networkNode.networkNodeEndpointUrl ?: ""
+                    )
+                if (netWorkNodeToUpdate != null) {
+                    netWorkNodeToUpdate.networkNodeDiscovered = DateTime.nowUnixLong()
+                    netWorkNodeToUpdate.networkNodeLost = 0
+                    db.networkNodeDao.update(netWorkNodeToUpdate)
+                }
             }
         }
     }
 
-    suspend fun updateNetworkNodeLost(endpointUrl: String){
+    fun updateNetworkNodeLost(endpointUrl: String){
+
         //TODO: Should also delete responses from that node
         //TODO: Availability observers should be updated.
-        db.networkNodeDao.deleteByEndpointUrl(endpointUrl)
-
-
+        GlobalScope.launch {
+            db.networkNodeDao.deleteByEndpointUrl(endpointUrl)
+        }
     }
 
 

@@ -8,10 +8,4 @@ interface  AvailabilityChecker {
         networkNode: NetworkNode,
         originUrls:List<String>
     ): AvailabilityCheckerResult
-
-    /** In implementation, get retriever requests from originUrls as:
-     * val retrieverRequests: List<RetrieverRequest> = item.fileUrls.map {
-     *   RetrieverRequest(it, OriginServerChecksumProvider())
-     *   }
-     **/
 }

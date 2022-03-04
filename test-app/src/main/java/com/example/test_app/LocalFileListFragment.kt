@@ -27,7 +27,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
-import com.ustadmobile.retriever.Retriever
+import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.LocalFileListController
 import com.ustadmobile.retriever.view.LocalFileListView
@@ -38,7 +38,7 @@ interface ClickAddLocalFile{
     fun onClickAddFromUrl()
 }
 
-class LocalFileListFragment(val retriever: Retriever): Fragment(), LocalFileListView,
+class LocalFileListFragment(val retriever: RetrieverCommon): Fragment(), LocalFileListView,
     ClickAddLocalFile, FileListener {
 
     private lateinit var binding: FragmentLocalFileListBinding

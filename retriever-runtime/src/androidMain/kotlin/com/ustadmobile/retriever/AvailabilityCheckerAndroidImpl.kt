@@ -22,51 +22,61 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
 
         //For networkNode, find availability of the originalUrls
 
+        var nodeEndpoint = networkNode.networkNodeEndpointUrl ?: ""
+        nodeEndpoint = if (nodeEndpoint.startsWith("/")) {
+            nodeEndpoint.substring(1, nodeEndpoint.length)
+        } else {
+            nodeEndpoint
+        }
+        nodeEndpoint = if (nodeEndpoint.startsWith("http")) {
+            nodeEndpoint
+        } else {
+            "http://$nodeEndpoint"
+        }
+        nodeEndpoint = nodeEndpoint + "/" +
+                RequestResponder.PARAM_FILE_REQUEST_URL
+
+        var connection: HttpURLConnection? = null
+
+        val url = URL(nodeEndpoint)
+        connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Accept", "application/json")
+        connection.doOutput = true
+
+        val requestBodyStr = Gson().toJson(originUrls).toString()
+
+        val fileAvailableResponses: List<RequestResponder.FileAvailableResponse>? = try{
+            val bodyByteArray: ByteArray = requestBodyStr.toByteArray(Charsets.UTF_8)
+            connection.outputStream.write(bodyByteArray, 0, bodyByteArray.size)
+
+            val responseStr = connection.inputStream.bufferedReader().readText()
+            val responseEntryList = Gson().fromJson<List<RequestResponder.FileAvailableResponse>>(
+                responseStr,
+                object : TypeToken<List<RequestResponder.FileAvailableResponse>>() {
+                }.type
+            )
+
+            responseEntryList
+
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            null
+        } finally {
+            connection.disconnect()
+        }
+
+
+        //Create the requestMap
         val requestMap: Map<String, Boolean> = originUrls.associate {
-            val fileUrl: String = it
+            val originUrl = it
+            val available: Boolean = fileAvailableResponses?.any { it.originUrl == originUrl }?:false
 
-
-            var nodeEndpoint = networkNode.networkNodeEndpointUrl ?: ""
-            nodeEndpoint = if (nodeEndpoint.startsWith("/")) {
-                nodeEndpoint.substring(1, nodeEndpoint.length)
-            } else {
-                nodeEndpoint
-            }
-            nodeEndpoint = if (nodeEndpoint.startsWith("http")) {
-                nodeEndpoint
-            } else {
-                "http://$nodeEndpoint"
-            }
-
-            nodeEndpoint = nodeEndpoint + "/" +
-                    RequestResponder.PARAM_FILE_REQUEST_URL + "?" +
-                    RequestResponder.PARAM_FILE_REQUEST_URL + "=" +
-                    fileUrl
-
-
-            var connection: HttpURLConnection? = null
-            val fileAvailable: Boolean = try {
-                val url = URL(nodeEndpoint)
-                connection = url.openConnection() as HttpURLConnection
-                val responseStr = connection.inputStream.bufferedReader().readText()
-                val responseEntryList = Gson().fromJson<List<LocallyStoredFile>>(
-                    responseStr,
-                    object : TypeToken<List<LocallyStoredFile>>() {
-                    }.type
-                )
-                responseEntryList.isNotEmpty()
-            } catch (e: IOException) {
-                e.printStackTrace()
-                false
-            } catch (e: Throwable) {
-                e.printStackTrace()
-                false
-            } finally {
-                connection?.disconnect()
-            }
-
-            fileUrl to fileAvailable
-
+            originUrl to available
         }
 
         return AvailabilityCheckerResult(requestMap, networkNode.networkNodeId)

@@ -10,6 +10,7 @@ import com.ustadmobile.retriever.responder.RequestResponder
 import java.net.InetAddress
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
+import io.ktor.util.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -33,7 +34,7 @@ class RetrieverAndroidImpl internal constructor(
 
     private lateinit var nsdManager: NsdManager
 
-    private var SERVICE_TYPE = "_$nsdServiceName._tcp"
+    private var SERVICE_TYPE = "_${nsdServiceName.lowercase()}._tcp"
 
     private val server = RouterNanoHTTPD(0)
 
@@ -165,7 +166,7 @@ class RetrieverAndroidImpl internal constructor(
 
         val serviceInfo = NsdServiceInfo().apply{
             serviceName = nsdServiceName
-            serviceType = "$nsdServiceName._tcp"
+            serviceType = "_${nsdServiceName.lowercase()}._tcp"
             port = server.listeningPort
         }
 

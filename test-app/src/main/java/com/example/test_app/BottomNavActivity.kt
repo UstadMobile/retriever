@@ -7,11 +7,12 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.RetrieverBuilderAndroid
+import com.ustadmobile.retriever.RetrieverCommon
 
 
 class BottomNavActivity : AppCompatActivity(){
 
-    private lateinit var retriever: Retriever
+    private lateinit var retriever: RetrieverCommon
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

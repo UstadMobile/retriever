@@ -66,6 +66,8 @@ class TestAvailabilityManager {
             db.networkNodeDao.insertList(defaultNetworkNodeList)
         }
 
+        availabilityChecker = AvailabilityCheckerAndroidImpl(db)
+
         availabilityChecker = mock {
             (0..4).forEach {
                 onBlocking {
@@ -91,6 +93,8 @@ class TestAvailabilityManager {
             availabilityManager.addAvailabilityObserver(availabilityObserver)
             availabilityManager.runJob()
         }
+
+
 
         //Verify for every node, onAvailabilityChanged was called
         defaultNetworkNodeList.forEach { networkNode ->

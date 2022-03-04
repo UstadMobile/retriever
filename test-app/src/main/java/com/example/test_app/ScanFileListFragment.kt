@@ -20,7 +20,9 @@ import com.example.test_app.databinding.FragmentScanFileListBinding
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
-import com.ustadmobile.retriever.Retriever
+import com.ustadmobile.retriever.AvailabilityObserver
+import com.ustadmobile.retriever.OnAvailabilityChanged
+import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.ScanFileListController
 import com.ustadmobile.retriever.view.ScanFileListView
@@ -30,7 +32,7 @@ interface ClickAddScan{
     fun onClickAddFromUrl()
 }
 
-class ScanFileListFragment(val retriever: Retriever): Fragment(), ScanFileListView,
+class ScanFileListFragment(val retriever: RetrieverCommon): Fragment(), ScanFileListView,
     ClickAddScan, WatchListListener {
 
     private lateinit var binding: FragmentScanFileListBinding
@@ -108,6 +110,10 @@ class ScanFileListFragment(val retriever: Retriever): Fragment(), ScanFileListVi
 
     override fun onClickAddFromUrl() {
 
+        val availabilityChanged: OnAvailabilityChanged = OnAvailabilityChanged {
+
+        }
+
         val builder: AlertDialog.Builder = AlertDialog.Builder(context)
         val dialogView = LayoutInflater.from(context).inflate(
             R.layout.dialog_text_edit_entry,
@@ -132,8 +138,14 @@ class ScanFileListFragment(val retriever: Retriever): Fragment(), ScanFileListVi
         builder.setView(dialogView)
         builder.setTitle(R.string.enter_url_to_scan)
         builder.setPositiveButton(R.string.scan) { dialog, which ->
-            //TODO: check
-            controller.addUrlToScan(urlEditText.text.toString())
+            val availabilityObserver: AvailabilityObserver =
+                AvailabilityObserver(
+                    listOf(urlEditText.text.toString()),
+                    availabilityChanged
+                )
+
+            controller.addToAvailabilityObserver(retriever, availabilityObserver)
+
             dialog.dismiss()
         }
 
@@ -144,6 +156,7 @@ class ScanFileListFragment(val retriever: Retriever): Fragment(), ScanFileListVi
     }
 
     override fun deleteFile(availableFile: AvailabilityFileWithNumNodes) {
+        //TODO: update to remove all responses for this file and observers as well.
         controller.removeFileUrl(availableFile)
     }
 

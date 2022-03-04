@@ -30,6 +30,7 @@ import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
+import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.controller.NodeListController
 import com.ustadmobile.retriever.view.NodeListView
 import java.util.*
@@ -38,7 +39,7 @@ import java.util.regex.Pattern
 interface ClickAddNode{
     fun clickAddNote()
 }
-class NodeListFragment(val retriever: Retriever):
+class NodeListFragment(val retriever: RetrieverCommon):
     Fragment(), NodeListView, NodeListener, ClickAddNode{
 
 
@@ -184,11 +185,15 @@ class NodeListFragment(val retriever: Retriever):
                         data?.getParcelableExtra(CompanionDeviceManager.EXTRA_DEVICE)
 
                     if(deviceToPair?.address != null) {
-                        controller.addNetworkNode(NetworkNode(
-                            deviceToPair.name + ":" +deviceToPair.address,
-                            deviceToPair.address,
-                            System.currentTimeMillis()
+
+
+                        retriever.addNewNode(
+                            NetworkNode(
+                                deviceToPair.name + ":" + deviceToPair.address,
+                                deviceToPair.address,
+                                System.currentTimeMillis()
                         ))
+
                     }
                     println("P2P selected")
                 }
@@ -214,7 +219,11 @@ class NodeListFragment(val retriever: Retriever):
     }
 
     override fun onDeleteNode(node: NetworkNode) {
-        controller.deleteNode(node)
+
+        val endpointUrl = node.networkNodeEndpointUrl
+        if(!endpointUrl.isNullOrEmpty()){
+            retriever.updateNetworkNodeLost(endpointUrl)
+        }
     }
 
     override fun clickAddNote() {

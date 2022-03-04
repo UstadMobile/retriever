@@ -13,21 +13,5 @@ class NodeListController(context: Any, val db: RetrieverDatabase, val view: Node
         view.nodeList = db.networkNodeDao.findAllActiveNodesLive()
     }
 
-    fun addNetworkNode(networkNode: NetworkNode){
-        GlobalScope.launch {
-            val existing = db.networkNodeDao.findByEndpointUrl(
-                networkNode.networkNodeEndpointUrl?:"")
-            if(existing == null) {
-                db.networkNodeDao.insert(networkNode)
-            }
-        }
-    }
-
-    fun deleteNode(networkNode: NetworkNode){
-        GlobalScope.launch {
-            db.networkNodeDao.deleteNetworkNode(networkNode.networkNodeId)
-        }
-    }
-
 
 }
