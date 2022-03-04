@@ -19,9 +19,6 @@ class ScanFileListController(
 
     fun onCreate(){
         view.watchList = db.availabilityObserverItemDao.getWatchListLive()
-
-//        //Call retrieve
-//        startWatchListScan(retriever)
     }
 
 
@@ -50,23 +47,5 @@ class ScanFileListController(
             retrieverCommon.removeAvailabilityObserver(availabilityObserver)
         }
     }
-
-
-//    private fun startWatchListScan(retriever: Retriever) {
-//
-//        val ignoreChecksumProvider: IgnoreChecksumProvider = IgnoreChecksumProvider()
-//
-//        GlobalScope.launch {
-//            val watchList: List<AvailabilityObserverItemWithNetworkNode> =
-//                db.availabilityObserverItemDao.findPendingItems()
-//            val retrieverRequests = watchList.map {
-//                RetrieverRequest(it.aoiOriginalUrl ?: "", ignoreChecksumProvider)
-//            }
-//
-//            val retrieverCall: RetrieverCall = retriever.retrieve(retrieverRequests)
-//
-//        }
-//
-//    }
 
 }
