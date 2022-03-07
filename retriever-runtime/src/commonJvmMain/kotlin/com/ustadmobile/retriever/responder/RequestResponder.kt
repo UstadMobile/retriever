@@ -52,11 +52,6 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
             "text/plain",
             "No request body")
 
-//        var jsonText = session.receiveRequestBody()
-//            ?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
-//            "text/plain",
-//            "No request body")
-
         val jsonArray: List<JsonElement> = Json.decodeFromString(JsonArray.serializer(), jsonQueryParam)
         val fileUrlList : List<String> = jsonArray.map { (it as JsonPrimitive).content }
         if(fileUrlList.isEmpty()) {
