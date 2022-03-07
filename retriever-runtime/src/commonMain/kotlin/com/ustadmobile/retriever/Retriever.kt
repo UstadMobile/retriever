@@ -11,6 +11,8 @@ interface Retriever{
 
     suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver)
 
+    suspend fun forceStartJob()
+
     companion object{
         const val DBNAME: String = "retreiverdb"
     }

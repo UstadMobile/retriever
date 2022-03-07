@@ -1,12 +1,11 @@
 package com.ustadmobile.retriever.responder
 
-import fi.iki.elonen.NanoHTTPD
-import fi.iki.elonen.router.RouterNanoHTTPD
 import com.google.gson.Gson
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.receiveRequestBody
-
+import fi.iki.elonen.NanoHTTPD
+import fi.iki.elonen.router.RouterNanoHTTPD
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -48,13 +47,17 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
         session: NanoHTTPD.IHTTPSession
     ): NanoHTTPD.Response {
 
-        //receive a set of file list
-        var jsonText = session.receiveRequestBody()
-            ?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
+        //receive request body
+        val jsonQueryParam = session.queryParameterString?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
             "text/plain",
             "No request body")
 
-        val jsonArray: List<JsonElement> = Json.decodeFromString(JsonArray.serializer(), jsonText)
+//        var jsonText = session.receiveRequestBody()
+//            ?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
+//            "text/plain",
+//            "No request body")
+
+        val jsonArray: List<JsonElement> = Json.decodeFromString(JsonArray.serializer(), jsonQueryParam)
         val fileUrlList : List<String> = jsonArray.map { (it as JsonPrimitive).content }
         if(fileUrlList.isEmpty()) {
             return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
@@ -70,7 +73,7 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
 
         val availabilityResponseList: List<FileAvailableResponse> =
             locallyStoredFiles.map {
-                FileAvailableResponse(it.lsfFilePath?:"", "sha256", it.lsfFileSize)
+                FileAvailableResponse(it.lsfOriginUrl?:"", "sha256", it.lsfFileSize)
             }
 
         val gson = Gson()

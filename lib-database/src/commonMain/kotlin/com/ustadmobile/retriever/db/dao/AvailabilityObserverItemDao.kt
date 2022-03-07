@@ -50,6 +50,7 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
                 WHERE
                     AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
                     AND NetworkNode.networkNodeLost = 0
+                    AND CAST(AvailabilityResponse.availabilityAvailable AS INTEGER) = 1
                 ) as numNodes                    
             FROM
                 AvailabilityObserverItem

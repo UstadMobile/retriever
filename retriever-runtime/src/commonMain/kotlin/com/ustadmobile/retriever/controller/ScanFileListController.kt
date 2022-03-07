@@ -19,6 +19,10 @@ class ScanFileListController(
 
     fun onCreate(){
         view.watchList = db.availabilityObserverItemDao.getWatchListLive()
+
+        GlobalScope.launch {
+            retriever.forceStartJob()
+        }
     }
 
 
@@ -34,6 +38,7 @@ class ScanFileListController(
         availabilityObserver: AvailabilityObserver){
 
         GlobalScope.launch {
+
             retrieverCommon.addAvailabilityObserver(availabilityObserver)
         }
     }

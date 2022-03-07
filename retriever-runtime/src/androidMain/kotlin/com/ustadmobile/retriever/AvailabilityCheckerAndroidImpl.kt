@@ -38,20 +38,25 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
 
         var connection: HttpURLConnection? = null
 
+        val requestBodyStr = Gson().toJson(originUrls).toString()
+        val bodyByteArray: ByteArray = requestBodyStr.toByteArray(Charsets.UTF_8)
+
         val url = URL(nodeEndpoint)
         connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
         connection.setRequestProperty("Accept", "application/json")
         connection.doOutput = true
 
-        val requestBodyStr = Gson().toJson(originUrls).toString()
 
-        val fileAvailableResponses: List<RequestResponder.FileAvailableResponse>? = try{
-            val bodyByteArray: ByteArray = requestBodyStr.toByteArray(Charsets.UTF_8)
+
+        val fileAvailableResponses: List<RequestResponder.FileAvailableResponse>? =
+          try{
+
             connection.outputStream.write(bodyByteArray, 0, bodyByteArray.size)
 
             val responseStr = connection.inputStream.bufferedReader().readText()
-            val responseEntryList = Gson().fromJson<List<RequestResponder.FileAvailableResponse>>(
+            val responseEntryList =
+             Gson().fromJson<List<RequestResponder.FileAvailableResponse>>(
                 responseStr,
                 object : TypeToken<List<RequestResponder.FileAvailableResponse>>() {
                 }.type
@@ -60,15 +65,15 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
             responseEntryList
 
 
-        } catch (e: IOException) {
+         } catch (e: IOException) {
             e.printStackTrace()
             null
-        } catch (e: Throwable) {
+         } catch (e: Throwable) {
             e.printStackTrace()
             null
-        } finally {
+         } finally {
             connection.disconnect()
-        }
+         }
 
 
         //Create the requestMap

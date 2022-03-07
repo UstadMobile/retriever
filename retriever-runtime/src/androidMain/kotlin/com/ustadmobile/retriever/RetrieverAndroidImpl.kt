@@ -30,8 +30,6 @@ class RetrieverAndroidImpl internal constructor(
 
     private var mServiceName = ""
 
-    private lateinit var mService: NsdServiceInfo
-
     private lateinit var nsdManager: NsdManager
 
     private var SERVICE_TYPE = "_${nsdServiceName.lowercase()}._tcp"
@@ -39,7 +37,7 @@ class RetrieverAndroidImpl internal constructor(
     private val server = RouterNanoHTTPD(0)
 
     //Node lost listener
-    private val lostListener = object : NsdManager.ResolveListener {
+    private class LostListener(val retriever: RetrieverCommon) : NsdManager.ResolveListener {
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
@@ -54,13 +52,16 @@ class RetrieverAndroidImpl internal constructor(
             println("P2PManagerAndroid: Lost Peer: $host:$port")
 
             GlobalScope.launch {
-                updateNetworkNodeLost("$host:$port")
+                retriever.updateNetworkNodeLost("$host:$port")
             }
         }
     }
 
     //Node found listener
-    private val serviceFoundResolveListener = object : NsdManager.ResolveListener {
+    class ServiceFoundResolveListener(
+        val mServiceName: String,
+        val retriever: RetrieverCommon
+    ) : NsdManager.ResolveListener {
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
@@ -74,7 +75,6 @@ class RetrieverAndroidImpl internal constructor(
                 //println("P2PManagerAndroid: Same IP ")
                 return
             }
-            mService = serviceInfo
             val port: Int = serviceInfo.port
             val host: InetAddress = serviceInfo.host
 
@@ -86,7 +86,7 @@ class RetrieverAndroidImpl internal constructor(
             networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
 
             GlobalScope.launch {
-                addNewNode(networkNode)
+                retriever.addNewNode(networkNode)
             }
         }
     }
@@ -137,14 +137,17 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         override fun onServiceFound(service: NsdServiceInfo) {
-            if(service.serviceName.startsWith(nsdServiceName)) {
-                nsdManager.resolveService(service, serviceFoundResolveListener)
+            if(!service.serviceName.equals(mServiceName) && service.serviceName.startsWith(nsdServiceName)) {
+                nsdManager.resolveService(
+                    service,
+                    ServiceFoundResolveListener(mServiceName, this@RetrieverAndroidImpl)
+                )
             }
         }
 
         override fun onServiceLost(service: NsdServiceInfo?) {
             println("P2PManagerAndroid: Lost peer.")
-            nsdManager.resolveService(service, lostListener)
+            nsdManager.resolveService(service, LostListener(this@RetrieverAndroidImpl))
         }
     }
 
@@ -196,8 +199,6 @@ class RetrieverAndroidImpl internal constructor(
         //TODO: How to handle RetrieverCall ?
         return RetrieverCall(listenerUid)
     }
-
-
 
     companion object {
     }

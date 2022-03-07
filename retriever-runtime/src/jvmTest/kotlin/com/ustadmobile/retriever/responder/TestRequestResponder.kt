@@ -115,6 +115,10 @@ class TestRequestResponder {
                 map["postData"] = Json.encodeToString(JsonArray.serializer(), filesJson)
                 Unit
             }
+            on { queryParameterString }.thenAnswer{
+                val filesJson = JsonArray(urlsToRetrieve.map { JsonPrimitive(it) })
+                Json.encodeToString(JsonArray.serializer(), filesJson)
+            }
             on {method}.thenReturn(NanoHTTPD.Method.POST)
         }
     }
@@ -148,7 +152,10 @@ class TestRequestResponder {
 
             }.type
         )
-        Assert.assertEquals("Node has response OK", urlsToRetrieve.size, responseEntryList.size)
+        Assert.assertEquals(
+            "Node has response OK",
+            availableFilesToInsert.size,
+            responseEntryList.size)
 
 
 

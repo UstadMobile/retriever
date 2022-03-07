@@ -46,6 +46,9 @@ abstract class RetrieverCommon(
         }
     }
 
+    override suspend fun forceStartJob(){
+        availabilityManager.runJob()
+    }
 
     override suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver) {
         availabilityManager.addAvailabilityObserver(availabilityObserver)

@@ -66,7 +66,7 @@ class TestAvailabilityManager {
             db.networkNodeDao.insertList(defaultNetworkNodeList)
         }
 
-        availabilityChecker = AvailabilityCheckerAndroidImpl(db)
+        //availabilityChecker = AvailabilityCheckerAndroidImpl(db)
 
         availabilityChecker = mock {
             (0..4).forEach {
