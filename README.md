@@ -90,12 +90,12 @@ GET /endpoint/singular?originUrl=https://myserver.com/otherfile
 response: 
 [data]
 
-POST /endpoint/concatenated
+POST /endpoint/zipped
 payload:
 ["https://myserver.com/somebigfile", "https://myserver.com/otherfile"]
 
 response:
-zip containing each requested url (in the same order as requested)
+zip containing each requested url (in the same order as requested), where each entry has the url as the name
 
 ```
 

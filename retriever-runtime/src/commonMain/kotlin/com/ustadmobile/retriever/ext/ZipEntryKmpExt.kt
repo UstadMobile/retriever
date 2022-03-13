@@ -17,6 +17,13 @@ val ZipEntryKmp.totalSize: Long
         return getCompressedSize() + 30 + nameSize + extraSize + 46 + nameSize + extraSize + commentSize
     }
 
+val ZipEntryKmp.headerSize: Int
+    get() {
+        val nameSize = getName().encodeToByteArray().size
+        val extraSize = getExtra()?.size ?: 0
+        return 30  + nameSize + extraSize
+    }
+
 fun List<ZipEntryKmp>.totalZipSize(comment: String?): Long {
     return sumOf { it.totalSize } + (comment?.encodeToByteArray()?.size?.toLong() ?: 0L) + 22
 }

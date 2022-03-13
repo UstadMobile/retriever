@@ -191,7 +191,7 @@ abstract class FileResponder {
                 if (range != null && range.statusCode == 206) {
                     retInputStream = if (isHeadRequest) null else RangeInputStream(retInputStream!!,
                         range.fromByte, range.toByte)
-                    //val contentLength = range[1] + 1 - range[0]
+
                     val r = NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.PARTIAL_CONTENT,
                         mimeType, retInputStream, range.actualContentLength)
 
