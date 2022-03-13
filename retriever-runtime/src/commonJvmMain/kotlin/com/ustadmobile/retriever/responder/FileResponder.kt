@@ -143,7 +143,13 @@ abstract class FileResponder {
          * @return An appropriate NanoHTTPD.Response as above for the request
          */
         @JvmOverloads
-        fun newResponseFromFile(method: NanoHTTPD.Method, uriResource: RouterNanoHTTPD.UriResource, session: NanoHTTPD.IHTTPSession, file: IFileSource, cacheControlHeader: String? = "cache, max-age=86400"): NanoHTTPD.Response {
+        fun newResponseFromFile(
+            method: NanoHTTPD.Method,
+            uriResource: RouterNanoHTTPD.UriResource,
+            session: NanoHTTPD.IHTTPSession,
+            file: IFileSource,
+            cacheControlHeader: String? = "cache, max-age=86400"
+        ): NanoHTTPD.Response {
             val isHeadRequest = method == NanoHTTPD.Method.HEAD
             try {
                 val range: RangeResponse?
@@ -217,8 +223,12 @@ abstract class FileResponder {
 
         }
 
-        fun newResponseFromFile(uriResource: RouterNanoHTTPD.UriResource, session: NanoHTTPD.IHTTPSession, file: IFileSource): NanoHTTPD.Response {
-            return newResponseFromFile(NanoHTTPD.Method.GET, uriResource, session, file)
+        fun newResponseFromFile(
+            uriResource: RouterNanoHTTPD.UriResource,
+            session: NanoHTTPD.IHTTPSession,
+            file: IFileSource
+        ): NanoHTTPD.Response {
+            return newResponseFromFile(session.method, uriResource, session, file)
         }
 
     }

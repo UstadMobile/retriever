@@ -22,11 +22,9 @@ open class AvailabilityResponse {
 //    @PrimaryKey(autoGenerate = true)
 //    var availabilityResponseUid: Long = 0
 
-    @NonNull
     var availabilityNetworkNode: Long = 0
 
-    @NonNull
-    var availabilityOriginUrl: String = ""
+    var availabilityOriginUrl: String? = ""
 
     var availabilityAvailable: Boolean = false
 

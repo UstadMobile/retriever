@@ -15,7 +15,7 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import java.io.File
 
-class TestSingleItemResponder {
+class SingleItemResponderTest {
 
     @JvmField
     @Rule
@@ -30,7 +30,7 @@ class TestSingleItemResponder {
     @Before
     fun setup() {
         catPicFile = temporaryFolder.newFile()
-        this::class.java.getResourceAsStream("/cat-pic0.jpg").writeToFile(catPicFile)
+        this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.writeToFile(catPicFile)
         db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "RetrieverDatabase")
             .build().also {
                 it.clearAllTables()

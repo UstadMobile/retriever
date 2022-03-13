@@ -17,7 +17,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.mockito.kotlin.any
 
 
-class TestRequestResponder {
+class RequestResponderTest {
 
     private lateinit var db: RetrieverDatabase
     private lateinit var context: Any
@@ -106,6 +106,7 @@ class TestRequestResponder {
     }
 
 
+    @Suppress("UNCHECKED_CAST", "RedundantUnitExpression")
     private fun makeMockUriSession(urlsToRetrieve: List<String>) : NanoHTTPD.IHTTPSession {
         return mock {
             on { uri }.thenReturn("/retriever/")

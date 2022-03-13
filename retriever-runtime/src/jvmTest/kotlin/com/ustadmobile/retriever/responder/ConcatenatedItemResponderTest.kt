@@ -23,17 +23,9 @@ import java.io.File
 import java.util.zip.ZipInputStream
 
 /**
- * Download approach:
- *   Put all download items into the database for the request
- *   Wait until discovery of potential mirrors is done, at most 1-2 seconds (if nodes are available).
- *   Run a query to find next downloads (look to find the mirror with the most files available, and bundle), otherwise,
- *   download individually from the original source.
  *
- *
- * fun produceItems
- *   batch requests together, put them on a channel, continue until all items are finished
  */
-class TestConcatenatedItemResponder {
+class ConcatenatedItemResponderTest {
 
     @JvmField
     @Rule
@@ -50,10 +42,10 @@ class TestConcatenatedItemResponder {
     @Before
     fun setup() {
         catPicFile = temporaryFolder.newFile()
-        this::class.java.getResourceAsStream("/cat-pic0.jpg").writeToFile(catPicFile)
+        this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.writeToFile(catPicFile)
 
         overlayFile = temporaryFolder.newFile()
-        this::class.java.getResourceAsStream("/animated-overlay.gif").writeToFile(overlayFile)
+        this::class.java.getResourceAsStream("/animated-overlay.gif")!!.writeToFile(overlayFile)
 
         db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "RetrieverDatabase")
             .build().also {
@@ -73,6 +65,7 @@ class TestConcatenatedItemResponder {
     }
 
 
+    @Suppress("UNCHECKED_CAST", "RedundantUnitExpression")
     private fun makeMockUriSession(urlsToRetrieve: List<String>) : NanoHTTPD.IHTTPSession {
         return mock {
             on { uri }.thenReturn("/retriever/")

@@ -50,6 +50,7 @@ kotlin {
 
         commonJvmMain{
             dependencies{
+                implementation "com.squareup.okhttp3:okhttp:$version_okhttp"
                 implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
                 implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
             }
@@ -57,6 +58,9 @@ kotlin {
 
         jvmMain {
             dependsOn commonJvmMain
+            dependencies {
+                implementation "com.squareup.okhttp3:okhttp:$version_okhttp"
+            }
         }
 
         commonTest {
@@ -74,6 +78,7 @@ kotlin {
                 implementation project(':lib-database-android')
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
                 implementation "androidx.paging:paging-runtime:$version_androidx_paging"
+                implementation "com.squareup.okhttp3:okhttp:$version_okhttp"
             }
         }
 

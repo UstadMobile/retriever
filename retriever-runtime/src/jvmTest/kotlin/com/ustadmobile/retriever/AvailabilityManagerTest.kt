@@ -19,7 +19,7 @@ import kotlin.random.Random
 /**
  * JVM Test
  */
-class TestAvailabilityManager {
+class AvailabilityManagerTest {
 
     private lateinit var db: RetrieverDatabase
 

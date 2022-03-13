@@ -7,6 +7,11 @@ interface Retriever{
      */
     fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall
 
+    suspend fun retrieve(
+        retrieverRequests: List<RetrieverRequest>,
+        progressListener: ProgressListener,
+    )
+
     suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver)
 
     suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver)

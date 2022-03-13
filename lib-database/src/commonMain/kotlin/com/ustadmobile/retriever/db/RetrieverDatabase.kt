@@ -8,8 +8,8 @@ import com.ustadmobile.door.ext.DoorTag
 import com.ustadmobile.lib.db.entities.*
 import com.ustadmobile.retriever.db.dao.AvailabilityObserverItemDao
 import com.ustadmobile.retriever.db.dao.AvailabilityResponseDao
+import com.ustadmobile.retriever.db.dao.DownloadJobItemDao
 import com.ustadmobile.retriever.db.dao.LocallyStoredFileDao
-import kotlin.js.JsName
 
 @Database(entities = [
 
@@ -17,6 +17,7 @@ import kotlin.js.JsName
     AvailabilityObserverItem::class,
     NetworkNode::class,
     LocallyStoredFile::class,
+    DownloadJobItem::class,
 
     SyncNode::class,
     //Door Helper entities
@@ -32,15 +33,6 @@ import kotlin.js.JsName
 ], version = 1)
 abstract class RetrieverDatabase : DoorDatabase() {
 
-
-
-    /**
-     * Preload a few entities where we have fixed UIDs for fixed items (e.g. Xapi Verbs)
-     */
-    fun preload() {
-
-    }
-
     abstract val networkNodeDao : NetworkNodeDao
 
     abstract val availabilityObserverItemDao: AvailabilityObserverItemDao
@@ -48,6 +40,8 @@ abstract class RetrieverDatabase : DoorDatabase() {
     abstract val availabilityResponseDao: AvailabilityResponseDao
 
     abstract val locallyStoredFileDao: LocallyStoredFileDao
+
+    abstract val downloadJobItemDao: DownloadJobItemDao
 
     //TODO: DO NOT REMOVE THIS COMMENT!
     //#DOORDB_SYNCDAO
