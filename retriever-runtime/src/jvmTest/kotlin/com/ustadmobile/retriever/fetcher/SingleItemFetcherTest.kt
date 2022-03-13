@@ -86,7 +86,25 @@ class SingleItemFetcherTest {
 
     @Test
     fun givenPartialDownloadExists_whenDownloadCalled_thenShouldResume() {
+        val destFile = File(downloadDestDir, "cat-pic0")
 
+        val bytesInItem = this::class.java.getResourceAsStream("/cat-pic0.jpg").readBytes()
+        val partialBytes = bytesInItem.copyOf(bytesInItem.size / 2)
+        destFile.writeBytes(partialBytes)
+
+        val mockProgressListener = mock<FetchProgressListener>()
+
+        runBlocking {
+            SingleItemFetcher(okHttpClient).download(
+                DownloadJobItem().apply {
+                    djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
+                    djiDestPath = destFile.toDoorUri().toString()
+                } , mockProgressListener)
+        }
+
+        Assert.assertArrayEquals("Downloaded bytes match original bytes",
+            this::class.java.getResource("/cat-pic0.jpg")!!.readBytes(),
+            destFile.readBytes())
     }
 
 }

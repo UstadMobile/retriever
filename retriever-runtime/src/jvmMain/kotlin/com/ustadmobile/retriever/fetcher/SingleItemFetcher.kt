@@ -22,27 +22,47 @@ actual class SingleItemFetcher(
                 ?: throw IllegalArgumentException("Null URL on ${downloadJobItem.djiUid}")
             val destinationUri = downloadJobItem.djiDestPath?.let { DoorUri.parse(it) }
                 ?: throw IllegalArgumentException("Null destination uri on ${downloadJobItem.djiUid}")
+            val existingDestFile = destinationUri.toFile()
 
+            val bytesAlreadyDownloaded = existingDestFile.length()
             val request = Request.Builder()
                 .url(url)
+                .apply {
+                    if(bytesAlreadyDownloaded != 0L) {
+                        addHeader("range", "bytes=$bytesAlreadyDownloaded-")
+                    }
+                }
                 .build()
 
 
             //TODO: wrap this and run it asynchronously instead
             okHttpClient.newCall(request).execute().use { response ->
-                if(response.code != 200) {
+                if(bytesAlreadyDownloaded > 0L && response.code != 206) {
+                    throw IOException("$url response code was ${response.code} : expected 206 partial content response")
+                }else if(bytesAlreadyDownloaded == 0L && response.code != 200) {
                     throw IOException("$url response code was ${response.code} : expected 200 OK response")
                 }
 
                 val totalBytes = response.header("content-length") ?.toLong()
                     ?: throw IllegalStateException("$url does not provide a content-length header.")
-                fetchProgressListener.onFetchProgress(FetchProgressEvent(downloadJobItem.djiUid, 0,
+                fetchProgressListener.onFetchProgress(FetchProgressEvent(downloadJobItem.djiUid, bytesAlreadyDownloaded,
                     totalBytes))
+
+                val fetchProgressWrapper = if(bytesAlreadyDownloaded > 0L) {
+                    FetchProgressListener {
+                        fetchProgressListener.onFetchProgress(it.copy(
+                            bytesSoFar = it.bytesSoFar + bytesAlreadyDownloaded,
+                            totalBytes = it.totalBytes + bytesAlreadyDownloaded
+                        ))
+                    }
+                }else {
+                    fetchProgressListener
+                }
 
                 val body = response.body ?: throw IllegalStateException("Response to $url has no body!")
                 body.byteStream().use { bodyIn ->
-                    FileOutputStream(destinationUri.toFile()).use { fileOut ->
-                        bodyIn.copyToAndUpdateProgress(fileOut, fetchProgressListener, downloadJobItem.djiUid,
+                    FileOutputStream(destinationUri.toFile(), bytesAlreadyDownloaded != 0L).use { fileOut ->
+                        bodyIn.copyToAndUpdateProgress(fileOut, fetchProgressWrapper, downloadJobItem.djiUid,
                             totalBytes)
                     }
                 }
