@@ -14,6 +14,7 @@ import java.util.zip.ZipEntry
 import com.ustadmobile.retriever.ext.totalZipSize
 import kotlinx.coroutines.*
 import java.io.*
+import com.ustadmobile.door.ext.withDoorTransaction
 
 class ConcatenatedItemResponder : RouterNanoHTTPD.UriResponder{
 
@@ -53,8 +54,11 @@ class ConcatenatedItemResponder : RouterNanoHTTPD.UriResponder{
         }
 
         val db: RetrieverDatabase = uriResource.initParameter(RetrieverDatabase::class.java)
-        val locallyStoredFiles = originUrlList.chunked(100).flatMap {
-            db.locallyStoredFileDao.findAvailableFilesByUrlList(it)
+
+        val locallyStoredFiles = db.withDoorTransaction(RetrieverDatabase::class) { txDb ->
+            originUrlList.chunked(100).flatMap {
+                txDb.locallyStoredFileDao.findAvailableFilesByUrlList(it)
+            }
         }
 
         val nullOriginUrls = locallyStoredFiles.filter { it.lsfOriginUrl == null }

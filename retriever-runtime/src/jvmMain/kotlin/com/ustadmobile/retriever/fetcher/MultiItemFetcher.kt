@@ -12,7 +12,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -32,6 +31,7 @@ actual class MultiItemFetcher(
     ): FetchResult {
         //Validate input here
 
+        var firstFileTmp: File? = null
         try {
             val url = endpointUrl.requirePostfix("/") + "zipped"
             val originUrlsList = JsonArray(downloadJobItems.map { JsonPrimitive(it.djiOriginUrl) })
@@ -39,6 +39,7 @@ actual class MultiItemFetcher(
 
 
             val firstFile = DoorUri.parse(downloadJobItems[0].djiDestPath!!).toFile()
+            //move first file out of the way, otherwise the extractor will attempt
             val firstFileZipHeader = File(firstFile.parentFile, "${firstFile.name}.zipentry")
             val bytesAlreadyDownloaded = firstFile.length()
             if(bytesAlreadyDownloaded > 0){
@@ -84,20 +85,25 @@ actual class MultiItemFetcher(
                         ?: throw IllegalArgumentException("Unexpected entry in result stream: ${it.name}")
                 }
 
-                val bodyBytes = body.byteStream().readAllBytes()
+                //val bodyBytes = body.byteStream().readAllBytes()
                 val headerBytes = firstFileZipHeader.readBytes()
-                val firstFileBytes = firstFile.readBytes()
+                val firstFileBytes = FileInputStream(firstFile).use {
+                    it.readAllBytes()
+                } //firstFile.readBytes()
 
+                //TODO: this should be possible with sequence
                 val bout = ByteArrayOutputStream()
                 bout.write(headerBytes)
                 bout.write(firstFileBytes)
-                bout.write(bodyBytes)
+                //bout.write(bodyBytes)
                 bout.flush()
 
                 val sourceInput = if(bytesAlreadyDownloaded > 0) {
-                    ByteArrayInputStream(bout.toByteArray())
-//                    SequenceInputStream(Collections.enumeration(listOf(ByteArrayInputStream(headerBytes),
-//                        ByteArrayInputStream(firstFileBytes), ByteArrayInputStream(bodyBytes))))
+                    SequenceInputStream(Vector<InputStream>(3).apply {
+                        addElement(FileInputStream(firstFileZipHeader))
+                        addElement(ByteArrayInputStream(firstFileBytes)) //Using fileinputstream here will cause this to fail?
+                        addElement(body.byteStream())
+                    }.elements())
                 }else {
                     body.byteStream()
                 }

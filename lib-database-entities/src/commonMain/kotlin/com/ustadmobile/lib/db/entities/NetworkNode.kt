@@ -21,6 +21,9 @@ open class NetworkNode {
 
     var networkNodeIPAddress: String? = null
 
+    /**
+     * E.g http://ipaddr:port/retriever/
+     */
     var networkNodeEndpointUrl: String? = null
 
     var networkNodeDiscovered: Long = 0
