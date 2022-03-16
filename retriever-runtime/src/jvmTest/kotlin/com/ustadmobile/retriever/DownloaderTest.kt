@@ -1,7 +1,6 @@
 package com.ustadmobile.retriever
 
 import com.ustadmobile.door.DatabaseBuilder
-import com.ustadmobile.door.DoorUri
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.DownloadJobItem

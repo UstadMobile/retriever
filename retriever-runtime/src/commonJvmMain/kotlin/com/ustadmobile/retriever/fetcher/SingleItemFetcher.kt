@@ -45,8 +45,12 @@ actual class SingleItemFetcher(
 
                 val totalBytes = response.header("content-length") ?.toLong()
                     ?: throw IllegalStateException("$url does not provide a content-length header.")
-                fetchProgressListener.onFetchProgress(FetchProgressEvent(downloadJobItem.djiUid, bytesAlreadyDownloaded,
-                    totalBytes))
+                fetchProgressListener.onFetchProgress(
+                    FetchProgressEvent(
+                        downloadJobItem.djiUid, bytesAlreadyDownloaded,
+                        totalBytes
+                    )
+                )
 
                 val fetchProgressWrapper = if(bytesAlreadyDownloaded > 0L) {
                     FetchProgressListener {

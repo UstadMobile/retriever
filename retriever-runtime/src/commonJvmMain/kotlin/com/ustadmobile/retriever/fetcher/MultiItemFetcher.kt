@@ -50,8 +50,10 @@ actual class MultiItemFetcher(
                 val zipHeaderSize = ZipEntry(downloadJobItems.first().djiOriginUrl!!).headerSize
                 val zipHeaderRequest = Request.Builder()
                     .url(url)
-                    .method("POST", json.encodeToString(JsonArray.serializer(),
-                        JsonArray(listOf(JsonPrimitive(downloadJobItems.first().djiOriginUrl!!))))
+                    .method("POST", json.encodeToString(
+                        JsonArray.serializer(),
+                        JsonArray(listOf(JsonPrimitive(downloadJobItems.first().djiOriginUrl!!)))
+                    )
                             .toRequestBody("application/json".toMediaType()))
                     .addHeader("range", "bytes=0-${zipHeaderSize-1}") //Ranges are inclusive
                     .build()
@@ -105,8 +107,11 @@ actual class MultiItemFetcher(
 
                 ZipInputStream(sourceInput).use { zipIn ->
                     zipIn.extractToDir(destFileProvider) { entry, bytesSoFar, totalBytes ->
-                        fetchProgressListener.onFetchProgress(FetchProgressEvent(
-                            urlToJobItemMap[entry.name]?.djiUid ?: 0, bytesSoFar, totalBytes))
+                        fetchProgressListener.onFetchProgress(
+                            FetchProgressEvent(
+                                urlToJobItemMap[entry.name]?.djiUid ?: 0, bytesSoFar, totalBytes
+                            )
+                        )
                     }
                 }
 

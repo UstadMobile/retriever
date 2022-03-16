@@ -1,6 +1,5 @@
     package com.ustadmobile.retriever
 
-import com.ustadmobile.door.DoorUri
 import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.lib.db.entities.DownloadJobItem

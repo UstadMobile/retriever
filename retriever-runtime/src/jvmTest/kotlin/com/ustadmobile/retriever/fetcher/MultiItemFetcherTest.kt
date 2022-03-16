@@ -23,7 +23,6 @@ import org.mockito.kotlin.mock
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import com.ustadmobile.retriever.ext.headerSize
 import com.ustadmobile.retriever.io.RangeInputStream
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.atLeastOnce
