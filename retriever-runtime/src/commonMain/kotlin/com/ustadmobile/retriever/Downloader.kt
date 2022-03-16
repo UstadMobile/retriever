@@ -6,6 +6,7 @@ import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.fetcher.MultiItemFetcher
 import com.ustadmobile.retriever.fetcher.SingleItemFetcher
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -31,6 +32,7 @@ class Downloader(
     private val availabilityManager: AvailabilityManager,
     private val progressListener: ProgressListener,
     private val singleItemFetcher: SingleItemFetcher,
+    private val multiItemFetcher: MultiItemFetcher,
     private val db: RetrieverDatabase,
     private val maxConcurrent: Int = 8,
 ) {
@@ -83,7 +85,8 @@ class Downloader(
                     done = txDb.downloadJobItemDao.isBatchDone(downloadBatchId)
 
                     (locallyAvailableBatchesToSend + originDownloadBatchesToSend).also {
-                        Napier.d("$logPrefix starting download ids: ${it.joinToString()}")
+                        if(it.isNotEmpty())
+                            Napier.d("$logPrefix starting download ids: ${it.joinToString()}")
                     }
                 }
 
@@ -120,6 +123,28 @@ class Downloader(
                     }
                     Napier.d("$logPrefix - processor $id - fetch from origin server done" +
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
+                }else {
+                    Napier.d("$logPrefix - processor $id - fetch from peer $host starting", tag = Retriever.LOGTAG)
+
+                    val completedItems = mutableListOf<Long>()
+                    try {
+                        multiItemFetcher.download(host, item.itemsToDownload) {
+                            if(it.bytesSoFar == it.totalBytes)
+                                completedItems += it.downloadJobItemUid
+                        }
+                        Napier.d("$logPrefix - processor $id - fetch from peer $host done.",
+                            tag = Retriever.LOGTAG)
+                    }catch(e: Exception) {
+                        throw e
+                    }finally {
+                        withContext(NonCancellable) {
+                            db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                                completedItems.forEach { djUid ->
+                                    txDb.downloadJobItemDao.updateStatusByUid(djUid, DownloadJobItem.STATUS_COMPLETE)
+                                }
+                            }
+                        }
+                    }
                 }
             }catch(e: Exception) {
                 //TODO: retry logic

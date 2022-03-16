@@ -34,13 +34,13 @@ suspend fun ZipInputStream.extractToDir(
                 entryBytesSoFar += bytesRead
                 val timeNow = systemTimeInMillis()
                 if(timeNow - lastProgressUpdateTime >= progressInterval) {
-                    progressListener?.onProgress(zipEntry, entryBytesSoFar, zipEntry.totalSize)
+                    progressListener?.onProgress(zipEntry, entryBytesSoFar, zipEntry.size)
                     lastProgressUpdateTime = timeNow
                 }
             }
             fileOut.flush()
 
-            progressListener?.onProgress(zipEntry, entryBytesSoFar, zipEntry.totalSize)
+            progressListener?.onProgress(zipEntry, entryBytesSoFar, zipEntry.size)
         }
     }
 }

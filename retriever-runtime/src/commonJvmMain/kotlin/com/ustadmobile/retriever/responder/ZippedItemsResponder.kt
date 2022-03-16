@@ -16,23 +16,7 @@ import kotlinx.coroutines.*
 import java.io.*
 import com.ustadmobile.door.ext.withDoorTransaction
 
-class ConcatenatedItemResponder : RouterNanoHTTPD.UriResponder{
-
-    override fun get(
-        uriResource: RouterNanoHTTPD.UriResource?,
-        urlParams: MutableMap<String, String>?,
-        session: NanoHTTPD.IHTTPSession?
-    ): NanoHTTPD.Response {
-        TODO("Not yet implemented")
-    }
-
-    override fun put(
-        uriResource: RouterNanoHTTPD.UriResource?,
-        urlParams: MutableMap<String, String>?,
-        session: NanoHTTPD.IHTTPSession?
-    ): NanoHTTPD.Response {
-        TODO("Not yet implemented")
-    }
+class ZippedItemsResponder : AbstractUriResponder(){
 
     override fun post(
         uriResource: RouterNanoHTTPD.UriResource,
@@ -117,22 +101,5 @@ class ConcatenatedItemResponder : RouterNanoHTTPD.UriResponder{
             pipedIn, totalSize).also {
                 it.addHeader("content-length", totalSize.toString())
         }
-    }
-
-    override fun delete(
-        uriResource: RouterNanoHTTPD.UriResource?,
-        urlParams: MutableMap<String, String>?,
-        session: NanoHTTPD.IHTTPSession?
-    ): NanoHTTPD.Response {
-        TODO("Not yet implemented")
-    }
-
-    override fun other(
-        method: String?,
-        uriResource: RouterNanoHTTPD.UriResource?,
-        urlParams: MutableMap<String, String>?,
-        session: NanoHTTPD.IHTTPSession?
-    ): NanoHTTPD.Response {
-        TODO("Not yet implemented")
     }
 }

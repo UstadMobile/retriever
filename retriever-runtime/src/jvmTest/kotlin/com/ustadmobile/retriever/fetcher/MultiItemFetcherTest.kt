@@ -25,6 +25,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import com.ustadmobile.retriever.ext.headerSize
 import com.ustadmobile.retriever.io.RangeInputStream
+import org.mockito.kotlin.argWhere
+import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.verify
 import java.io.*
 import java.util.zip.ZipInputStream
 
@@ -121,6 +124,9 @@ class MultiItemFetcherTest {
             Assert.assertArrayEquals("Content for ${it.djiOriginUrl} is the same",
                 this::class.java.getResourceAsStream("${it.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
                 DoorUri.parse(it.djiDestPath!!).toFile().readBytes())
+            verify(mockFetchProgressListener, atLeastOnce()).onFetchProgress(argWhere { evt ->
+                evt.downloadJobItemUid == it.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
+            })
         }
     }
 

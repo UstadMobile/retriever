@@ -1,7 +1,6 @@
 package com.ustadmobile.retriever.responder
 
 import com.ustadmobile.door.DatabaseBuilder
-import com.ustadmobile.door.ext.toDoorUri
 import com.ustadmobile.door.ext.writeToFile
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
@@ -25,7 +24,7 @@ import java.util.zip.ZipInputStream
 /**
  *
  */
-class ConcatenatedItemResponderTest {
+class ZippedItemsResponderTest {
 
     @JvmField
     @Rule
@@ -81,7 +80,7 @@ class ConcatenatedItemResponderTest {
 
     @Test
     fun givenValidRequestWhereAllFilesAvailable_whenPostCalled_thenShouldReturnZipInOrder() {
-        val responder = ConcatenatedItemResponder()
+        val responder = ZippedItemsResponder()
 
         val urlsToRetrieve = listOf("http://cats.com/cat-pic0.jpg", "http://cats.com/overlay.gif")
         val mockUriSession = makeMockUriSession(urlsToRetrieve)
@@ -114,7 +113,7 @@ class ConcatenatedItemResponderTest {
 
     @Test
     fun givenInvalidRequestWithAFileNotAvailable_whenPostCalled_thenShouldRespondBadRequest() {
-        val responder = ConcatenatedItemResponder()
+        val responder = ZippedItemsResponder()
 
         val urlsToRetrieve = listOf("http://cats.com/cat-pic0.jpg", "http://othersite.com/otherfile.gif")
 
@@ -128,7 +127,7 @@ class ConcatenatedItemResponderTest {
 
     @Test
     fun givenInvalidRequestWithNoFilesRequested_whenPostCalled_thenShouldRespondBadRequest() {
-        val responder = ConcatenatedItemResponder()
+        val responder = ZippedItemsResponder()
 
         val urlsToRetrieve = listOf<String>()
 
@@ -139,24 +138,5 @@ class ConcatenatedItemResponderTest {
         Assert.assertEquals("Invalid request where one file is not available returns bad request",
             NanoHTTPD.Response.Status.BAD_REQUEST, response.status)
     }
-
-    @Test
-    fun givenCorruptDataInStoredFile_whenPostCalled_thenResponseShouldBeCutShort() {
-        val responder = ConcatenatedItemResponder()
-
-        catPicFile.writeText("This is corrupt data")
-
-        val urlsToRetrieve = listOf("http://cats.com/cat-pic0.jpg", "http://cats.com/overlay.gif")
-        val mockUriSession = makeMockUriSession(urlsToRetrieve)
-
-        val response = responder.post(mockUriResource, mutableMapOf(), mockUriSession)
-
-        Assert.assertEquals("Response status is 200 OK", NanoHTTPD.Response.Status.OK, response.status)
-
-        val contentLen = response.getHeader("content-length")!!.toInt()
-        val responseBytes = response.data.readBytes()
-        Assert.assertTrue("Response was cut short", responseBytes.size < contentLen)
-    }
-
 
 }
