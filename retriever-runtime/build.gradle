@@ -45,6 +45,9 @@ kotlin {
                 implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
                 implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
 
+                implementation "io.github.aakira:napier:$version_napier"
+
+
             }
         }
 
@@ -53,6 +56,7 @@ kotlin {
                 implementation "com.squareup.okhttp3:okhttp:$version_okhttp"
                 implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
                 implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
+
             }
         }
 
@@ -108,11 +112,12 @@ kotlin {
 
 dependencies {
     implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
-    implementation "io.github.aakira:napier:$version_napier"
+
     implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
 
     testImplementation "junit:junit:$version_junit"
-    
+
+
 
 }
 

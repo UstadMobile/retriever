@@ -55,7 +55,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:padding="4dp"
-            android:text="@{node.networkNodeIPAddress}"
+            android:text="@{node.networkNodeEndpointUrl}"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@+id/item_node_endpoint"
             app:layout_constraintStart_toEndOf="@+id/item_file_icon"

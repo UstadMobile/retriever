@@ -5,12 +5,14 @@ import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.*
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import io.github.aakira.napier.Napier
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlin.jvm.Volatile
+
 
 class AvailabilityManager(
     val database: RetrieverDatabase,
@@ -23,7 +25,7 @@ class AvailabilityManager(
      * Sending anything on this channel will result in one queue check. If there is an available
      * processor, one new item will be started.
      */
-    private val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
+    internal val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
     private val activeNetworkNodeIds = concurrentSafeListOf<Long>()
 
     @ExperimentalCoroutinesApi
@@ -49,6 +51,9 @@ class AvailabilityManager(
             database.availabilityObserverItemDao.insertList(
                 availabilityObserver.originUrls.map { AvailabilityObserverItem(it, listenerUid) }
             )
+
+            checkQueueSignalChannel.trySend(true)
+
         }
 
         return listenerUid
@@ -68,6 +73,7 @@ class AvailabilityManager(
     @ExperimentalCoroutinesApi
     private fun CoroutineScope.produceJobs() = produce<AvailabilityCheckJob> {
 
+        println("Retriever: AvailabilityManager :  produceJobs() called ..")
         do{
             checkQueueSignalChannel.receive()
             val numProcessorsAvailable = numProcessors - activeNetworkNodeIds.size
@@ -76,10 +82,12 @@ class AvailabilityManager(
             val pendingItems : List<AvailabilityObserverItemWithNetworkNode> =
                 database.availabilityObserverItemDao.findPendingItems()
 
-            print("AvailabilityManager: produceJobs(): " + pendingItems.size + " pendingItems.")
+
+            println("Retriever: AvailabilityManager :  produceJobs(): " + pendingItems.size + " pendingItems.")
 
             val grouped = pendingItems.groupBy { it.networkNode.networkNodeId }
-            println("grouped by networkid: " +grouped.size)
+            println("Retriever:AvailabilityManager : grouped by networkid: " + grouped.size)
+
             //Use kotlin to group by networknode uid
             pendingItems.groupBy { it.networkNode.networkNodeId }.forEach {
                 send(
@@ -103,7 +111,7 @@ class AvailabilityManager(
         //Runs checkAvailability (that checks availability and populates AvailabilityResponse)
         // for every node id
         for(item in channel){
-            println("AvailabilityManager: item networkid: " +  item.networkNode.networkNodeId)
+            Napier.d("AvailabilityManager: item networkid: " +  item.networkNode.networkNodeId)
 
             //Returns result<String, Boolean> and networkNodeId
             val availabilityCheckerResult : AvailabilityCheckerResult=

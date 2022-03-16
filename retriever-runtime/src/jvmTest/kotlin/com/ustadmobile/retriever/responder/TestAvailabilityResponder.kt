@@ -7,8 +7,8 @@ import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
 import org.junit.*
 import org.mockito.kotlin.mock
-import com.ustadmobile.retriever.responder.RequestResponder.Companion.PARAM_FILE_REQUEST_URL
-import com.ustadmobile.retriever.responder.RequestResponder.Companion.PARAM_DB_INDEX
+import com.ustadmobile.retriever.responder.AvailabilityResponder.Companion.PARAM_FILE_REQUEST_URL
+import com.ustadmobile.retriever.responder.AvailabilityResponder.Companion.PARAM_DB_INDEX
 import com.google.gson.reflect.TypeToken
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import kotlinx.serialization.json.Json
@@ -17,7 +17,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.mockito.kotlin.any
 
 
-class RequestResponderTest {
+class TestAvailabilityResponder {
 
     private lateinit var db: RetrieverDatabase
     private lateinit var context: Any
@@ -50,7 +50,7 @@ class RequestResponderTest {
 
     @Test
     fun givenRequestResponder_whenGetRequestMadeForAvailableFile_thenShouldReturnAvailableResponse(){
-        val responder = RequestResponder()
+        val responder = AvailabilityResponder()
 
         val mockUriResource = mock<RouterNanoHTTPD.UriResource> {
             on {initParameter(PARAM_DB_INDEX, RetrieverDatabase::class.java)}.thenReturn(db)
@@ -77,7 +77,7 @@ class RequestResponderTest {
 
     @Test
     fun givenRequestResponder_whenGetRequestMadeForUnavailableFile_thenShouldReturnNoResponse(){
-        val responder = RequestResponder()
+        val responder = AvailabilityResponder()
 
         val mockUriResource = mock<RouterNanoHTTPD.UriResource> {
             on {initParameter(PARAM_DB_INDEX, RetrieverDatabase::class.java)}.thenReturn(db)
@@ -106,7 +106,6 @@ class RequestResponderTest {
     }
 
 
-    @Suppress("UNCHECKED_CAST", "RedundantUnitExpression")
     private fun makeMockUriSession(urlsToRetrieve: List<String>) : NanoHTTPD.IHTTPSession {
         return mock {
             on { uri }.thenReturn("/retriever/")
@@ -127,7 +126,7 @@ class RequestResponderTest {
     @Test
     fun givenRequestResponder_whenPostRequestMade_thenShouldReturnResponse(){
 
-        val responder = RequestResponder()
+        val responder = AvailabilityResponder()
 
         val mockUriResource: RouterNanoHTTPD.UriResource = mock {
             on { initParameter(RetrieverDatabase::class.java) }
@@ -147,9 +146,9 @@ class RequestResponderTest {
             response.status)
 
         val responseStr = String(response.data.readBytes())
-        val responseEntryList = Gson().fromJson<List<RequestResponder.FileAvailableResponse>>(
+        val responseEntryList = Gson().fromJson<List<AvailabilityResponder.FileAvailableResponse>>(
             responseStr,
-            object: TypeToken<List<RequestResponder.FileAvailableResponse>>(){
+            object: TypeToken<List<AvailabilityResponder.FileAvailableResponse>>(){
 
             }.type
         )

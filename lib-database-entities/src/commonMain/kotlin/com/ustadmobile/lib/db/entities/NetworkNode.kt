@@ -19,8 +19,6 @@ open class NetworkNode {
     @PrimaryKey(autoGenerate = true)
     var networkNodeId: Long = 0
 
-    var networkNodeIPAddress: String? = null
-
     /**
      * E.g http://ipaddr:port/retriever/
      */
@@ -31,13 +29,11 @@ open class NetworkNode {
     var networkNodeLost: Long = 0
 
     constructor(ipAddress: String, endpointUrl: String, discovered: Long){
-        networkNodeIPAddress = ipAddress
         networkNodeEndpointUrl = endpointUrl
         networkNodeDiscovered = discovered
     }
 
     constructor(ipAddress: String, endpointUrl: String, discovered: Long, id: Long){
-        networkNodeIPAddress = ipAddress
         networkNodeEndpointUrl = endpointUrl
         networkNodeDiscovered = discovered
         networkNodeId = id

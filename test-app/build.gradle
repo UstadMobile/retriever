@@ -69,4 +69,6 @@ dependencies {
     implementation "com.ustadmobile.door:door-runtime:$version_door"
 
     implementation "androidx.paging:paging-runtime:$version_androidx_paging"
+
+    implementation "io.github.aakira:napier:$version_napier"
 }

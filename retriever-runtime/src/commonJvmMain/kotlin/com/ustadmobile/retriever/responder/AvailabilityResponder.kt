@@ -2,6 +2,7 @@ package com.ustadmobile.retriever.responder
 
 import com.google.gson.Gson
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.receiveRequestBody
 import fi.iki.elonen.NanoHTTPD
@@ -11,7 +12,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
-class RequestResponder:RouterNanoHTTPD.UriResponder{
+class AvailabilityResponder:RouterNanoHTTPD.UriResponder{
 
     private fun newBadRequestResponse(errorMessage: String): NanoHTTPD.Response =
         NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST, "text/plain", errorMessage)
@@ -48,7 +49,13 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
     ): NanoHTTPD.Response {
 
         //receive request body
-        val jsonQueryParam = session.queryParameterString?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
+
+        val jsonText = session.receiveRequestBody()
+
+        val jsonQueryParam2 = session.queryParameterString
+
+        val jsonQueryParam = session.queryParameterString
+            ?: return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
             "text/plain",
             "No request body")
 
@@ -62,6 +69,10 @@ class RequestResponder:RouterNanoHTTPD.UriResponder{
 
         val db: RetrieverDatabase = uriResource.initParameter(RetrieverDatabase::class.java)
         val locallyStoredFiles = fileUrlList.chunked(100).flatMap {
+//            db.withDoorTransactionInternal(RetrieverDatabase::class){
+//                txDb -> txDb.locallyStoredFileDao.findAvailableFilesByUrlList(it)
+//
+//            }
             db.locallyStoredFileDao.findAvailableFilesByUrlList(it)
         }
 

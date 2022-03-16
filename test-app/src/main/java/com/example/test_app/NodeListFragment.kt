@@ -33,6 +33,7 @@ import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.controller.NodeListController
 import com.ustadmobile.retriever.view.NodeListView
+import io.github.aakira.napier.Napier
 import java.util.*
 import java.util.regex.Pattern
 
@@ -160,18 +161,18 @@ class NodeListFragment(val retriever: RetrieverCommon):
             object: CompanionDeviceManager.Callback() {
 
                 override fun onDeviceFound(chooserLauncher: IntentSender) {
-                    println("P2P Test1")
+                    Napier.d("P2P Test1")
                     //show
                     startIntentSenderForResult(
                         chooserLauncher,
                         BT_ON_REQUEST_CODE,
                         null, 0, 0, 0,null)
 
-                    println("P2P Retriever: Found bluetooth device.")
+                    Napier.d("P2P Retriever: Found bluetooth device.")
                 }
 
                 override fun onFailure(error: CharSequence?) {
-                    println("P2P Retriever : Failed association device Manager")
+                    Napier.w("P2P Retriever : Failed association device Manager")
                 }
 
             }, null)
@@ -195,7 +196,7 @@ class NodeListFragment(val retriever: RetrieverCommon):
                         ))
 
                     }
-                    println("P2P selected")
+                    Napier.d("P2P selected")
                 }
             }else -> super.onActivityResult(requestCode, resultCode, data)
 
