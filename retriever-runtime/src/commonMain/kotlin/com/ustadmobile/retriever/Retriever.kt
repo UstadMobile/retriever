@@ -20,6 +20,8 @@ interface Retriever{
 
     companion object{
         const val DBNAME: String = "retreiverdb"
+
+        const val LOGTAG = "RetrieverLog"
     }
 
 }

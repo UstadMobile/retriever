@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlin.math.min
+import io.github.aakira.napier.Napier
 
 /**
  * Download approach:
@@ -40,6 +41,8 @@ class Downloader(
 
     private val activeBatches: MutableList<DownloadBatch> = concurrentSafeListOf()
 
+    private val logPrefix = "[Retriever-Downloader #$downloadBatchId] "
+
     /**
      * Produce items -
      *  Group into batches - whatever is available locally, take that first. Remaining (from Internet) items download
@@ -51,10 +54,10 @@ class Downloader(
         try {
             do {
                 checkQueueChannel.receive()
+                Napier.d("$logPrefix: checking queue", tag = Retriever.LOGTAG)
                 val numProcessorsAvailable = maxConcurrent - activeBatches.size
                 val batchesToSend = db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                     val queueItems = txDb.downloadJobItemDao.findNextItemsToDownload(downloadBatchId)
-
                     //turn these into batches
                     val groupedByNode = queueItems.groupBy { it.networkNodeId }.toMutableMap()
                     val locallyAvailableBatches = groupedByNode.entries.filter { it.key != 0L }
@@ -79,7 +82,9 @@ class Downloader(
 
                     done = txDb.downloadJobItemDao.isBatchDone(downloadBatchId)
 
-                    locallyAvailableBatchesToSend + originDownloadBatchesToSend
+                    (locallyAvailableBatchesToSend + originDownloadBatchesToSend).also {
+                        Napier.d("$logPrefix starting download ids: ${it.joinToString()}")
+                    }
                 }
 
                 batchesToSend.forEach {
@@ -98,7 +103,8 @@ class Downloader(
         channel: ReceiveChannel<DownloadBatch>
     ) = launch {
         for(item in channel) {
-            //TODO: actually download it, set status
+            Napier.d("$logPrefix - processor $id - start download of " +
+                    item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
             try {
                 val host = item.host
                 if(host == null) {
@@ -106,14 +112,18 @@ class Downloader(
                     val itemToDownload = item.itemsToDownload.firstOrNull()
                         ?: throw IllegalArgumentException("Batch to download from origin has no item!")
 
+                    Napier.d("$logPrefix - processor $id - fetch from origin server " +
+                            item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
                     singleItemFetcher.download(itemToDownload, { })
                     db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                         txDb.downloadJobItemDao.updateStatusByUid(itemToDownload.djiUid, DownloadJobItem.STATUS_COMPLETE)
                     }
-
+                    Napier.d("$logPrefix - processor $id - fetch from origin server done" +
+                            item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
                 }
             }catch(e: Exception) {
                 //TODO: retry logic
+                throw e
             }finally {
                 checkQueueChannel.send(true)
             }
@@ -122,6 +132,7 @@ class Downloader(
     }
 
     suspend fun download() {
+        Napier.i("$logPrefix download started")
         withContext(Dispatchers.Default) {
             val producer = produceJobs()
             val jobList = mutableListOf<Job>()
@@ -136,6 +147,7 @@ class Downloader(
                 throw e
             }
         }
+        Napier.i("$logPrefix download finished")
     }
 
 
