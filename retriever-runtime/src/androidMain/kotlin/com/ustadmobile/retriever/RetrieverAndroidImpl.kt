@@ -6,13 +6,15 @@ import android.net.nsd.NsdServiceInfo
 import com.soywiz.klock.DateTime
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.responder.RequestResponder
+import com.ustadmobile.retriever.responder.AvailabilityResponder
 import java.net.InetAddress
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
-import io.ktor.util.*
+import io.github.aakira.napier.Napier
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.net.NetworkInterface
+import java.util.*
 
 class RetrieverAndroidImpl internal constructor(
         db: RetrieverDatabase,
@@ -41,7 +43,7 @@ class RetrieverAndroidImpl internal constructor(
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
-            println( "P2PManagerAndroid: Lost Resolve failed: $errorCode")
+            Napier.d( "P2PManagerAndroid: Lost Resolve failed: $errorCode")
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
@@ -49,7 +51,7 @@ class RetrieverAndroidImpl internal constructor(
             val port: Int = serviceInfo.port
             val host: InetAddress = serviceInfo.host
 
-            println("P2PManagerAndroid: Lost Peer: $host:$port")
+            Napier.d("P2PManagerAndroid: Lost Peer: $host:$port")
 
             GlobalScope.launch {
                 retriever.updateNetworkNodeLost("$host:$port")
@@ -65,24 +67,38 @@ class RetrieverAndroidImpl internal constructor(
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
-            println( "P2PManagerAndroid: Resolve failed: $errorCode")
+            Napier.d( "P2PManagerAndroid: Resolve failed: $errorCode")
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-            //println( "P2PManagerAndroid: Resolve Succeeded. $serviceInfo")
+            Napier.d( "P2PManagerAndroid: Resolve Succeeded. $serviceInfo")
 
-            if (serviceInfo.serviceName == mServiceName) {
-                //println("P2PManagerAndroid: Same IP ")
+
+            val allDeviceAddresses = Collections.list(NetworkInterface.getNetworkInterfaces()).flatMap {
+                Collections.list(it.inetAddresses)
+            }
+
+            if(serviceInfo.host in allDeviceAddresses){
                 return
             }
+
             val port: Int = serviceInfo.port
             val host: InetAddress = serviceInfo.host
 
-            println("P2PManagerAndroid: Found Peer: $host:$port")
+            Napier.d("P2PManagerAndroid: Found Peer: $host:$port")
 
+            val resolvedEndpoint =
+                if(!host.toString().contains("http:/")) {
+                    if (host.toString().startsWith("/")) {
+                        "http:/$host:$port/"
+                    } else {
+                        "http://$host:$port/"
+                    }
+                }else{
+                    "$host:$port/"
+            }
             val networkNode = NetworkNode()
-            networkNode.networkNodeIPAddress = host.toString()
-            networkNode.networkNodeEndpointUrl = "$host:$port"
+            networkNode.networkNodeEndpointUrl = resolvedEndpoint
             networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
 
             GlobalScope.launch {
@@ -95,45 +111,45 @@ class RetrieverAndroidImpl internal constructor(
     private val registrationListener = object: NsdManager.RegistrationListener{
         override fun onRegistrationFailed(p0: NsdServiceInfo?, p1: Int) {
             //Failed.
-            println("P2PManager: onRegistration Failed! ")
+            Napier.w("P2PManager: onRegistration Failed! ")
         }
 
         override fun onUnregistrationFailed(p0: NsdServiceInfo?, p1: Int) {
             //Unreg failed.
-            println("P2PManager: onUnregistration Failed! ")
+            Napier.w("P2PManager: onUnregistration Failed! ")
         }
 
         override fun onServiceRegistered(nsdServiceInfo: NsdServiceInfo) {
             mServiceName = nsdServiceInfo.serviceName
-            println("P2PManagerAndroid: Registered ok: " + mServiceName)
+            Napier.d("P2PManagerAndroid: Registered ok: " + mServiceName)
         }
 
         override fun onServiceUnregistered(p0: NsdServiceInfo?) {
             //Un registered ok
-            println("P2PManagerAndroid: Unregistered ok.")
+            Napier.d("P2PManagerAndroid: Unregistered ok.")
         }
     }
 
     private val discoveryListener = object: NsdManager.DiscoveryListener{
         override fun onStartDiscoveryFailed(p0: String?, p1: Int) {
             //failed to start discovery
-            println("P2PManagerAndroid: onStartDiscoveryFailed !")
+            Napier.w("P2PManagerAndroid: onStartDiscoveryFailed !")
             nsdManager.stopServiceDiscovery(this)
         }
 
         override fun onStopDiscoveryFailed(p0: String?, p1: Int) {
             //failed on stop discovery
-            println("P2PManagerAndroid: onStopDiscoveryFailed!")
+            Napier.w("P2PManagerAndroid: onStopDiscoveryFailed!")
             nsdManager.stopServiceDiscovery(this)
         }
 
         override fun onDiscoveryStarted(p0: String?) {
             //Discovery started
-            //println("P2PManagerAndroid: Discovery Started..")
+            Napier.d("P2PManagerAndroid: Discovery Started..")
         }
 
         override fun onDiscoveryStopped(p0: String?) {
-            println("P2PManagerAndroid: Discovery Stopped.")
+            Napier.d("P2PManagerAndroid: Discovery Stopped.")
         }
 
         override fun onServiceFound(service: NsdServiceInfo) {
@@ -146,7 +162,7 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         override fun onServiceLost(service: NsdServiceInfo?) {
-            println("P2PManagerAndroid: Lost peer.")
+            Napier.d("P2PManagerAndroid: Lost peer.")
             nsdManager.resolveService(service, LostListener(this@RetrieverAndroidImpl))
         }
     }
@@ -161,8 +177,8 @@ class RetrieverAndroidImpl internal constructor(
 
         //Start nanohttpd server
         server.addRoute(
-            "/:${RequestResponder.PARAM_FILE_REQUEST_URL}/",
-            RequestResponder::class.java,
+            "/:${AvailabilityResponder.PARAM_FILE_REQUEST_URL}/",
+            AvailabilityResponder::class.java,
             db
         )
         server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
@@ -178,6 +194,10 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+
+        GlobalScope.launch {
+            availabilityManager.runJob()
+        }
 
 
     }

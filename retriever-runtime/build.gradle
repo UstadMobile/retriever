@@ -45,6 +45,9 @@ kotlin {
                 implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
                 implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
 
+                implementation "io.github.aakira:napier:$version_napier"
+
+
             }
         }
 
@@ -52,6 +55,7 @@ kotlin {
             dependencies{
                 implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
                 implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
+
             }
         }
 
@@ -74,6 +78,8 @@ kotlin {
                 implementation project(':lib-database-android')
                 implementation "com.ustadmobile.door:door-runtime:$version_door"
                 implementation "androidx.paging:paging-runtime:$version_androidx_paging"
+
+
             }
         }
 
@@ -103,11 +109,12 @@ kotlin {
 
 dependencies {
     implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
-    implementation "io.github.aakira:napier:$version_napier"
+
     implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
 
     testImplementation "junit:junit:$version_junit"
-    
+
+
 
 }
 

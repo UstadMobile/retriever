@@ -19,8 +19,6 @@ open class NetworkNode {
     @PrimaryKey(autoGenerate = true)
     var networkNodeId: Long = 0
 
-    var networkNodeIPAddress: String? = null
-
     var networkNodeEndpointUrl: String? = null
 
     var networkNodeDiscovered: Long = 0
@@ -28,13 +26,11 @@ open class NetworkNode {
     var networkNodeLost: Long = 0
 
     constructor(ipAddress: String, endpointUrl: String, discovered: Long){
-        networkNodeIPAddress = ipAddress
         networkNodeEndpointUrl = endpointUrl
         networkNodeDiscovered = discovered
     }
 
     constructor(ipAddress: String, endpointUrl: String, discovered: Long, id: Long){
-        networkNodeIPAddress = ipAddress
         networkNodeEndpointUrl = endpointUrl
         networkNodeDiscovered = discovered
         networkNodeId = id

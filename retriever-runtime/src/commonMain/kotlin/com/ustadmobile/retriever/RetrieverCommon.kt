@@ -16,6 +16,7 @@ abstract class RetrieverCommon(
 
     fun addNewNode(networkNode: NetworkNode){
 
+        println("Retriever: Adding a new node ..")
         GlobalScope.launch {
             //Check if doesn't already exist. Else update time discovered
             if (db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl ?: "")
@@ -34,6 +35,9 @@ abstract class RetrieverCommon(
                     db.networkNodeDao.update(netWorkNodeToUpdate)
                 }
             }
+
+            println("Retriever: Sending Signal ..")
+            availabilityManager.checkQueueSignalChannel.trySend(true)
         }
     }
 

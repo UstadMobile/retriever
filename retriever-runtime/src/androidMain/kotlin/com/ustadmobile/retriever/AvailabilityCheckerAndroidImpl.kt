@@ -2,15 +2,12 @@ package com.ustadmobile.retriever
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.responder.RequestResponder
-import java.io.IOException
+import com.ustadmobile.retriever.responder.AvailabilityResponder
+import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
-import kotlin.io.bufferedReader
-import kotlin.io.readText
 
 class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChecker {
 
@@ -33,8 +30,10 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
         } else {
             "http://$nodeEndpoint"
         }
-        nodeEndpoint = nodeEndpoint + "/" +
-                RequestResponder.PARAM_FILE_REQUEST_URL
+        if(!nodeEndpoint.endsWith("/")){
+            nodeEndpoint += "/"
+        }
+        nodeEndpoint += AvailabilityResponder.PARAM_FILE_REQUEST_URL
 
         var connection: HttpURLConnection? = null
 
@@ -49,20 +48,48 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
 
 
 
-        val fileAvailableResponses: List<RequestResponder.FileAvailableResponse>? =
+        println("Retriever: 1")
+        val fileAvailableResponses: List<AvailabilityResponder.FileAvailableResponse>? =
           try{
+              println("Retriever: 2")
+              val os: OutputStream = connection.outputStream
+              println("Retriever: 2a")
+              os.write(bodyByteArray, 0, bodyByteArray.size)
+              println("Retriever: 2b")
 
-            connection.outputStream.write(bodyByteArray, 0, bodyByteArray.size)
+              println("Retriever: 2c")
+              os.flush()
 
-            val responseStr = connection.inputStream.bufferedReader().readText()
-            val responseEntryList =
-             Gson().fromJson<List<RequestResponder.FileAvailableResponse>>(
-                responseStr,
-                object : TypeToken<List<RequestResponder.FileAvailableResponse>>() {
-                }.type
-            )
+              //connection.outputStream.write(bodyByteArray, 0, bodyByteArray.size)
+              connection.outputStream.flush()
+              println("Retriever: 2d")
+              connection.outputStream.close()
+              os.close()
 
-            responseEntryList
+
+              println("Retriever: 3")
+              connection.connect()
+              println("Retriever: 4")
+
+//              val bos = ByteArrayOutputStream()
+//              val bis = BufferedInputStream(connection.inputStream)
+//              var nextByte = bis.read()
+//              while(nextByte != -1){
+//                  bos.write(nextByte)
+//              }
+//              val responseString = bos.toString(nextByte)
+
+              println("Retriever: 5")
+              val responseStr = connection.inputStream.bufferedReader().readText()
+              println("Retriever: 6")
+              val responseEntryList =
+               Gson().fromJson<List<AvailabilityResponder.FileAvailableResponse>>(
+                  responseStr,
+                    object : TypeToken<List<AvailabilityResponder.FileAvailableResponse>>() {
+                    }.type
+               )
+
+                responseEntryList
 
 
          } catch (e: IOException) {

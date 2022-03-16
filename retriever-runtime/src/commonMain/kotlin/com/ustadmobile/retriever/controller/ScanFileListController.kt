@@ -1,10 +1,9 @@
 package com.ustadmobile.retriever.controller
 
 import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
-import com.ustadmobile.retriever.*
-import com.ustadmobile.retriever.checksumproviders.IgnoreChecksumProvider
+import com.ustadmobile.retriever.AvailabilityObserver
+import com.ustadmobile.retriever.Retriever
+import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.view.ScanFileListView
 import kotlinx.coroutines.GlobalScope
@@ -19,10 +18,6 @@ class ScanFileListController(
 
     fun onCreate(){
         view.watchList = db.availabilityObserverItemDao.getWatchListLive()
-
-        GlobalScope.launch {
-            retriever.forceStartJob()
-        }
     }
 
 
