@@ -32,13 +32,15 @@ actual class MultiItemFetcher(
         //Validate input here
 
         var firstFileTmp: File? = null
+        val firstFile = DoorUri.parse(downloadJobItems[0].djiDestPath!!).toFile()
+        val urlToJobItemMap = downloadJobItems.associateBy { it.djiOriginUrl }
+
         try {
             val url = endpointUrl.requirePostfix("/") + "zipped"
             val originUrlsList = JsonArray(downloadJobItems.map { JsonPrimitive(it.djiOriginUrl) })
             val jobItemUrlMap = downloadJobItems.associateBy { it.djiOriginUrl!! }
 
 
-            val firstFile = DoorUri.parse(downloadJobItems[0].djiDestPath!!).toFile()
             //move first file out of the way, otherwise the extractor will attempt
             val firstFileZipHeader = File(firstFile.parentFile, "${firstFile.name}.zipentry")
             val bytesAlreadyDownloaded = firstFile.length()
@@ -60,6 +62,12 @@ actual class MultiItemFetcher(
                         it.writeToFile(firstFileZipHeader)
                     }
                 }
+
+                firstFileTmp = File(firstFile.parentFile, firstFile.name + ".tmp")
+
+                //now try and move the first file itself
+                if(!firstFile.renameTo(firstFileTmp))
+                    throw IOException("Could not rename $firstFile to $firstFileTmp")
             }
 
             val request = Request.Builder()
@@ -67,8 +75,8 @@ actual class MultiItemFetcher(
                 .method("POST", json.encodeToString(JsonArray.serializer(), originUrlsList)
                     .toRequestBody(contentType = "application/json".toMediaType()))
                 .apply {
-                    if(bytesAlreadyDownloaded > 0)
-                        addHeader("range", "bytes=${firstFileZipHeader.length() + firstFile.length()}-")
+                    if(firstFileTmp != null)
+                        addHeader("range", "bytes=${firstFileZipHeader.length() + firstFileTmp.length()}-")
                 }
                 .build()
 
@@ -85,23 +93,10 @@ actual class MultiItemFetcher(
                         ?: throw IllegalArgumentException("Unexpected entry in result stream: ${it.name}")
                 }
 
-                //val bodyBytes = body.byteStream().readAllBytes()
-                val headerBytes = firstFileZipHeader.readBytes()
-                val firstFileBytes = FileInputStream(firstFile).use {
-                    it.readAllBytes()
-                } //firstFile.readBytes()
-
-                //TODO: this should be possible with sequence
-                val bout = ByteArrayOutputStream()
-                bout.write(headerBytes)
-                bout.write(firstFileBytes)
-                //bout.write(bodyBytes)
-                bout.flush()
-
-                val sourceInput = if(bytesAlreadyDownloaded > 0) {
+                val sourceInput = if(firstFileTmp != null) {
                     SequenceInputStream(Vector<InputStream>(3).apply {
                         addElement(FileInputStream(firstFileZipHeader))
-                        addElement(ByteArrayInputStream(firstFileBytes)) //Using fileinputstream here will cause this to fail?
+                        addElement(FileInputStream(firstFileTmp))
                         addElement(body.byteStream())
                     }.elements())
                 }else {
@@ -109,7 +104,10 @@ actual class MultiItemFetcher(
                 }
 
                 ZipInputStream(sourceInput).use { zipIn ->
-                    zipIn.extractToDir(destFileProvider)
+                    zipIn.extractToDir(destFileProvider) { entry, bytesSoFar, totalBytes ->
+                        fetchProgressListener.onFetchProgress(FetchProgressEvent(
+                            urlToJobItemMap[entry.name]?.djiUid ?: 0, bytesSoFar, totalBytes))
+                    }
                 }
 
                 response.code
@@ -118,6 +116,9 @@ actual class MultiItemFetcher(
             return FetchResult(responseCode)
         }catch (e: Exception) {
             throw e
+        }finally {
+            if(firstFileTmp?.exists() == true && firstFile.exists())
+                firstFileTmp.delete()
         }
 
     }
