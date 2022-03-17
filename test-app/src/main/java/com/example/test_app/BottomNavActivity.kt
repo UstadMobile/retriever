@@ -21,7 +21,7 @@ class BottomNavActivity : AppCompatActivity(){
         retriever = RetrieverBuilderAndroid
             .builder(applicationContext, "UstadRetriever")
             .build()
-        (retriever as RetrieverAndroidImpl).startNSD()
+        //(retriever as RetrieverAndroidImpl).startNSD()
 
         val localFragment = LocalFileListFragment(retriever)
         val scanFragment = ScanFileListFragment(retriever)

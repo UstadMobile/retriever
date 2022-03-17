@@ -48,40 +48,16 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
 
 
 
-        println("Retriever: 1")
         val fileAvailableResponses: List<AvailabilityResponder.FileAvailableResponse>? =
           try{
-              println("Retriever: 2")
               val os: OutputStream = connection.outputStream
-              println("Retriever: 2a")
               os.write(bodyByteArray, 0, bodyByteArray.size)
-              println("Retriever: 2b")
-
-              println("Retriever: 2c")
               os.flush()
-
-              //connection.outputStream.write(bodyByteArray, 0, bodyByteArray.size)
               connection.outputStream.flush()
-              println("Retriever: 2d")
               connection.outputStream.close()
               os.close()
-
-
-              println("Retriever: 3")
               connection.connect()
-              println("Retriever: 4")
-
-//              val bos = ByteArrayOutputStream()
-//              val bis = BufferedInputStream(connection.inputStream)
-//              var nextByte = bis.read()
-//              while(nextByte != -1){
-//                  bos.write(nextByte)
-//              }
-//              val responseString = bos.toString(nextByte)
-
-              println("Retriever: 5")
               val responseStr = connection.inputStream.bufferedReader().readText()
-              println("Retriever: 6")
               val responseEntryList =
                Gson().fromJson<List<AvailabilityResponder.FileAvailableResponse>>(
                   responseStr,
