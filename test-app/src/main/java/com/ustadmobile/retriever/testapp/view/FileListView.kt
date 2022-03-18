@@ -1,9 +1,9 @@
-package com.ustadmobile.retriever.view
+package com.ustadmobile.retriever.testapp.view
 
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 
-interface LocalFileListView{
+interface FileListView{
 
     var localFileList: DoorDataSourceFactory<Int, LocallyStoredFile>?
 

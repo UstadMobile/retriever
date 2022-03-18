@@ -1,11 +1,11 @@
-package com.ustadmobile.retriever.controller
+package com.ustadmobile.retriever.testapp.controller
 
 import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
 import com.ustadmobile.retriever.AvailabilityObserver
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.view.ScanFileListView
+import com.ustadmobile.retriever.testapp.view.ScanFileListView
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 

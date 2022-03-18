@@ -21,7 +21,6 @@ import androidx.lifecycle.Observer
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.ustadmobile.retriever.testapp.R
 import com.ustadmobile.retriever.testapp.databinding.FragmentNodeListBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
@@ -29,9 +28,8 @@ import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
-import com.ustadmobile.retriever.RetrieverCommon
-import com.ustadmobile.retriever.controller.NodeListController
-import com.ustadmobile.retriever.view.NodeListView
+import com.ustadmobile.retriever.testapp.controller.NodeListController
+import com.ustadmobile.retriever.testapp.view.NodeListView
 import io.github.aakira.napier.Napier
 import org.kodein.di.DI
 import org.kodein.di.DIAware

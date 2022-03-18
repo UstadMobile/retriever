@@ -6,7 +6,7 @@
 
     <fragment
         android:id="@+id/local_dest"
-        android:name="com.ustadmobile.retriever.testapp.LocalFileListFragment"
+        android:name="com.ustadmobile.retriever.testapp.FileListFragment"
         android:label="@string/local"/>
 
     <fragment
@@ -18,5 +18,10 @@
         android:id="@+id/nodes_dest"
         android:name="com.ustadmobile.retriever.testapp.NodeListFragment"
         android:label="@string/nodes"/>
+
+    <fragment
+        android:id="@+id/filedownload_dest"
+        android:name="com.ustadmobile.retriever.testapp.FileDownloadFragment"
+        android:label="@string/download"/>
 
 </navigation>

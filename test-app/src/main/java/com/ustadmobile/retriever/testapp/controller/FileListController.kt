@@ -1,9 +1,8 @@
-package com.ustadmobile.retriever.controller
+package com.ustadmobile.retriever.testapp.controller
 
-import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.view.LocalFileListView
+import com.ustadmobile.retriever.testapp.view.FileListView
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -11,10 +10,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 
-class LocalFileListController(
+class FileListController(
     context: Any,
     val db: RetrieverDatabase,
-    val view: LocalFileListView
+    val view: FileListView
 ) {
 
     fun onCreate(){
@@ -47,7 +46,7 @@ class LocalFileListController(
         return try {
             conn = url.openConnection() as HttpURLConnection
             conn.setRequestMethod("HEAD")
-            conn.getContentLengthLong()
+            conn.getHeaderField("content-length")?.toLong() ?: -1L
         } catch (e: IOException) {
             throw RuntimeException(e)
         } catch (e: Throwable){

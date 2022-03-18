@@ -1,10 +1,7 @@
-package com.ustadmobile.retriever.controller
+package com.ustadmobile.retriever.testapp.controller
 
-import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.view.NodeListView
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import com.ustadmobile.retriever.testapp.view.NodeListView
 
 
 class NodeListController(context: Any, val db: RetrieverDatabase, val view: NodeListView) {

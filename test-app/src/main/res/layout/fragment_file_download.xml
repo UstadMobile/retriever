@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable name="downloadUrl" type="String"/>
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entry_import_link_textInput"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                app:errorEnabled="true"
+                app:hintEnabled="true"
+                app:helperText=""
+                app:layout_constraintStart_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/entry_import_link_editText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/enter_url"
+                    android:text="@={downloadUrl}"
+                    android:imeOptions="actionGo"
+                    android:inputType="text" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/entry_import_link_next_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:backgroundTint="?colorSecondary"
+                android:textColor="?colorOnSecondary"
+
+                android:padding="20dp"
+                android:text="@string/download"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/entry_import_link_textInput"
+        />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

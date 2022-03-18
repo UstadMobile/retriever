@@ -16,14 +16,13 @@ import androidx.lifecycle.Observer
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.ustadmobile.retriever.testapp.R
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
 import com.ustadmobile.retriever.*
-import com.ustadmobile.retriever.controller.ScanFileListController
+import com.ustadmobile.retriever.testapp.controller.ScanFileListController
 import com.ustadmobile.retriever.testapp.databinding.FragmentScanFileListBinding
-import com.ustadmobile.retriever.view.ScanFileListView
+import com.ustadmobile.retriever.testapp.view.ScanFileListView
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance

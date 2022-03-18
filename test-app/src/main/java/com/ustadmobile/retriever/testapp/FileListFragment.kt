@@ -19,20 +19,19 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.ustadmobile.retriever.testapp.R
-import com.ustadmobile.retriever.testapp.databinding.FragmentLocalFileListBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.Retriever
-import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.RetrieverAndroidImpl
-import com.ustadmobile.retriever.controller.LocalFileListController
-import com.ustadmobile.retriever.view.LocalFileListView
+import com.ustadmobile.retriever.testapp.controller.FileListController
+import com.ustadmobile.retriever.testapp.databinding.FragmentFileListBinding
+import com.ustadmobile.retriever.testapp.view.FileListView
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
@@ -44,13 +43,13 @@ interface ClickAddLocalFile{
     fun onClickAddFromUrl()
 }
 
-class LocalFileListFragment(): Fragment(), LocalFileListView, ClickAddLocalFile, FileListener, DIAware {
+class FileListFragment(): Fragment(), FileListView, ClickAddLocalFile, FileListener, DIAware {
 
     override val di: DI by closestDI()
 
-    private lateinit var binding: FragmentLocalFileListBinding
+    private lateinit var binding: FragmentFileListBinding
 
-    private lateinit var controller: LocalFileListController
+    private lateinit var controller: FileListController
 
     private lateinit var localFileListRecyclerView: RecyclerView
 
@@ -92,7 +91,7 @@ class LocalFileListFragment(): Fragment(), LocalFileListView, ClickAddLocalFile,
     ): View? {
 
         val rootView: View
-        binding = FragmentLocalFileListBinding.inflate(inflater, container, false).also{
+        binding = FragmentFileListBinding.inflate(inflater, container, false).also{
             rootView = it.root
             it.listener = this
         }
@@ -104,23 +103,13 @@ class LocalFileListFragment(): Fragment(), LocalFileListView, ClickAddLocalFile,
 
         localFileListRecyclerView.adapter = localFileListRecyclerAdapter
 
-        controller = LocalFileListController(requireContext(), (retriever as RetrieverAndroidImpl).database, this)
+        controller = FileListController(requireContext(), (retriever as RetrieverAndroidImpl).database, this)
         controller.onCreate()
 
         val fab: FloatingActionButton = rootView.findViewById(R.id.fragment_local_file_list_fab_add)
 
         fab.setOnClickListener {
-
-            fabClicked = if (fabClicked) {
-                fab.animate().rotation(-90f)
-                showFabItems(rootView, View.GONE)
-                false
-
-            } else {
-                fab.animate().rotation(45f)
-                showFabItems(rootView, View.VISIBLE)
-                true
-            }
+            findNavController().navigate(R.id.filedownload_dest)
         }
         return rootView
 
