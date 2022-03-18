@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/mobile_navigation"
+            app:startDestination="@id/local_dest">
+
+    <fragment
+        android:id="@+id/local_dest"
+        android:name="com.ustadmobile.retriever.testapp.LocalFileListFragment"
+        android:label="@string/local"/>
+
+    <fragment
+        android:id="@+id/scan_dest"
+        android:name="com.ustadmobile.retriever.testapp.ScanFileListFragment"
+        android:label="@string/scan"/>
+
+    <fragment
+        android:id="@+id/nodes_dest"
+        android:name="com.ustadmobile.retriever.testapp.NodeListFragment"
+        android:label="@string/nodes"/>
+
+</navigation>

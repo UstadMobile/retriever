@@ -20,21 +20,24 @@ import com.ustadmobile.retriever.testapp.R
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
-import com.ustadmobile.retriever.AvailabilityObserver
-import com.ustadmobile.retriever.OnAvailabilityChanged
-import com.ustadmobile.retriever.RetrieverCommon
-import com.ustadmobile.retriever.RetrieverAndroidImpl
+import com.ustadmobile.retriever.*
 import com.ustadmobile.retriever.controller.ScanFileListController
 import com.ustadmobile.retriever.testapp.databinding.FragmentScanFileListBinding
 import com.ustadmobile.retriever.view.ScanFileListView
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.closestDI
+import org.kodein.di.instance
 
 
 interface ClickAddScan{
     fun onClickAddFromUrl()
 }
 
-class ScanFileListFragment(val retriever: RetrieverCommon): Fragment(), ScanFileListView,
-    ClickAddScan, WatchListListener {
+class ScanFileListFragment(): Fragment(), ScanFileListView, ClickAddScan, WatchListListener, DIAware {
+
+    override val di by closestDI()
+
+    private val retriever: Retriever by instance()
 
     private lateinit var binding: FragmentScanFileListBinding
 
@@ -145,7 +148,7 @@ class ScanFileListFragment(val retriever: RetrieverCommon): Fragment(), ScanFile
                     availabilityChanged
                 )
 
-            controller.addToAvailabilityObserver(retriever, availabilityObserver)
+            controller.addToAvailabilityObserver(retriever as RetrieverCommon, availabilityObserver)
 
             dialog.dismiss()
         }

@@ -28,10 +28,15 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.LocalFileListController
 import com.ustadmobile.retriever.view.LocalFileListView
+import org.kodein.di.DI
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.closestDI
+import org.kodein.di.instance
 
 
 interface ClickAddLocalFile{
@@ -39,8 +44,9 @@ interface ClickAddLocalFile{
     fun onClickAddFromUrl()
 }
 
-class LocalFileListFragment(val retriever: RetrieverCommon): Fragment(), LocalFileListView,
-    ClickAddLocalFile, FileListener {
+class LocalFileListFragment(): Fragment(), LocalFileListView, ClickAddLocalFile, FileListener, DIAware {
+
+    override val di: DI by closestDI()
 
     private lateinit var binding: FragmentLocalFileListBinding
 
@@ -51,6 +57,8 @@ class LocalFileListFragment(val retriever: RetrieverCommon): Fragment(), LocalFi
     private var localFileListLiveData: LiveData<PagedList<LocallyStoredFile>>? = null
 
     private var localFileListRecyclerAdapter : FilesRecyclerAdapter? = null
+
+    private val retriever: Retriever by instance()
 
     private val localFileListObserver = Observer<PagedList<LocallyStoredFile>?>{ t->
         run{

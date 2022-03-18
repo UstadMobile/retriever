@@ -6,6 +6,8 @@ import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.MultiItemFetcher
 import com.ustadmobile.retriever.fetcher.SingleItemFetcher
 import io.ktor.client.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 
@@ -24,13 +26,13 @@ class RetrieverBuilderAndroid private constructor(
         val db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class, DB_NAME)
             .build()
 
-        //TODO: delete all old nodes and old responses
+        GlobalScope.launch {
+            db.networkNodeDao.clearAllNodes()
+            db.availabilityResponseDao.clearAllResponses()
+        }
 
-
-        val availabilityChecker: AvailabilityCheckerAndroidImpl = AvailabilityCheckerAndroidImpl(db)
-        return RetrieverAndroidImpl(db, nsdServiceName, context, availabilityChecker, SingleItemFetcher(okHttpClient),
-            MultiItemFetcher(okHttpClient, json))
-
+        return RetrieverAndroidImpl(db, nsdServiceName, context, AvailabilityCheckerAndroidImpl(db),
+            SingleItemFetcher(okHttpClient), MultiItemFetcher(okHttpClient, json))
     }
 
     companion object {

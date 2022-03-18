@@ -27,18 +27,25 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.controller.NodeListController
 import com.ustadmobile.retriever.view.NodeListView
 import io.github.aakira.napier.Napier
+import org.kodein.di.DI
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.closestDI
+import org.kodein.di.instance
 
 interface ClickAddNode{
     fun clickAddNote()
 }
-class NodeListFragment(val retriever: RetrieverCommon):
-    Fragment(), NodeListView, NodeListener, ClickAddNode {
+class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, DIAware {
 
+    override val di: DI by closestDI()
+
+    private val retriever: Retriever by instance()
 
     private lateinit var controller: NodeListController
 
@@ -174,6 +181,8 @@ class NodeListFragment(val retriever: RetrieverCommon):
             }, null)
     }
 
+
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode){
             BT_ON_REQUEST_CODE ->when(resultCode){
@@ -182,14 +191,13 @@ class NodeListFragment(val retriever: RetrieverCommon):
                         data?.getParcelableExtra(CompanionDeviceManager.EXTRA_DEVICE)
 
                     if(deviceToPair?.address != null) {
-
-
-                        retriever.addNewNode(
-                            NetworkNode(
-                                deviceToPair.name + ":" + deviceToPair.address,
-                                deviceToPair.address,
-                                System.currentTimeMillis()
-                        ))
+                        //Note: 18/Mar/22 this has been disabled - should be done via the retriever interface itself
+//                        retriever.addNewNode(
+//                            NetworkNode(
+//                                deviceToPair.name + ":" + deviceToPair.address,
+//                                deviceToPair.address,
+//                                System.currentTimeMillis()
+//                        ))
 
                     }
                     Napier.d("P2P selected")
@@ -216,11 +224,10 @@ class NodeListFragment(val retriever: RetrieverCommon):
     }
 
     override fun onDeleteNode(node: NetworkNode) {
-
-        val endpointUrl = node.networkNodeEndpointUrl
-        if(!endpointUrl.isNullOrEmpty()){
-            retriever.updateNetworkNodeLost(endpointUrl)
-        }
+//        val endpointUrl = node.networkNodeEndpointUrl
+//        if(!endpointUrl.isNullOrEmpty()){
+//            retriever.updateNetworkNodeLost(endpointUrl)
+//        }
     }
 
     override fun clickAddNote() {

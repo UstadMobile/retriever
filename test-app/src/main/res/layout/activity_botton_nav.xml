@@ -22,24 +22,27 @@
                 android:id="@+id/activity_bottom_nav_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Retriever"
                 app:title="Retriever"
                 android:theme="?attr/actionBarTheme"
                 />
         </com.google.android.material.appbar.AppBarLayout>
 
 
-        <FrameLayout
-            android:id="@+id/activity_bottom_nav_fl"
-            android:layout_width="match_parent"
+        <androidx.fragment.app.FragmentContainerView
+            android:layout_width="0dp"
             android:layout_height="0dp"
+            android:name="androidx.navigation.fragment.NavHostFragment"
+            android:id="@+id/activity_navhost_fragment"
             app:layout_constraintBottom_toTopOf="@+id/activity_bottom_nav_bottomnav"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/activity_bottom_nav_app_bar" >
+            app:layout_constraintTop_toBottomOf="@+id/activity_bottom_nav_app_bar"
+            app:defaultNavHost="true"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            app:navGraph="@navigation/mobile_navigation"
+        />
 
-        </FrameLayout>
 
 
         <com.google.android.material.bottomnavigation.BottomNavigationView

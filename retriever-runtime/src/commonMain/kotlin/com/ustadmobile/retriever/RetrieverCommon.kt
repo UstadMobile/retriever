@@ -24,7 +24,7 @@ abstract class RetrieverCommon(
         GlobalScope.launch {
             //Check if doesn't already exist. Else update time discovered
             if (db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl ?: "")
-                    .isNullOrEmpty()
+                    .isEmpty()
             ) {
                 networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
                 db.networkNodeDao.insert(networkNode)
@@ -41,7 +41,7 @@ abstract class RetrieverCommon(
             }
 
             println("Retriever: Sending Signal ..")
-            availabilityManager.checkQueueSignalChannel.trySend(true)
+            availabilityManager.checkQueue()
         }
     }
 

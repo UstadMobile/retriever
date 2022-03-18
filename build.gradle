@@ -99,6 +99,8 @@ ext {
     version_android_room = "2.4.0-rc01"
 
     version_klock = "2.0.7"
+
+    version_android_navigation = "2.3.5"
 }
 
 allprojects {

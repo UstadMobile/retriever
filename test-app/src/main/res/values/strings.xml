@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name">test-app</string>
+    <string name="app_name">Retriever</string>
     <string name="test_title">Testing the library (wip)</string>
     <string name="large_text"></string>
     <string name="action_settings">Settings</string>
-    <string name="enter_url">Enter a URL to save it locally"</string>
-    <string name="enter_url_to_scan">Enter a URL to scan it"</string>
+    <string name="enter_url">Enter a URL to save it locally</string>
+    <string name="enter_url_to_scan">Enter a URL to scan it</string>
     <string name="ok">Ok</string>
     <string name="cancel">Cancel</string>
     <string name="quick_fill">Quick fill url with:</string>
@@ -15,4 +15,6 @@
     <string name="scan">Scan</string>
     <string name="add_url">Add URL</string>
     <string name="add_bluetooth_node">Scan and add via Bluetooth</string>
+    <string name="local">Local</string>
+    <string name="nodes">Nodes</string>
 </resources>

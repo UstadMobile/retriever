@@ -11,12 +11,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
-import kotlin.jvm.Volatile
 
 
 class AvailabilityManager(
     val database: RetrieverDatabase,
-    val availabilityChecker: AvailabilityChecker,
+    private val availabilityChecker: AvailabilityChecker,
     coroutineScope: CoroutineScope = GlobalScope,
 ) {
 
@@ -26,7 +25,7 @@ class AvailabilityManager(
      * Sending anything on this channel will result in one queue check. If there is an available
      * processor, one new item will be started.
      */
-    internal val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
+    private val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
 
     @ExperimentalCoroutinesApi
     private val jobItemProducer : ReceiveChannel<AvailabilityCheckJob>
@@ -124,7 +123,7 @@ class AvailabilityManager(
         // for every node id
         for(item in channel){
             try {
-                Napier.d("AvailabilityManager: item networkid: " +  item.networkNode.networkNodeId)
+                Napier.d("AvailabilityManager $id: item networkid: " +  item.networkNode.networkNodeId)
 
                 //Returns result<String, Boolean> and networkNodeId
                 val availabilityCheckerResult : AvailabilityCheckerResult=
