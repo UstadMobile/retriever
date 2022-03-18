@@ -15,7 +15,7 @@
         
         <variable
             name="listener"
-            type="com.example.test_app.FileListener" />
+            type="com.ustadmobile.retriever.testapp.FileListener" />
 
     </data>
 

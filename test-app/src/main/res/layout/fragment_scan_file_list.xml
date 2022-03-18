@@ -7,7 +7,7 @@
 
         <variable
             name="listener"
-            type="com.example.test_app.ClickAddScan" />
+            type="com.ustadmobile.retriever.testapp.ClickAddScan" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

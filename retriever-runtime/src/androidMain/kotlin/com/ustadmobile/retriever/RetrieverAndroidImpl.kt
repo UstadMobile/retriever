@@ -6,6 +6,8 @@ import android.net.nsd.NsdServiceInfo
 import com.soywiz.klock.DateTime
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.fetcher.MultiItemFetcher
+import com.ustadmobile.retriever.fetcher.SingleItemFetcher
 import com.ustadmobile.retriever.responder.AvailabilityResponder
 import java.net.InetAddress
 import fi.iki.elonen.NanoHTTPD
@@ -20,11 +22,10 @@ class RetrieverAndroidImpl internal constructor(
         db: RetrieverDatabase,
         nsdServiceName: String,
         private val applicationContext: Context,
-        availabilityChecker: AvailabilityChecker
-    ): RetrieverCommon(db, nsdServiceName, availabilityChecker
-) {
-
-
+        availabilityChecker: AvailabilityChecker,
+        singleItemFetcher: SingleItemFetcher,
+        multiItemFetcher: MultiItemFetcher,
+): RetrieverCommon(db, nsdServiceName, availabilityChecker, singleItemFetcher, multiItemFetcher) {
 
     val database = db
 
@@ -188,7 +189,7 @@ class RetrieverAndroidImpl internal constructor(
             AvailabilityResponder::class.java,
             db
         )
-        server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
+        server.start()
 
         val serviceInfo = NsdServiceInfo().apply{
             serviceName = nsdServiceName
@@ -201,13 +202,6 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
-
-        GlobalScope.launch {
-            availabilityManager.runJob()
-        }
-
-
-
     }
 
     override suspend fun retrieve(retrieverRequests: List<RetrieverRequest>, progressListener: ProgressListener) {

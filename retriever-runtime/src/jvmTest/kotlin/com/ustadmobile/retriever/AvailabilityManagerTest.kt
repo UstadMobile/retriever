@@ -2,19 +2,13 @@ package com.ustadmobile.retriever
 
 import com.soywiz.klock.DateTime
 import com.ustadmobile.door.DatabaseBuilder
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.db.dao.AvailabilityObserverItemDao
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.CALLS_REAL_METHODS
 import org.mockito.kotlin.*
-import kotlin.random.Random
 
 /**
  * JVM Test
@@ -62,17 +56,13 @@ class AvailabilityManagerTest {
         db.clearAllTables()
 
         //Add Nodes
-        if(db.networkNodeDao.findAllActiveNodes().isEmpty()){
-            db.networkNodeDao.insertList(defaultNetworkNodeList)
-        }
-
-        //availabilityChecker = AvailabilityCheckerAndroidImpl(db)
+        db.networkNodeDao.insertList(defaultNetworkNodeList)
 
         availabilityChecker = mock {
             (0..4).forEach {
                 onBlocking {
                     checkAvailability(
-                        argThat{networkNodeId == defaultNetworkNodeList[it].networkNodeId} ,
+                        argThat{ networkNodeId == defaultNetworkNodeList[it].networkNodeId} ,
                         any())
                 }.thenReturn(AvailabilityCheckerResult(
                     nodeAvailabilityMaps[it], defaultNetworkNodeList[it].networkNodeId))
@@ -85,13 +75,16 @@ class AvailabilityManagerTest {
         availabilityManager = AvailabilityManager(db, availabilityChecker)
     }
 
+    fun tearDown() {
+        availabilityManager.close()
+    }
+
     @Test
     fun givenNetworkNodesDiscoveredAndFilesRequested_thenRightInfoGottenFromDbAndObserverCalled(){
 
         //Add to the watch list and call runJob
-        GlobalScope.launch {
+        runBlocking {
             availabilityManager.addAvailabilityObserver(availabilityObserver)
-            availabilityManager.runJob()
         }
 
 
@@ -102,6 +95,15 @@ class AvailabilityManagerTest {
                 .onAvailabilityChanged(argWhere {
                 it.networkNodeUid == networkNode.networkNodeId
             })
+        }
+
+
+        defaultNetworkNodeList.forEach { networkNode ->
+            verifyBlocking(availabilityChecker, timeout(1000)) {
+                checkAvailability(
+                    argWhere { it.networkNodeEndpointUrl == networkNode.networkNodeEndpointUrl },
+                    argWhere { it.containsAll(testOriginUrls) })
+            }
         }
 
         //Verify for onAvailabilityChanged event was called for every Node and its result matches

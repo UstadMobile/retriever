@@ -1,4 +1,4 @@
-package com.example.test_app
+package com.ustadmobile.retriever.testapp
 
 import android.Manifest
 import android.app.AlertDialog
@@ -16,7 +16,7 @@ import androidx.lifecycle.Observer
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.test_app.databinding.FragmentScanFileListBinding
+import com.ustadmobile.retriever.testapp.R
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
@@ -25,6 +25,7 @@ import com.ustadmobile.retriever.OnAvailabilityChanged
 import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.controller.ScanFileListController
+import com.ustadmobile.retriever.testapp.databinding.FragmentScanFileListBinding
 import com.ustadmobile.retriever.view.ScanFileListView
 
 

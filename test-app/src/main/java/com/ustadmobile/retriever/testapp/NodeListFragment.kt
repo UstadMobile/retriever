@@ -1,4 +1,4 @@
-package com.example.test_app
+package com.ustadmobile.retriever.testapp
 
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
@@ -6,11 +6,9 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.companion.AssociationRequest
 import android.companion.BluetoothDeviceFilter
-import android.companion.BluetoothLeDeviceFilter
 import android.companion.CompanionDeviceManager
 import android.content.*
 import android.os.Bundle
-import android.os.ParcelUuid
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,25 +21,23 @@ import androidx.lifecycle.Observer
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.test_app.databinding.FragmentNodeListBinding
+import com.ustadmobile.retriever.testapp.R
+import com.ustadmobile.retriever.testapp.databinding.FragmentNodeListBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.controller.NodeListController
 import com.ustadmobile.retriever.view.NodeListView
 import io.github.aakira.napier.Napier
-import java.util.*
-import java.util.regex.Pattern
 
 interface ClickAddNode{
     fun clickAddNote()
 }
 class NodeListFragment(val retriever: RetrieverCommon):
-    Fragment(), NodeListView, NodeListener, ClickAddNode{
+    Fragment(), NodeListView, NodeListener, ClickAddNode {
 
 
     private lateinit var controller: NodeListController

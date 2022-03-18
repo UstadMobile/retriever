@@ -15,7 +15,7 @@
         
         <variable
             name="listener"
-            type="com.example.test_app.WatchListListener" />
+            type="com.ustadmobile.retriever.testapp.WatchListListener" />
 
     </data>
 

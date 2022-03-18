@@ -1,4 +1,4 @@
-package com.example.test_app
+package com.ustadmobile.retriever.testapp
 
 import android.Manifest
 import android.app.AlertDialog
@@ -22,7 +22,8 @@ import androidx.lifecycle.Observer
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.test_app.databinding.FragmentLocalFileListBinding
+import com.ustadmobile.retriever.testapp.R
+import com.ustadmobile.retriever.testapp.databinding.FragmentLocalFileListBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData

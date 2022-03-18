@@ -1,11 +1,11 @@
-package com.example.test_app
+package com.ustadmobile.retriever.testapp
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.example.test_app.databinding.ItemFileBinding
+import com.ustadmobile.retriever.testapp.databinding.ItemFileBinding
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 
 interface FileListener{

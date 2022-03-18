@@ -16,7 +16,8 @@ import kotlin.jvm.Volatile
 
 class AvailabilityManager(
     val database: RetrieverDatabase,
-    val availabilityChecker: AvailabilityChecker
+    val availabilityChecker: AvailabilityChecker,
+    coroutineScope: CoroutineScope = GlobalScope,
 ) {
 
     private val numProcessors: Int = DEFAULT_NUM_PROCESSORS
@@ -26,18 +27,28 @@ class AvailabilityManager(
      * processor, one new item will be started.
      */
     internal val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
-    private val activeNetworkNodeIds = concurrentSafeListOf<Long>()
 
     @ExperimentalCoroutinesApi
-    @Volatile
-    private var jobItemProducer : ReceiveChannel<AvailabilityCheckJob>? = null
-
+    private val jobItemProducer : ReceiveChannel<AvailabilityCheckJob>
 
     data class AvailabilityCheckJob(val networkNode: NetworkNode, val fileUrls: List<String>)
 
     private val availabilityObserverAtomicId = atomic(0)
 
     private val availabilityObservers = mutableMapOf<Int, AvailabilityObserver>()
+
+    private val checkJobsInProgress = concurrentSafeListOf<AvailabilityCheckJob>()
+
+    init {
+        jobItemProducer = coroutineScope.produceJobs()
+        coroutineScope.launch {
+            repeat(numProcessors) {
+                launchProcessor(it, jobItemProducer)
+            }
+
+            checkQueueSignalChannel.send(true)
+        }
+    }
 
     /**
      * Adds an observer information to the watch list database(AvailabilityObserverItem)
@@ -76,12 +87,13 @@ class AvailabilityManager(
         println("Retriever: AvailabilityManager :  produceJobs() called ..")
         do{
             checkQueueSignalChannel.receive()
-            val numProcessorsAvailable = numProcessors - activeNetworkNodeIds.size
 
+            val inProgressEndpoints = checkJobsInProgress.mapNotNull { it.networkNode.networkNodeEndpointUrl }
             //Get all available items(files) that are pending (no response of)
             val pendingItems : List<AvailabilityObserverItemWithNetworkNode> =
-                database.availabilityObserverItemDao.findPendingItems()
-
+                database.availabilityObserverItemDao.findPendingItems().filter {
+                    it.networkNode.networkNodeEndpointUrl !in inProgressEndpoints
+                }
 
             println("Retriever: AvailabilityManager :  produceJobs(): " + pendingItems.size + " pendingItems.")
 
@@ -90,10 +102,10 @@ class AvailabilityManager(
 
             //Use kotlin to group by networknode uid
             pendingItems.groupBy { it.networkNode.networkNodeId }.forEach {
-                send(
-                    AvailabilityCheckJob(it.value.first().networkNode,
+                val availabilityCheckJob = AvailabilityCheckJob(it.value.first().networkNode,
                     it.value.map{it.aoiOriginalUrl?:""})
-                )
+                checkJobsInProgress += availabilityCheckJob
+                send(availabilityCheckJob)
             }
 
         }while(isActive)
@@ -111,51 +123,47 @@ class AvailabilityManager(
         //Runs checkAvailability (that checks availability and populates AvailabilityResponse)
         // for every node id
         for(item in channel){
-            Napier.d("AvailabilityManager: item networkid: " +  item.networkNode.networkNodeId)
+            try {
+                Napier.d("AvailabilityManager: item networkid: " +  item.networkNode.networkNodeId)
 
-            //Returns result<String, Boolean> and networkNodeId
-            val availabilityCheckerResult : AvailabilityCheckerResult=
-                availabilityChecker.checkAvailability(item.networkNode, item.fileUrls)
+                //Returns result<String, Boolean> and networkNodeId
+                val availabilityCheckerResult : AvailabilityCheckerResult=
+                    availabilityChecker.checkAvailability(item.networkNode, item.fileUrls)
 
-            // Add to AvailabilityResponse table
-            val currentTime = systemTimeInMillis()
-            val allResponses = availabilityCheckerResult.result.map {
-                AvailabilityResponse(item.networkNode.networkNodeId, it.key, it.value, currentTime)
-            }
+                // Add to AvailabilityResponse table
+                val currentTime = systemTimeInMillis()
+                val allResponses = availabilityCheckerResult.result.map {
+                    AvailabilityResponse(item.networkNode.networkNodeId, it.key, it.value, currentTime)
+                }
 
-            database.availabilityResponseDao.insertList(allResponses)
+                database.availabilityResponseDao.insertList(allResponses)
 
-            val affectedResult: List<FileAvailabilityWithListener> =
-                database.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime)
-            affectedResult.groupBy {
-                it.listenerUid
-            }.forEach {
-                val fileAvailabilityResultMap = it.value.map {
-                    it.fileUrl to it.available
-                }.toMap()
-                availabilityObservers[it.key]?.onAvailabilityChanged?.onAvailabilityChanged(
-                    AvailabilityEvent(fileAvailabilityResultMap, item.networkNode.networkNodeId))
+                val affectedResult: List<FileAvailabilityWithListener> =
+                    database.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime)
+                affectedResult.groupBy {
+                    it.listenerUid
+                }.forEach {
+                    val fileAvailabilityResultMap = it.value.map {
+                        it.fileUrl to it.available
+                    }.toMap()
+
+                    availabilityObservers[it.key]?.onAvailabilityChanged?.onAvailabilityChanged(
+                        AvailabilityEvent(fileAvailabilityResultMap, item.networkNode.networkNodeId))
+                }
+            }finally {
+                checkJobsInProgress -= item
+                checkQueueSignalChannel.send(true)
             }
         }
     }
 
 
-    //Auto run externally
-    suspend fun runJob(): Boolean{
+    internal fun checkQueue() {
+        checkQueueSignalChannel.trySend(true)
+    }
 
-        withContext(Dispatchers.Default) {
-            val availability = produceJobs().also {
-                jobItemProducer = it
-            }
-
-            repeat(numProcessors) {
-                launchProcessor(it, availability)
-            }
-
-            checkQueueSignalChannel.send(true)
-        }
-
-        return true
+    fun close() {
+        jobItemProducer.cancel()
     }
 
 

@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 android {
@@ -69,6 +70,19 @@ dependencies {
     implementation "com.ustadmobile.door:door-runtime:$version_door"
 
     implementation "androidx.paging:paging-runtime:$version_androidx_paging"
+
+    implementation "org.kodein.di:kodein-di-framework-android-x:$version_kodein_di"
+
+    implementation "io.ktor:ktor-client-core:$version_ktor"
+    implementation "io.ktor:ktor-client-json:$version_ktor"
+
+    implementation "io.ktor:ktor-client-gson:$version_ktor"
+    implementation "io.ktor:ktor-client-okhttp:$version_ktor"
+    implementation "io.ktor:ktor-client-cio:$version_ktor"
+
+    implementation "com.squareup.okhttp3:okhttp:$version_okhttp"
+
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$version_kotlinx_serialization"
 
     implementation "io.github.aakira:napier:$version_napier"
 }

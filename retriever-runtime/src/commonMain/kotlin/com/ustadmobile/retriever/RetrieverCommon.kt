@@ -3,6 +3,8 @@ package com.ustadmobile.retriever
 import com.soywiz.klock.DateTime
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.fetcher.MultiItemFetcher
+import com.ustadmobile.retriever.fetcher.SingleItemFetcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -10,6 +12,8 @@ abstract class RetrieverCommon(
     protected val db: RetrieverDatabase,
     protected val nsdServiceName: String,
     private val availabilityChecker: AvailabilityChecker,
+    private val singleItemFetcher: SingleItemFetcher,
+    private val multiItemFetcher: MultiItemFetcher,
 ) : Retriever {
 
     protected val availabilityManager = AvailabilityManager(db, availabilityChecker)
@@ -48,10 +52,6 @@ abstract class RetrieverCommon(
         GlobalScope.launch {
             db.networkNodeDao.deleteByEndpointUrl(endpointUrl)
         }
-    }
-
-    override suspend fun forceStartJob(){
-        availabilityManager.runJob()
     }
 
     override suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver) {
