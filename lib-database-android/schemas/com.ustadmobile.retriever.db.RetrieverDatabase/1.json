@@ -2,12 +2,18 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "53c1d2a02a9695c2cc57736a08c69b17",
+    "identityHash": "782e6dd02e9d9618319729453cc7069c",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`availabilityNetworkNode` INTEGER NOT NULL, `availabilityOriginUrl` TEXT NOT NULL, `availabilityAvailable` INTEGER NOT NULL, `availabilityResponseTimeLogged` INTEGER NOT NULL, `availabilityResponseTimeUpdated` INTEGER NOT NULL, PRIMARY KEY(`availabilityOriginUrl`, `availabilityNetworkNode`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`availabilityResponseUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `availabilityNetworkNode` INTEGER NOT NULL, `availabilityOriginUrl` TEXT, `availabilityAvailable` INTEGER NOT NULL, `availabilityResponseTimeLogged` INTEGER NOT NULL, `availabilityResponseTimeUpdated` INTEGER NOT NULL)",
         "fields": [
+          {
+            "fieldPath": "availabilityResponseUid",
+            "columnName": "availabilityResponseUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
           {
             "fieldPath": "availabilityNetworkNode",
             "columnName": "availabilityNetworkNode",
@@ -18,7 +24,7 @@
             "fieldPath": "availabilityOriginUrl",
             "columnName": "availabilityOriginUrl",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "availabilityAvailable",
@@ -41,12 +47,22 @@
         ],
         "primaryKey": {
           "columnNames": [
-            "availabilityOriginUrl",
-            "availabilityNetworkNode"
+            "availabilityResponseUid"
           ],
-          "autoGenerate": false
+          "autoGenerate": true
         },
-        "indices": [],
+        "indices": [
+          {
+            "name": "index_AvailabilityResponse_availabilityOriginUrl_availabilityNetworkNode",
+            "unique": true,
+            "columnNames": [
+              "availabilityOriginUrl",
+              "availabilityNetworkNode"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_AvailabilityResponse_availabilityOriginUrl_availabilityNetworkNode` ON `${TABLE_NAME}` (`availabilityOriginUrl`, `availabilityNetworkNode`)"
+          }
+        ],
         "foreignKeys": []
       },
       {
@@ -157,6 +173,68 @@
         "primaryKey": {
           "columnNames": [
             "locallyStoredFileUid"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "DownloadJobItem",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`djiUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `djiBatchId` INTEGER NOT NULL, `djiOriginUrl` TEXT, `djiDestPath` TEXT, `djiStatus` INTEGER NOT NULL, `djiTotalSize` INTEGER NOT NULL, `djiAttemptCount` INTEGER NOT NULL, `djiIndex` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "djiUid",
+            "columnName": "djiUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "djiBatchId",
+            "columnName": "djiBatchId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "djiOriginUrl",
+            "columnName": "djiOriginUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "djiDestPath",
+            "columnName": "djiDestPath",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "djiStatus",
+            "columnName": "djiStatus",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "djiTotalSize",
+            "columnName": "djiTotalSize",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "djiAttemptCount",
+            "columnName": "djiAttemptCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "djiIndex",
+            "columnName": "djiIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "djiUid"
           ],
           "autoGenerate": true
         },
@@ -401,7 +479,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '53c1d2a02a9695c2cc57736a08c69b17')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '782e6dd02e9d9618319729453cc7069c')"
     ]
   }
 }

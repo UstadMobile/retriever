@@ -67,7 +67,8 @@ abstract class DownloadJobItemDao {
         SELECT NOT EXISTS(
                SELECT djiUid
                  FROM DownloadJobItem
-                WHERE djiStatus < ${DownloadJobItem.STATUS_COMPLETE}) 
+                WHERE djiBatchId = :batchId
+                  AND djiStatus < ${DownloadJobItem.STATUS_COMPLETE}) 
     """)
     abstract suspend fun isBatchDone(batchId: Long): Boolean
 

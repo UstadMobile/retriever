@@ -2,6 +2,7 @@ package com.ustadmobile.lib.db.entities
 
 import androidx.annotation.NonNull
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.ustadmobile.door.annotation.*
 import kotlinx.serialization.Serializable
@@ -15,12 +16,12 @@ import kotlin.math.log
  * file sets availabilityAvailable flag and records the time.
  *
 */
-@Entity(primaryKeys = arrayOf("availabilityOriginUrl", "availabilityNetworkNode"))
+@Entity(indices = arrayOf(Index(value = arrayOf("availabilityOriginUrl", "availabilityNetworkNode"), unique = true)))
 @Serializable
 open class AvailabilityResponse {
 
-//    @PrimaryKey(autoGenerate = true)
-//    var availabilityResponseUid: Long = 0
+    @PrimaryKey(autoGenerate = true)
+    var availabilityResponseUid: Long = 0
 
     var availabilityNetworkNode: Long = 0
 

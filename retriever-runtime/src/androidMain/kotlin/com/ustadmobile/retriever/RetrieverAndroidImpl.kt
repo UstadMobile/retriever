@@ -200,24 +200,11 @@ class RetrieverAndroidImpl internal constructor(
         }
 
 
+
     }
 
-    override fun retrieve(retrieverRequests: List<RetrieverRequest>): RetrieverCall {
+    override suspend fun retrieve(retrieverRequests: List<RetrieverRequest>, progressListener: ProgressListener) {
 
-
-        //TODO: How to handle onAvailabilityChanged event?
-        val onAvailabilityChanged : OnAvailabilityChanged = OnAvailabilityChanged {
-
-        }
-        val allUrls : List<String> = retrieverRequests.map { it.originUrl }
-        val availabilityObserver = AvailabilityObserver(allUrls, onAvailabilityChanged)
-
-
-        val listenerUid = availabilityManager.addAvailabilityObserver(availabilityObserver)
-
-
-        //TODO: How to handle RetrieverCall ?
-        return RetrieverCall(listenerUid)
     }
 
     companion object {
