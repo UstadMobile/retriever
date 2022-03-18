@@ -24,9 +24,7 @@ class RetrieverAndroidImpl internal constructor(
     ): RetrieverCommon(db, nsdServiceName, availabilityChecker
 ) {
 
-    init {
-        //startNSD()
-    }
+
 
     val database = db
 
@@ -38,74 +36,6 @@ class RetrieverAndroidImpl internal constructor(
 
     private val server = RouterNanoHTTPD(0)
 
-    //Node lost listener
-    private class LostListener(val retriever: RetrieverCommon) : NsdManager.ResolveListener {
-
-        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-            // Called when the resolve fails. Use the error code to debug.
-            Napier.d( "P2PManagerAndroid: Lost Resolve failed: $errorCode")
-        }
-
-        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-
-            val port: Int = serviceInfo.port
-            val host: InetAddress = serviceInfo.host
-
-            Napier.d("P2PManagerAndroid: Lost Peer: $host:$port")
-
-            GlobalScope.launch {
-                retriever.updateNetworkNodeLost("$host:$port")
-            }
-        }
-    }
-
-    //Node found listener
-    class ServiceFoundResolveListener(
-        val mServiceName: String,
-        val retriever: RetrieverCommon
-    ) : NsdManager.ResolveListener {
-
-        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-            // Called when the resolve fails. Use the error code to debug.
-            Napier.d( "P2PManagerAndroid: Resolve failed: $errorCode")
-        }
-
-        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-            Napier.d( "P2PManagerAndroid: Resolve Succeeded. $serviceInfo")
-
-
-            val allDeviceAddresses = Collections.list(NetworkInterface.getNetworkInterfaces()).flatMap {
-                Collections.list(it.inetAddresses)
-            }
-
-            if(serviceInfo.host in allDeviceAddresses){
-                return
-            }
-
-            val port: Int = serviceInfo.port
-            val host: InetAddress = serviceInfo.host
-
-            Napier.d("P2PManagerAndroid: Found Peer: $host:$port")
-
-            val resolvedEndpoint =
-                if(!host.toString().contains("http:/")) {
-                    if (host.toString().startsWith("/")) {
-                        "http:/$host:$port/"
-                    } else {
-                        "http://$host:$port/"
-                    }
-                }else{
-                    "$host:$port/"
-            }
-            val networkNode = NetworkNode()
-            networkNode.networkNodeEndpointUrl = resolvedEndpoint
-            networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
-
-            GlobalScope.launch {
-                retriever.addNewNode(networkNode)
-            }
-        }
-    }
 
     //Service registered listener
     private val registrationListener = object: NsdManager.RegistrationListener{
@@ -166,6 +96,83 @@ class RetrieverAndroidImpl internal constructor(
             nsdManager.resolveService(service, LostListener(this@RetrieverAndroidImpl))
         }
     }
+
+    //Node lost listener
+    private class LostListener(val retriever: RetrieverCommon) : NsdManager.ResolveListener {
+
+        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+            // Called when the resolve fails. Use the error code to debug.
+            Napier.d( "P2PManagerAndroid: Lost Resolve failed: $errorCode")
+        }
+
+        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+
+            val port: Int = serviceInfo.port
+            val host: InetAddress = serviceInfo.host
+
+            Napier.d("P2PManagerAndroid: Lost Peer: $host:$port")
+
+            GlobalScope.launch {
+                retriever.updateNetworkNodeLost("$host:$port")
+            }
+        }
+    }
+
+    //Node found listener
+    class ServiceFoundResolveListener(
+        val mServiceName: String,
+        val retriever: RetrieverCommon
+    ) : NsdManager.ResolveListener {
+
+        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+            // Called when the resolve fails. Use the error code to debug.
+            Napier.d( "P2PManagerAndroid: Resolve failed: $errorCode")
+        }
+
+        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+            Napier.d( "P2PManagerAndroid: Resolve Succeeded. $serviceInfo")
+
+
+            val allDeviceAddresses = Collections.list(NetworkInterface.getNetworkInterfaces()).flatMap {
+                Collections.list(it.inetAddresses)
+            }
+
+            if(serviceInfo.host in allDeviceAddresses){
+                return
+            }
+
+            val port: Int = serviceInfo.port
+            val host: InetAddress = serviceInfo.host
+
+            Napier.d("P2PManagerAndroid: Found Peer: $host:$port")
+
+            val resolvedEndpoint =
+                if(!host.toString().contains("http:/")) {
+                    if (host.toString().startsWith("/")) {
+                        "http:/$host:$port/"
+                    } else {
+                        "http://$host:$port/"
+                    }
+                }else{
+                    "$host:$port/"
+                }
+            val networkNode = NetworkNode()
+            networkNode.networkNodeEndpointUrl = resolvedEndpoint
+            networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
+
+            GlobalScope.launch {
+                retriever.addNewNode(networkNode)
+            }
+        }
+    }
+
+    init {
+        startNSD()
+    }
+
+
+
+
 
     fun startNSD() {
 
