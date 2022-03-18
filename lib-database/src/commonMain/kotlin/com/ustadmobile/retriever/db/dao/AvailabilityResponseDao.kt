@@ -38,7 +38,18 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
                   WHERE AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
                     AND CAST(AvailabilityResponse.availabilityAvailable AS INTEGER) = 1 
                   LIMIT 1
-                ) AS available
+                ) AS available,
+                EXISTS
+                (
+                 SELECT NetworkNode.networkNodeId
+                   FROM NetworkNode
+                  WHERE NOT EXISTS(
+                        SELECT AvailabilityResponse.availabilityResponseUid
+                          FROM AvailabilityResponse
+                         WHERE AvailabilityResponse.availabilityNetworkNode = NetworkNode.networkNodeId
+                           AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
+                  )         
+                ) as checksPending
             FROM AffectedObservers
             JOIN AvailabilityObserverItem
               ON AvailabilityObserverItem.aoiListenerUid = AffectedObservers.affectedListenerUid

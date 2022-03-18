@@ -141,13 +141,15 @@ class AvailabilityManager(
                     database.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime)
                 affectedResult.groupBy {
                     it.listenerUid
-                }.forEach {
-                    val fileAvailabilityResultMap = it.value.map {
-                        it.fileUrl to it.available
+                }.forEach { entry ->
+                    val fileAvailabilityResultMap = entry.value.map {
+                        (it.fileUrl ?: throw IllegalArgumentException("fileUrl is null!")) to it.available
                     }.toMap()
 
-                    availabilityObservers[it.key]?.onAvailabilityChanged?.onAvailabilityChanged(
-                        AvailabilityEvent(fileAvailabilityResultMap, item.networkNode.networkNodeId))
+                    val checksPending = entry.value.any { it.checksPending }
+                    availabilityObservers[entry.key]?.onAvailabilityChanged?.onAvailabilityChanged(
+                        AvailabilityEvent(fileAvailabilityResultMap, item.networkNode.networkNodeId,
+                        checksPending))
                 }
             }finally {
                 checkJobsInProgress -= item

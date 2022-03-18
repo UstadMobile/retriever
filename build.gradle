@@ -82,6 +82,7 @@ ext {
 
     version_android_compile_sdk = 31
     version_android_target_sdk = 31
+    version_android_workmanager = "2.7.1"
 
     version_door = "0.0.46x"
     //pre replication sync : version_door = "0.0.32t"
