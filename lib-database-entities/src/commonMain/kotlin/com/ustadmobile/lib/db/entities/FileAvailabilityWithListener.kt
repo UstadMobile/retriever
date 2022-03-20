@@ -12,4 +12,6 @@ class FileAvailabilityWithListener(){
      * from all nodes
      */
     var checksPending: Boolean = false
+
+    var networkNodeEndpointUrl: String? = null
 }

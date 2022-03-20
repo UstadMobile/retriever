@@ -28,7 +28,7 @@
                     android:id="@+id/entry_import_link_editText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/enter_url"
+                    android:hint="@string/url"
                     android:text="@={downloadUrl}"
                     android:imeOptions="actionGo"
                     android:inputType="text" />
@@ -44,7 +44,7 @@
                 android:textColor="?colorOnSecondary"
 
                 android:padding="20dp"
-                android:text="@string/download"
+                android:text="@string/next"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/entry_import_link_textInput"

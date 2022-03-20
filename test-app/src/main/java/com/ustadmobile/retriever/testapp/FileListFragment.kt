@@ -109,7 +109,7 @@ class FileListFragment(): Fragment(), FileListView, ClickAddLocalFile, FileListe
         val fab: FloatingActionButton = rootView.findViewById(R.id.fragment_local_file_list_fab_add)
 
         fab.setOnClickListener {
-            findNavController().navigate(R.id.filedownload_dest)
+            findNavController().navigate(R.id.enterdownloadurl_dest)
         }
         return rootView
 

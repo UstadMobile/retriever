@@ -20,8 +20,8 @@
         android:label="@string/nodes"/>
 
     <fragment
-        android:id="@+id/filedownload_dest"
-        android:name="com.ustadmobile.retriever.testapp.FileDownloadFragment"
+        android:id="@+id/enterdownloadurl_dest"
+        android:name="com.ustadmobile.retriever.testapp.EnterDownloadUrlFragment"
         android:label="@string/download"/>
 
 </navigation>

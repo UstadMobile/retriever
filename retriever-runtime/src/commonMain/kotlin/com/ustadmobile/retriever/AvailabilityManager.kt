@@ -59,7 +59,9 @@ class AvailabilityManager(
 
         GlobalScope.launch {
             database.availabilityObserverItemDao.insertList(
-                availabilityObserver.originUrls.map { AvailabilityObserverItem(it, listenerUid) }
+                availabilityObserver.originUrls.map {
+                    AvailabilityObserverItem(it, listenerUid, availabilityObserver.observerMode)
+                }
             )
 
             checkQueueSignalChannel.trySend(true)
@@ -139,16 +141,22 @@ class AvailabilityManager(
 
                 val affectedResult: List<FileAvailabilityWithListener> =
                     database.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime)
+
                 affectedResult.groupBy {
                     it.listenerUid
-                }.forEach { entry ->
-                    val fileAvailabilityResultMap = entry.value.map {
-                        (it.fileUrl ?: throw IllegalArgumentException("fileUrl is null!")) to it.available
+                }.forEach { entries ->
+                    val entriesByUrl = entries.value.groupBy { it.fileUrl }
+                    val availabilityEventInfoMap = entriesByUrl.map { urlEntry ->
+                        val firstValue = urlEntry.value.firstOrNull()
+                        val url = urlEntry.key ?: throw IllegalArgumentException("Null URL on response #${entries.key}")
+                        url to AvailabilityEventInfo(firstValue?.available ?: false,
+                            firstValue?.checksPending ?: true,
+                            urlEntry.value.mapNotNull { it.networkNodeEndpointUrl } )
                     }.toMap()
 
-                    val checksPending = entry.value.any { it.checksPending }
-                    availabilityObservers[entry.key]?.onAvailabilityChanged?.onAvailabilityChanged(
-                        AvailabilityEvent(fileAvailabilityResultMap, item.networkNode.networkNodeId,
+                    val checksPending = entries.value.any { it.checksPending }
+                    availabilityObservers[entries.key]?.onAvailabilityChanged?.onAvailabilityChanged(
+                        AvailabilityEvent(availabilityEventInfoMap, item.networkNode.networkNodeId,
                         checksPending))
                 }
             }finally {

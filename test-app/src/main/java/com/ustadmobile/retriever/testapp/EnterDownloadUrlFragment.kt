@@ -5,20 +5,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.ustadmobile.retriever.testapp.databinding.FragmentFileDownloadBinding
+import com.ustadmobile.retriever.testapp.databinding.FragmentEnterDownloadUrlBinding
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 
-class FileDownloadFragment: Fragment(), DIAware {
+class EnterDownloadUrlFragment: Fragment(), DIAware {
 
     override val di: DI by closestDI()
 
-    private var mBinding: FragmentFileDownloadBinding? = null
+    private var mBinding: FragmentEnterDownloadUrlBinding? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val rootView: View
-        mBinding = FragmentFileDownloadBinding.inflate(inflater, container, false).also {
+        mBinding = FragmentEnterDownloadUrlBinding.inflate(inflater, container, false).also {
             rootView = it.root
         }
 

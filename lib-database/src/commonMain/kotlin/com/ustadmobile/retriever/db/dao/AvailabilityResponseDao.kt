@@ -3,24 +3,14 @@ package com.ustadmobile.retriever.db.dao
 import androidx.room.Dao
 import androidx.room.Query
 import com.ustadmobile.core.db.dao.BaseDao
+import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
 import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.FileAvailabilityWithListener
 
 @Dao
 abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
 
-    @Query(QUERY_FIND_LISTENER_TO_URL)
-    abstract fun findAllListenersAndAvailabilityByTime(time: Long):
-            List<FileAvailabilityWithListener>
-
     @Query("""
-        DELETE FROM AvailabilityResponse
-    """)
-    abstract suspend fun clearAllResponses()
-
-   companion object{
-
-       const val QUERY_FIND_LISTENER_TO_URL= """
             WITH AffectedObservers AS 
              (SELECT DISTINCT AOI.aoiListenerUid AS affectedListenerUid
                FROM AvailabilityResponse AS AR
@@ -49,12 +39,29 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
                          WHERE AvailabilityResponse.availabilityNetworkNode = NetworkNode.networkNodeId
                            AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
                   )         
-                ) as checksPending
+                ) as checksPending,
+                NetworkNode.networkNodeEndpointUrl AS networkNodeEndpointUrl
             FROM AffectedObservers
-            JOIN AvailabilityObserverItem
-              ON AvailabilityObserverItem.aoiListenerUid = AffectedObservers.affectedListenerUid
-           
-       """
+                 JOIN AvailabilityObserverItem
+                      ON AvailabilityObserverItem.aoiListenerUid = AffectedObservers.affectedListenerUid
+                 LEFT JOIN AvailabilityResponse
+                      ON AvailabilityObserverItem.aoiResultMode = ${AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES}
+                         AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
+                         AND CAST(AvailabilityResponse.availabilityAvailable AS INTEGER) = 1
+                 LEFT JOIN NetworkNode
+                      ON AvailabilityObserverItem.aoiResultMode = ${AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES}
+                         AND NetworkNode.networkNodeId = AvailabilityResponse.availabilityNetworkNode
+       """)
+    abstract fun findAllListenersAndAvailabilityByTime(
+        time: Long,
+    ): List<FileAvailabilityWithListener>
+
+    @Query("""
+        DELETE FROM AvailabilityResponse
+    """)
+    abstract suspend fun clearAllResponses()
+
+   companion object{
 
    }
 

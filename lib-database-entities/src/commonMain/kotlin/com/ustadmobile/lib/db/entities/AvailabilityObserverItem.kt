@@ -24,13 +24,23 @@ open class AvailabilityObserverItem {
 
     var aoiListenerUid: Int = 0
 
-    constructor(url: String, listenerUid: Int){
+    var aoiResultMode: Int = MODE_SUMMARY_ONLY
+
+    constructor(url: String, listenerUid: Int, resultMode: Int){
         aoiOriginalUrl = url
         aoiListenerUid = listenerUid
+        aoiResultMode = resultMode
     }
     constructor(){
 
     }
 
+    companion object {
+
+        const val MODE_SUMMARY_ONLY = 1
+
+        const val MODE_INC_AVAILABLE_NODES = 2
+
+    }
 
 }
