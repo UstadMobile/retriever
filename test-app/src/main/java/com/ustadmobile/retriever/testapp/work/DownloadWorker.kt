@@ -12,6 +12,7 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
+import java.io.File
 
 class DownloadWorker(
     context: Context,
@@ -28,7 +29,12 @@ class DownloadWorker(
 
     override suspend fun doWork(): Result {
         val downloadUrl = inputData.getString(KEY_URL) ?: throw IllegalArgumentException("No url!")
-        val retrieverRequests = listOf(RetrieverRequest(downloadUrl, 0))
+        val downloadDir = File(applicationContext.dataDir, "downloads")
+        downloadDir.takeIf { !it.exists() }?.mkdirs()
+        val fileName = downloadUrl.substringAfterLast("/")
+        val downloadDestFile = File(downloadDir, fileName)
+
+        val retrieverRequests = listOf(RetrieverRequest(downloadUrl, downloadDestFile.absolutePath, 0))
         retriever.retrieve(retrieverRequests, this)
         return Result.success()
     }

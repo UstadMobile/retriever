@@ -1,7 +1,6 @@
 package com.ustadmobile.retriever.fetcher
 
-import com.ustadmobile.door.DoorUri
-import com.ustadmobile.door.ext.toFile
+import java.io.File
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ext.copyToAndUpdateProgress
 import okhttp3.OkHttpClient
@@ -20,11 +19,10 @@ actual class SingleItemFetcher(
         try {
             val url = downloadJobItem.djiOriginUrl
                 ?: throw IllegalArgumentException("Null URL on ${downloadJobItem.djiUid}")
-            val destinationUri = downloadJobItem.djiDestPath?.let { DoorUri.parse(it) }
+            val destFile = downloadJobItem.djiDestPath?.let { File(it) }
                 ?: throw IllegalArgumentException("Null destination uri on ${downloadJobItem.djiUid}")
-            val existingDestFile = destinationUri.toFile()
 
-            val bytesAlreadyDownloaded = existingDestFile.length()
+            val bytesAlreadyDownloaded = destFile.length()
             val request = Request.Builder()
                 .url(url)
                 .apply {
@@ -65,7 +63,7 @@ actual class SingleItemFetcher(
 
                 val body = response.body ?: throw IllegalStateException("Response to $url has no body!")
                 body.byteStream().use { bodyIn ->
-                    FileOutputStream(destinationUri.toFile(), bytesAlreadyDownloaded != 0L).use { fileOut ->
+                    FileOutputStream(destFile, bytesAlreadyDownloaded != 0L).use { fileOut ->
                         bodyIn.copyToAndUpdateProgress(fileOut, fetchProgressWrapper, downloadJobItem.djiUid,
                             totalBytes)
                     }

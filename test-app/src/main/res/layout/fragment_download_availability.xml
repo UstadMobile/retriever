@@ -15,7 +15,7 @@
 
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/download_availability_recyclerview"
-                app:layout_constraintBottom_toTopOf="@id/entry_import_link_next_button"
+                app:layout_constraintBottom_toTopOf="@id/download_now_button"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -23,7 +23,7 @@
                 android:layout_height="0dp"/>
 
         <com.google.android.material.button.MaterialButton
-                android:id="@+id/entry_import_link_next_button"
+                android:id="@+id/download_now_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"

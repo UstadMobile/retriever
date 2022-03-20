@@ -9,6 +9,7 @@ import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.MultiItemFetcher
 import com.ustadmobile.retriever.fetcher.SingleItemFetcher
 import com.ustadmobile.retriever.responder.AvailabilityResponder
+import com.ustadmobile.retriever.responder.ZippedItemsResponder
 import java.net.InetAddress
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
@@ -25,7 +26,7 @@ class RetrieverAndroidImpl internal constructor(
         availabilityChecker: AvailabilityChecker,
         singleItemFetcher: SingleItemFetcher,
         multiItemFetcher: MultiItemFetcher,
-): RetrieverCommon(db, nsdServiceName, availabilityChecker, singleItemFetcher, multiItemFetcher) {
+): RetrieverCommonJvm(db, nsdServiceName, availabilityChecker, singleItemFetcher, multiItemFetcher) {
 
     val database = db
 
@@ -176,8 +177,6 @@ class RetrieverAndroidImpl internal constructor(
 
 
     fun startNSD() {
-
-        //TODO: Check if already running
         GlobalScope.launch {
             db.networkNodeDao.clearAllNodes()
             db.availabilityResponseDao.clearAllResponses()
@@ -189,6 +188,7 @@ class RetrieverAndroidImpl internal constructor(
             AvailabilityResponder::class.java,
             db
         )
+        server.addRoute("/zipped", ZippedItemsResponder::class.java, db)
         server.start()
 
         val serviceInfo = NsdServiceInfo().apply{
@@ -202,10 +202,6 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
-    }
-
-    override suspend fun retrieve(retrieverRequests: List<RetrieverRequest>, progressListener: ProgressListener) {
-
     }
 
     companion object {

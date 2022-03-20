@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.work.*
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItem.Companion.MODE_INC_AVAILABLE_NODES
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.AvailabilityEvent
@@ -14,6 +15,7 @@ import com.ustadmobile.retriever.AvailabilityObserver
 import com.ustadmobile.retriever.OnAvailabilityChanged
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.testapp.databinding.FragmentDownloadAvailabilityBinding
+import com.ustadmobile.retriever.testapp.work.DownloadWorker
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
@@ -58,6 +60,16 @@ class DownloadAvailabilityFragment: Fragment(), DIAware, OnAvailabilityChanged {
             mConcatAdapter = ConcatAdapter(*recyclerAdaptersList.toTypedArray())
             binding.downloadAvailabilityRecyclerview.adapter = mConcatAdapter
             binding.downloadAvailabilityRecyclerview.layoutManager = LinearLayoutManager(requireContext())
+            binding.downloadNowButton.setOnClickListener {
+                val inputData = Data.Builder()
+                    .putString(DownloadWorker.KEY_URL, urls.first())
+                    .build()
+                val workRequest = OneTimeWorkRequest.Builder(DownloadWorker::class.java)
+                    .setInputData(inputData)
+                    .build()
+                WorkManager.getInstance(requireContext()).enqueueUniqueWork(urls.first(), ExistingWorkPolicy.KEEP,
+                    workRequest)
+            }
         }.root
     }
 

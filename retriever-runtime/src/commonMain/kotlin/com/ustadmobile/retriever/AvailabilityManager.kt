@@ -119,7 +119,7 @@ class AvailabilityManager(
     /**
      * To emit availability changed events
      */
-    private suspend fun CoroutineScope.launchProcessor(
+    private fun CoroutineScope.launchProcessor(
         id: Int,
         channel: ReceiveChannel<AvailabilityCheckJob>
     ) = launch{

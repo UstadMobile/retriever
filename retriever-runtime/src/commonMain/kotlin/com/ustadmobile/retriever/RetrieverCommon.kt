@@ -1,6 +1,8 @@
 package com.ustadmobile.retriever
 
 import com.soywiz.klock.DateTime
+import com.ustadmobile.door.util.systemTimeInMillis
+import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.MultiItemFetcher
@@ -66,4 +68,23 @@ abstract class RetrieverCommon(
         }
     }
 
+    override suspend fun retrieve(
+        retrieverRequests: List<RetrieverRequest>,
+        progressListener: ProgressListener
+    ) {
+        val batchId = systemTimeInMillis()
+
+        db.downloadJobItemDao.insertList(retrieverRequests.map { request ->
+            DownloadJobItem().apply {
+                djiBatchId = batchId
+                djiStatus = DownloadJobItem.STATUS_QUEUED
+                djiOriginUrl = request.originUrl
+                djiDestPath = request.destinationFilePath
+            }
+        })
+
+        Downloader(batchId, availabilityManager, progressListener, singleItemFetcher, multiItemFetcher, db).download()
+
+        addFiles(retrieverRequests.map { LocalFileInfo(it.originUrl, it.destinationFilePath) })
+    }
 }

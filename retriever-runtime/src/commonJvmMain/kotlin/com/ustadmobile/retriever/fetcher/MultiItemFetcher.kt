@@ -1,7 +1,5 @@
 package com.ustadmobile.retriever.fetcher
 
-import com.ustadmobile.door.DoorUri
-import com.ustadmobile.door.ext.toFile
 import com.ustadmobile.door.ext.writeToFile
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ext.requirePostfix
@@ -32,7 +30,7 @@ actual class MultiItemFetcher(
         //Validate input here
 
         var firstFileTmp: File? = null
-        val firstFile = DoorUri.parse(downloadJobItems[0].djiDestPath!!).toFile()
+        val firstFile = File(downloadJobItems[0].djiDestPath!!)
         val urlToJobItemMap = downloadJobItems.associateBy { it.djiOriginUrl }
 
         try {
@@ -91,7 +89,7 @@ actual class MultiItemFetcher(
                 val body = response.body ?: throw IllegalStateException("Response has no body!")
 
                 val destFileProvider: (ZipEntry) -> File = {
-                    jobItemUrlMap[it.name]?.djiDestPath?.let { DoorUri.parse(it) }?.toFile()
+                    jobItemUrlMap[it.name]?.djiDestPath?.let { File(it) }
                         ?: throw IllegalArgumentException("Unexpected entry in result stream: ${it.name}")
                 }
 

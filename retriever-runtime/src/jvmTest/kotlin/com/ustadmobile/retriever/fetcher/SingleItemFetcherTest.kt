@@ -57,7 +57,7 @@ class SingleItemFetcherTest {
             SingleItemFetcher(okHttpClient).download(
                 DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
-                    djiDestPath = destFile.toDoorUri().toString()
+                    djiDestPath = destFile.absolutePath
                 } , mockProgressListener)
         }
 
@@ -79,7 +79,7 @@ class SingleItemFetcherTest {
         runBlocking {
             SingleItemFetcher(okHttpClient).download(DownloadJobItem().apply {
                 djiOriginUrl = originHttpServer.url("/doesnotexist.jpg")
-                djiDestPath = destFile.toDoorUri().toString()
+                djiDestPath = destFile.absolutePath
             }, { })
         }
     }
@@ -98,7 +98,7 @@ class SingleItemFetcherTest {
             SingleItemFetcher(okHttpClient).download(
                 DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
-                    djiDestPath = destFile.toDoorUri().toString()
+                    djiDestPath = destFile.absolutePath
                 } , mockProgressListener)
         }
 

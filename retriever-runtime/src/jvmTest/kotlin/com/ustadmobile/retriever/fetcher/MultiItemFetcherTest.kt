@@ -103,7 +103,7 @@ class MultiItemFetcherTest {
         downloadJobItems = RESOURCE_PATH_LIST.mapIndexed { index, resPath ->
             DownloadJobItem().apply {
                 djiOriginUrl = "$originUrlPrefix$resPath"
-                djiDestPath = File(downloadDestDir, resPath.substringAfterLast("/")).toDoorUri().toString()
+                djiDestPath = File(downloadDestDir, resPath.substringAfterLast("/")).absolutePath
                 djiIndex = index
             }
         }
@@ -122,7 +122,7 @@ class MultiItemFetcherTest {
         downloadJobItems.forEach {
             Assert.assertArrayEquals("Content for ${it.djiOriginUrl} is the same",
                 this::class.java.getResourceAsStream("${it.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
-                DoorUri.parse(it.djiDestPath!!).toFile().readBytes())
+                File(it.djiDestPath!!).readBytes())
             verify(mockFetchProgressListener, atLeastOnce()).onFetchProgress(argWhere { evt ->
                 evt.downloadJobItemUid == it.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
             })
@@ -146,8 +146,7 @@ class MultiItemFetcherTest {
         val hostEndpoint = peerHttpServer.url("/retriever/")
 
         val resource1Bytes = this::class.java.getResourceAsStream(RESOURCE_PATH_LIST[0])!!.readBytes()
-        DoorUri.parse(downloadJobItems[0].djiDestPath!!).toFile()
-            .writeBytes(resource1Bytes.copyOf(resource1Bytes.size / 2))
+        File(downloadJobItems[0].djiDestPath!!).writeBytes(resource1Bytes.copyOf(resource1Bytes.size / 2))
 
         val multiItemFetcher = MultiItemFetcher(okHttpClient, json)
 
@@ -160,7 +159,7 @@ class MultiItemFetcherTest {
         downloadJobItems.forEach {
             Assert.assertArrayEquals("Content for ${it.djiOriginUrl} is the same",
                 this::class.java.getResourceAsStream("${it.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
-                DoorUri.parse(it.djiDestPath!!).toFile().readBytes())
+                File(it.djiDestPath!!).readBytes())
         }
     }
 
