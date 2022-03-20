@@ -22,9 +22,11 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
     abstract fun getWatchListLive(): DoorDataSourceFactory<Int, AvailabilityFileWithNumNodes>
 
     @Query("""
-        DELETE FROM AvailabilityObserverItem WHERE aoiId = :uid
+        DELETE 
+          FROM AvailabilityObserverItem 
+         WHERE aoiListenerUid = :listenerUid
     """)
-    abstract suspend fun removeFromWatchList(uid: Long)
+    abstract suspend fun deleteByListenerUid(listenerUid: Int)
 
    companion object{
        const val QUERY_FINDPENDINGITEMS= """

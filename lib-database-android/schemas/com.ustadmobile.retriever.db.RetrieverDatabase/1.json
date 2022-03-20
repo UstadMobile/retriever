@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "782e6dd02e9d9618319729453cc7069c",
+    "identityHash": "237188768363d8480cbc35a0e88fe174",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -67,7 +67,7 @@
       },
       {
         "tableName": "AvailabilityObserverItem",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`aoiId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `aoiOriginalUrl` TEXT, `aoiListenerUid` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`aoiId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `aoiOriginalUrl` TEXT, `aoiListenerUid` INTEGER NOT NULL, `aoiResultMode` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "aoiId",
@@ -84,6 +84,12 @@
           {
             "fieldPath": "aoiListenerUid",
             "columnName": "aoiListenerUid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "aoiResultMode",
+            "columnName": "aoiResultMode",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -406,7 +412,7 @@
       },
       {
         "tableName": "ZombieAttachmentData",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`zaUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `zaTableId` INTEGER NOT NULL, `zaPrimaryKey` INTEGER NOT NULL, `zaMd5` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`zaUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `zaUri` TEXT)",
         "fields": [
           {
             "fieldPath": "zaUid",
@@ -415,20 +421,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "zaTableId",
-            "columnName": "zaTableId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "zaPrimaryKey",
-            "columnName": "zaPrimaryKey",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "zaMd5",
-            "columnName": "zaMd5",
+            "fieldPath": "zaUri",
+            "columnName": "zaUri",
             "affinity": "TEXT",
             "notNull": false
           }
@@ -479,7 +473,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '782e6dd02e9d9618319729453cc7069c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '237188768363d8480cbc35a0e88fe174')"
     ]
   }
 }

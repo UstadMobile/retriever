@@ -2,6 +2,7 @@ package com.ustadmobile.retriever
 
 
 import com.ustadmobile.door.ext.concurrentSafeListOf
+import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.*
 import com.ustadmobile.retriever.db.RetrieverDatabase
@@ -58,14 +59,17 @@ class AvailabilityManager(
         availabilityObservers[listenerUid] = availabilityObserver
 
         GlobalScope.launch {
-            database.availabilityObserverItemDao.insertList(
-                availabilityObserver.originUrls.map {
-                    AvailabilityObserverItem(it, listenerUid, availabilityObserver.observerMode)
-                }
-            )
+            val initialInfo = database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                txDb.availabilityObserverItemDao.insertList(
+                    availabilityObserver.originUrls.map {
+                        AvailabilityObserverItem(it, listenerUid, availabilityObserver.observerMode)
+                    }
+                )
 
+                txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(0, listenerUid)
+            }
             checkQueueSignalChannel.trySend(true)
-
+            fireAvailabilityEvent(initialInfo, 0)
         }
 
         return listenerUid
@@ -76,9 +80,9 @@ class AvailabilityManager(
      */
     suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver){
         val keyToRemove =
-            availabilityObservers.entries.firstOrNull{it.value == availabilityObserver}?.key
-        // TODO: Delete AvailabilityObserverItem corresponding to the key and map
+            availabilityObservers.entries.firstOrNull{it.value == availabilityObserver}?.key ?: 0
 
+        database.availabilityObserverItemDao.deleteByListenerUid(keyToRemove)
         availabilityObservers.remove(keyToRemove)
     }
 
@@ -137,32 +141,39 @@ class AvailabilityManager(
                     AvailabilityResponse(item.networkNode.networkNodeId, it.key, it.value, currentTime)
                 }
 
-                database.availabilityResponseDao.insertList(allResponses)
-
-                val affectedResult: List<FileAvailabilityWithListener> =
-                    database.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime)
-
-                affectedResult.groupBy {
-                    it.listenerUid
-                }.forEach { entries ->
-                    val entriesByUrl = entries.value.groupBy { it.fileUrl }
-                    val availabilityEventInfoMap = entriesByUrl.map { urlEntry ->
-                        val firstValue = urlEntry.value.firstOrNull()
-                        val url = urlEntry.key ?: throw IllegalArgumentException("Null URL on response #${entries.key}")
-                        url to AvailabilityEventInfo(firstValue?.available ?: false,
-                            firstValue?.checksPending ?: true,
-                            urlEntry.value.mapNotNull { it.networkNodeEndpointUrl } )
-                    }.toMap()
-
-                    val checksPending = entries.value.any { it.checksPending }
-                    availabilityObservers[entries.key]?.onAvailabilityChanged?.onAvailabilityChanged(
-                        AvailabilityEvent(availabilityEventInfoMap, item.networkNode.networkNodeId,
-                        checksPending))
+                val affectedResult = database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                    txDb.availabilityResponseDao.insertList(allResponses)
+                    txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime, 0)
                 }
+
+                fireAvailabilityEvent(affectedResult, item.networkNode.networkNodeId)
             }finally {
                 checkJobsInProgress -= item
                 checkQueueSignalChannel.send(true)
             }
+        }
+    }
+
+    private fun fireAvailabilityEvent(
+        availabilityAndListenersList: List<FileAvailabilityWithListener>,
+        fromNetworkNodeId: Long
+    ) {
+        availabilityAndListenersList.groupBy {
+            it.listenerUid
+        }.forEach { entries ->
+            val entriesByUrl = entries.value.groupBy { it.fileUrl }
+            val availabilityEventInfoMap = entriesByUrl.map { urlEntry ->
+                val firstValue = urlEntry.value.firstOrNull()
+                val url = urlEntry.key ?: throw IllegalArgumentException("Null URL on response #${entries.key}")
+                url to AvailabilityEventInfo(url, firstValue?.available ?: false,
+                    firstValue?.checksPending ?: true,
+                    urlEntry.value.mapNotNull { it.networkNodeEndpointUrl } )
+            }.toMap()
+
+            val checksPending = entries.value.any { it.checksPending }
+            availabilityObservers[entries.key]?.onAvailabilityChanged?.onAvailabilityChanged(
+                AvailabilityEvent(availabilityEventInfoMap, fromNetworkNodeId,
+                    checksPending))
         }
     }
 

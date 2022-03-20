@@ -51,7 +51,7 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
 
     private var nodeListLiveData: LiveData<PagedList<NetworkNode>>? = null
 
-    private var nodeListRecyclerAdapter : NodeListRecyclerAdapter? = null
+    private var nodeListRecyclerAdapter : NodePagedListRecyclerAdapter? = null
 
     private val nodeListObserver = Observer<PagedList<NetworkNode>?>{ t->
         run{
@@ -81,7 +81,7 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
         nodeListRecyclerView = rootView.findViewById(R.id.fragment_node_list_rv)
         nodeListRecyclerView.layoutManager = LinearLayoutManager(context)
 
-        nodeListRecyclerAdapter = NodeListRecyclerAdapter(this)
+        nodeListRecyclerAdapter = NodePagedListRecyclerAdapter(this)
 
         nodeListRecyclerView.adapter = nodeListRecyclerAdapter
 

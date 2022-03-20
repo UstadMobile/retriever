@@ -67,7 +67,7 @@ dependencies {
 
     // Room (annotation processing takes place only on lib-database-android to improve build times)
     implementation "androidx.room:room-runtime:$version_android_room"
-    implementation "com.ustadmobile.door:door-runtime:$version_door"
+    implementation "com.github.UstadMobile.door:door-runtime:$version_door"
 
     implementation "androidx.paging:paging-runtime:$version_androidx_paging"
 
@@ -91,4 +91,6 @@ dependencies {
 
     implementation "androidx.work:work-runtime:$version_android_workmanager"
     implementation "androidx.work:work-runtime-ktx:$version_android_workmanager"
+
+    implementation "androidx.recyclerview:recyclerview:$version_androidx_recyclerview"
 }

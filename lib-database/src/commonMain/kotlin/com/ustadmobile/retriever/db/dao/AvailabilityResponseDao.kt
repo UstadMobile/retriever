@@ -16,7 +16,7 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
                FROM AvailabilityResponse AS AR
                JOIN AvailabilityObserverItem AS AOI
                  ON AR.availabilityOriginUrl = AOI.aoiOriginalUrl
-              WHERE AR.availabilityResponseTimeLogged = :time
+              WHERE AR.availabilityResponseTimeLogged = :responseTimeFilter
               )
             SELECT 
                 AvailabilityObserverItem.aoiListenerUid AS listenerUid, 
@@ -41,19 +41,22 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
                   )         
                 ) as checksPending,
                 NetworkNode.networkNodeEndpointUrl AS networkNodeEndpointUrl
-            FROM AffectedObservers
-                 JOIN AvailabilityObserverItem
-                      ON AvailabilityObserverItem.aoiListenerUid = AffectedObservers.affectedListenerUid
-                 LEFT JOIN AvailabilityResponse
-                      ON AvailabilityObserverItem.aoiResultMode = ${AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES}
-                         AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
-                         AND CAST(AvailabilityResponse.availabilityAvailable AS INTEGER) = 1
-                 LEFT JOIN NetworkNode
-                      ON AvailabilityObserverItem.aoiResultMode = ${AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES}
-                         AND NetworkNode.networkNodeId = AvailabilityResponse.availabilityNetworkNode
+           FROM AvailabilityObserverItem
+                LEFT JOIN AvailabilityResponse
+                     ON AvailabilityObserverItem.aoiResultMode = ${AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES}
+                        AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
+                        AND CAST(AvailabilityResponse.availabilityAvailable AS INTEGER) = 1
+                LEFT JOIN NetworkNode
+                     ON AvailabilityObserverItem.aoiResultMode = ${AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES}
+                        AND NetworkNode.networkNodeId = AvailabilityResponse.availabilityNetworkNode
+          WHERE (:responseTimeFilter = 0 
+                 OR AvailabilityObserverItem.aoiListenerUid IN 
+                       (SELECT affectedListenerUid FROM AffectedObservers))
+            AND (:listenerUidFilter = 0 OR AvailabilityObserverItem.aoiListenerUid = :listenerUidFilter)
        """)
     abstract fun findAllListenersAndAvailabilityByTime(
-        time: Long,
+        responseTimeFilter: Long,
+        listenerUidFilter: Int,
     ): List<FileAvailabilityWithListener>
 
     @Query("""

@@ -5,6 +5,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.ustadmobile.lib.db.entities.AvailabilityObserverItem.Companion.MODE_INC_AVAILABLE_NODES
+import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.AvailabilityEvent
+import com.ustadmobile.retriever.AvailabilityObserver
+import com.ustadmobile.retriever.OnAvailabilityChanged
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.testapp.databinding.FragmentDownloadAvailabilityBinding
 import org.kodein.di.DI
@@ -12,22 +19,66 @@ import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
 
-class DownloadAvailabilityFragment: Fragment(), DIAware {
+class DownloadAvailabilityFragment: Fragment(), DIAware, OnAvailabilityChanged {
 
     override val di: DI by closestDI()
 
     private val retriever: Retriever by instance()
 
-    private val mBinding: FragmentDownloadAvailabilityBinding? = null
+    private var mBinding: FragmentDownloadAvailabilityBinding? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    private var availabilityObserver: AvailabilityObserver? = null
 
-        return null
+    private var mConcatAdapter: ConcatAdapter? = null
 
+    private var recyclerAdapterMap: Map<String,
+            Pair<DownloadAvailabilityOriginUrlRecyclerViewAdapter, NodeListRecyclerAdapter>>? = null
+
+    private var urls: List<String> = listOf()
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        urls = arguments?.getString(ARG_URLS)?.let { listOf(it) }
+            ?: throw IllegalArgumentException("No urls specified!")
+
+        recyclerAdapterMap = urls.associateWith { url ->
+            (DownloadAvailabilityOriginUrlRecyclerViewAdapter() to NodeListRecyclerAdapter())
+        }
+
+        val recyclerAdaptersList = recyclerAdapterMap?.entries?.map {
+            listOf(it.value.first, it.value.second)
+        }?.flatten() ?: listOf()
+
+        AvailabilityObserver(urls, this, MODE_INC_AVAILABLE_NODES).also {
+            availabilityObserver = it
+            retriever.addAvailabilityObserver(it)
+        }
+
+        return FragmentDownloadAvailabilityBinding.inflate(inflater, container, false).also { binding ->
+            mBinding = binding
+            mConcatAdapter = ConcatAdapter(*recyclerAdaptersList.toTypedArray())
+            binding.downloadAvailabilityRecyclerview.adapter = mConcatAdapter
+            binding.downloadAvailabilityRecyclerview.layoutManager = LinearLayoutManager(requireContext())
+        }.root
     }
 
+    override fun onAvailabilityChanged(evt: AvailabilityEvent) {
+        evt.availabilityInfo.values.forEach {
+            val adapters = recyclerAdapterMap?.get(it.url) ?: return@forEach
+            adapters.first.submitList(listOf(it))
+            adapters.second.submitList(it.availableEndpoints.map { endpoint ->
+                NetworkNode().apply {
+                    networkNodeEndpointUrl = endpoint
+                }
+            })
+        }
+    }
 
     override fun onDestroyView() {
+        availabilityObserver?.also { observer ->
+            retriever.removeAvailabilityObserver(observer)
+            availabilityObserver = null
+        }
+
         super.onDestroyView()
     }
 

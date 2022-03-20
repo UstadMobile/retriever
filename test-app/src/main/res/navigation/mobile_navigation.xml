@@ -24,4 +24,9 @@
         android:name="com.ustadmobile.retriever.testapp.EnterDownloadUrlFragment"
         android:label="@string/download"/>
 
+    <fragment
+        android:id="@+id/downloadavailability_dest"
+        android:name="com.ustadmobile.retriever.testapp.DownloadAvailabilityFragment"
+        android:label="@string/download"/>
+
 </navigation>

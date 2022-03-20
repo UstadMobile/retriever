@@ -83,9 +83,9 @@ ext {
     version_android_compile_sdk = 31
     version_android_target_sdk = 31
     version_android_workmanager = "2.7.1"
+    version_androidx_recyclerview = "1.2.1"
 
-    version_door = "0.0.46x"
-    //pre replication sync : version_door = "0.0.32t"
+    version_door = "0.0.56"
     version_junit = "4.13"
 
     version_kotlin_jvmTarget = "1.8"

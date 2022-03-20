@@ -22,9 +22,7 @@ class ScanFileListController(
 
 
     fun removeFileUrl(availableFileWithNumNodes: AvailabilityFileWithNumNodes){
-        GlobalScope.launch {
-            db.availabilityObserverItemDao.removeFromWatchList(availableFileWithNumNodes.aoiId)
-        }
+
     }
 
 

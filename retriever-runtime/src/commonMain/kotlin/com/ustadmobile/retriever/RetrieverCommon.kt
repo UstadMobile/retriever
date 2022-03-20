@@ -54,12 +54,16 @@ abstract class RetrieverCommon(
         }
     }
 
-    override suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver) {
-        availabilityManager.addAvailabilityObserver(availabilityObserver)
+    override fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver) {
+        GlobalScope.launch {
+            availabilityManager.addAvailabilityObserver(availabilityObserver)
+        }
     }
 
-    override suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver) {
-        availabilityManager.removeAvailabilityObserver(availabilityObserver)
+    override fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver) {
+        GlobalScope.launch {
+            availabilityManager.removeAvailabilityObserver(availabilityObserver)
+        }
     }
 
 }

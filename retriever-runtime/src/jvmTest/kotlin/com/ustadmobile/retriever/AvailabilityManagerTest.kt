@@ -111,7 +111,9 @@ class AvailabilityManagerTest {
         //Verify for onAvailabilityChanged event was called for every Node and its result matches
         // pre determined nodeAvailabilityMaps as defined.
         argumentCaptor<AvailabilityEvent> {
-            verify(onAvailabilityChanged, timeout(2000).times(defaultNetworkNodeList.size))
+
+            //Expected number of calls is once when first added, then again after each receiving each response
+            verify(onAvailabilityChanged, timeout(2000).times(defaultNetworkNodeList.size + 1))
                 .onAvailabilityChanged(capture())
 
             lastValue.originUrlsToAvailable.forEach { originUrlEntry ->
@@ -135,7 +137,8 @@ class AvailabilityManagerTest {
         }
 
         argumentCaptor<AvailabilityEvent> {
-            verify(onAvailabilityChanged, timeout(2000).times(defaultNetworkNodeList.size))
+            //Expected number of calls is once when first added, then again after each receiving each response
+            verify(onAvailabilityChanged, timeout(2000).times(defaultNetworkNodeList.size + 1))
                 .onAvailabilityChanged(capture())
 
             testOriginUrls.forEach { originUrl ->

@@ -7,9 +7,9 @@ interface Retriever{
         progressListener: ProgressListener,
     )
 
-    suspend fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver)
+    fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver)
 
-    suspend fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver)
+    fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver)
 
     companion object{
         const val DBNAME: String = "retreiverdb"

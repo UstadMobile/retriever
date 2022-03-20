@@ -33,7 +33,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                implementation "com.ustadmobile.door:door-runtime:$version_door"
+                implementation "com.github.UstadMobile.door:door-runtime:$version_door"
                 implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$version_kotlinx_serialization"
                 compileOnly project(':lib-database')
                 compileOnly project(':lib-database-entities')
@@ -87,7 +87,7 @@ kotlin {
                 // Room (annotation processing takes place only on lib-database-android to improve build times)
                 implementation "androidx.room:room-runtime:$version_android_room"
                 implementation project(':lib-database-android')
-                implementation "com.ustadmobile.door:door-runtime:$version_door"
+                implementation "com.github.UstadMobile.door:door-runtime:$version_door"
                 implementation "androidx.paging:paging-runtime:$version_androidx_paging"
                 implementation "com.squareup.okhttp3:okhttp:$version_okhttp"
                 implementation "io.ktor:ktor-client-gson:$version_ktor"

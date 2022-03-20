@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
 open class AvailabilityObserverItem {
 
     @PrimaryKey(autoGenerate = true)
-    var aoiId: Long = 0
+    var aoiId: Int = 0
 
     var aoiOriginalUrl: String? = null
 
