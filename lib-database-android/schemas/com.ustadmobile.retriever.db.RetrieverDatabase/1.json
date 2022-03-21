@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "237188768363d8480cbc35a0e88fe174",
+    "identityHash": "0dc10f0a2b24f10d6e6c4e547a8dcf2d",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -187,7 +187,7 @@
       },
       {
         "tableName": "DownloadJobItem",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`djiUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `djiBatchId` INTEGER NOT NULL, `djiOriginUrl` TEXT, `djiDestPath` TEXT, `djiStatus` INTEGER NOT NULL, `djiTotalSize` INTEGER NOT NULL, `djiAttemptCount` INTEGER NOT NULL, `djiIndex` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`djiUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `djiBatchId` INTEGER NOT NULL, `djiOriginUrl` TEXT, `djiDestPath` TEXT, `djiStatus` INTEGER NOT NULL, `djiBytesSoFar` INTEGER NOT NULL, `djiTotalSize` INTEGER NOT NULL, `djiAttemptCount` INTEGER NOT NULL, `djiIndex` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "djiUid",
@@ -216,6 +216,12 @@
           {
             "fieldPath": "djiStatus",
             "columnName": "djiStatus",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "djiBytesSoFar",
+            "columnName": "djiBytesSoFar",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -473,7 +479,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '237188768363d8480cbc35a0e88fe174')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0dc10f0a2b24f10d6e6c4e547a8dcf2d')"
     ]
   }
 }
