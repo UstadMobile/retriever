@@ -1,6 +1,5 @@
 package com.ustadmobile.retriever.fetcher
 
-import com.ustadmobile.door.ext.toDoorUri
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ResourcesResponder
 import com.ustadmobile.retriever.ext.url
@@ -12,7 +11,7 @@ import org.junit.*
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyBlocking
 import java.io.File
 import java.io.IOException
 
@@ -51,7 +50,7 @@ class SingleItemFetcherTest {
     @Test
     fun givenValidUrl_whenDownloadCalled_thenShouldDownloadToDestination() {
         val destFile = File(downloadDestDir, "cat-pic0")
-        val mockProgressListener = mock<FetchProgressListener>()
+        val mockProgressListener = mock<RetrieverProgressListener>()
 
         runBlocking {
             SingleItemFetcher(okHttpClient).download(
@@ -65,12 +64,17 @@ class SingleItemFetcherTest {
             this::class.java.getResource("/cat-pic0.jpg")!!.readBytes(),
             destFile.readBytes())
 
-        verify(mockProgressListener).onFetchProgress(argWhere {
-            it.bytesSoFar == 0L && it.totalBytes > 0L
-        })
-        verify(mockProgressListener).onFetchProgress(argWhere {
-            it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes
-        })
+        verifyBlocking (mockProgressListener) {
+            onRetrieverProgress(argWhere {
+                it.bytesSoFar == 0L && it.totalBytes > 0L
+            })
+        }
+
+        verifyBlocking(mockProgressListener) {
+            onRetrieverProgress(argWhere {
+                it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes
+            })
+        }
     }
 
     @Test(expected = IOException::class)
@@ -92,7 +96,7 @@ class SingleItemFetcherTest {
         val partialBytes = bytesInItem.copyOf(bytesInItem.size / 2)
         destFile.writeBytes(partialBytes)
 
-        val mockProgressListener = mock<FetchProgressListener>()
+        val mockProgressListener = mock<RetrieverProgressListener>()
 
         runBlocking {
             SingleItemFetcher(okHttpClient).download(

@@ -10,7 +10,7 @@ expect class MultiItemFetcher {
     suspend fun download(
         endpointUrl: String,
         downloadJobItems: List<DownloadJobItem>,
-        fetchProgressListener: FetchProgressListener,
+        retrieverProgressListener: RetrieverProgressListener,
     ): FetchResult
 
 }

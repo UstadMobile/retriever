@@ -1,5 +1,7 @@
 package com.ustadmobile.retriever
 
+import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
+
 interface Retriever{
 
     /**
@@ -7,7 +9,7 @@ interface Retriever{
      */
     suspend fun retrieve(
         retrieverRequests: List<RetrieverRequest>,
-        progressListener: ProgressListener,
+        progressListener: RetrieverProgressListener,
     )
 
     suspend fun addFiles(files: List<LocalFileInfo>)

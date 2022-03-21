@@ -25,7 +25,7 @@ actual class MultiItemFetcher(
     actual suspend fun download(
         endpointUrl: String,
         downloadJobItems: List<DownloadJobItem>,
-        fetchProgressListener: FetchProgressListener
+        retrieverProgressListener: RetrieverProgressListener
     ): FetchResult {
         //Validate input here
 
@@ -104,13 +104,8 @@ actual class MultiItemFetcher(
                 }
 
                 ZipInputStream(sourceInput).use { zipIn ->
-                    zipIn.extractToDir(destFileProvider) { entry, bytesSoFar, totalBytes ->
-                        fetchProgressListener.onFetchProgress(
-                            FetchProgressEvent(
-                                urlToJobItemMap[entry.name]?.djiUid ?: 0, bytesSoFar, totalBytes
-                            )
-                        )
-                    }
+                    zipIn.extractToDir(destFileProvider, jobItemUrlMap.map { it.key to it.value.djiUid }.toMap(),
+                        progressListener = retrieverProgressListener)
                 }
 
                 response.code

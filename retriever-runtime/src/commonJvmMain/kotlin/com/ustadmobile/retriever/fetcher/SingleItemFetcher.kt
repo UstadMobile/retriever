@@ -2,6 +2,7 @@ package com.ustadmobile.retriever.fetcher
 
 import java.io.File
 import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.ext.copyToAndUpdateProgress
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -14,7 +15,7 @@ actual class SingleItemFetcher(
 
     actual suspend fun download(
         downloadJobItem: DownloadJobItem,
-        fetchProgressListener: FetchProgressListener,
+        retrieverProgressListener: RetrieverProgressListener,
     ) {
         try {
             val url = downloadJobItem.djiOriginUrl
@@ -43,29 +44,27 @@ actual class SingleItemFetcher(
 
                 val totalBytes = response.header("content-length") ?.toLong()
                     ?: throw IllegalStateException("$url does not provide a content-length header.")
-                fetchProgressListener.onFetchProgress(
-                    FetchProgressEvent(
-                        downloadJobItem.djiUid, bytesAlreadyDownloaded,
-                        totalBytes
-                    )
+                retrieverProgressListener.onRetrieverProgress(
+                    RetrieverProgressEvent(downloadJobItem.djiUid, url, bytesAlreadyDownloaded, totalBytes,
+                        STATUS_RUNNING)
                 )
 
                 val fetchProgressWrapper = if(bytesAlreadyDownloaded > 0L) {
-                    FetchProgressListener {
-                        fetchProgressListener.onFetchProgress(it.copy(
+                    RetrieverProgressListener {
+                        retrieverProgressListener.onRetrieverProgress(it.copy(
                             bytesSoFar = it.bytesSoFar + bytesAlreadyDownloaded,
                             totalBytes = it.totalBytes + bytesAlreadyDownloaded
                         ))
                     }
                 }else {
-                    fetchProgressListener
+                    retrieverProgressListener
                 }
 
                 val body = response.body ?: throw IllegalStateException("Response to $url has no body!")
                 body.byteStream().use { bodyIn ->
                     FileOutputStream(destFile, bytesAlreadyDownloaded != 0L).use { fileOut ->
                         bodyIn.copyToAndUpdateProgress(fileOut, fetchProgressWrapper, downloadJobItem.djiUid,
-                            totalBytes)
+                            url, totalBytes)
                     }
                 }
             }

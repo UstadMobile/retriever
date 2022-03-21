@@ -1,11 +1,15 @@
     package com.ustadmobile.retriever
 
 import com.ustadmobile.door.ext.concurrentSafeListOf
+import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_COMPLETE
 import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.MultiItemFetcher
+import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
+import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
 import com.ustadmobile.retriever.fetcher.SingleItemFetcher
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -13,6 +17,8 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlin.math.min
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Download approach:
@@ -29,7 +35,7 @@ import io.github.aakira.napier.Napier
 class Downloader(
     private val downloadBatchId: Long,
     private val availabilityManager: AvailabilityManager,
-    private val progressListener: ProgressListener,
+    private val progressListener: RetrieverProgressListener,
     private val singleItemFetcher: SingleItemFetcher,
     private val multiItemFetcher: MultiItemFetcher,
     private val db: RetrieverDatabase,
@@ -43,6 +49,10 @@ class Downloader(
     private val activeBatches: MutableList<DownloadBatch> = concurrentSafeListOf()
 
     private val logPrefix = "[Retriever-Downloader #$downloadBatchId] "
+
+    private val progressUpdateMutex = Mutex()
+
+    private val pendingUpdates = concurrentSafeMapOf<Long, RetrieverProgressEvent>()
 
     /**
      * Produce items -
@@ -99,6 +109,20 @@ class Downloader(
         }
     }
 
+    private suspend fun commitProgressUpdates() {
+        progressUpdateMutex.withLock {
+            val updatesToCommit = pendingUpdates.values.toList()
+            pendingUpdates.clear()
+
+            db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                updatesToCommit.forEach {
+                    txDb.downloadJobItemDao.updateProgressAndStatusByUid(it.downloadJobItemUid,
+                        it.bytesSoFar, it.totalBytes, it.status)
+                }
+            }
+        }
+    }
+
     @ExperimentalCoroutinesApi
     private fun CoroutineScope.launchProcessor(
         id: Int,
@@ -116,7 +140,7 @@ class Downloader(
 
                     Napier.d("$logPrefix - processor $id - fetch from origin server " +
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
-                    singleItemFetcher.download(itemToDownload, { })
+                    singleItemFetcher.download(itemToDownload, progressListener)
                     db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                         txDb.downloadJobItemDao.updateStatusByUid(itemToDownload.djiUid, DownloadJobItem.STATUS_COMPLETE)
                     }
@@ -125,11 +149,20 @@ class Downloader(
                 }else {
                     Napier.d("$logPrefix - processor $id - fetch from peer $host starting", tag = Retriever.LOGTAG)
 
-                    val completedItems = mutableListOf<Long>()
                     try {
                         multiItemFetcher.download(host, item.itemsToDownload) {
-                            if(it.bytesSoFar == it.totalBytes)
-                                completedItems += it.downloadJobItemUid
+                            val status = if(it.bytesSoFar > 0 && it.bytesSoFar == it.totalBytes) {
+                                STATUS_COMPLETE
+                            }else {
+                                STATUS_RUNNING
+                            }
+
+                            progressUpdateMutex.withLock {
+                                pendingUpdates[it.downloadJobItemUid] = RetrieverProgressEvent(
+                                    it.downloadJobItemUid, it.url, it.bytesSoFar, it.totalBytes, status)
+                            }
+
+                            progressListener.onRetrieverProgress(it)
                         }
                         Napier.d("$logPrefix - processor $id - fetch from peer $host done.",
                             tag = Retriever.LOGTAG)
@@ -137,11 +170,7 @@ class Downloader(
                         throw e
                     }finally {
                         withContext(NonCancellable) {
-                            db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                                completedItems.forEach { djUid ->
-                                    txDb.downloadJobItemDao.updateStatusByUid(djUid, DownloadJobItem.STATUS_COMPLETE)
-                                }
-                            }
+                            commitProgressUpdates()
                         }
                     }
                 }

@@ -1,8 +1,5 @@
 package com.ustadmobile.retriever.fetcher
 
-import com.ustadmobile.door.DoorUri
-import com.ustadmobile.door.ext.toDoorUri
-import com.ustadmobile.door.ext.toFile
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ext.headerSize
 import com.ustadmobile.retriever.ext.url
@@ -19,14 +16,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.mockito.kotlin.mock
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import com.ustadmobile.retriever.io.RangeInputStream
-import org.mockito.kotlin.argWhere
-import org.mockito.kotlin.atLeastOnce
-import org.mockito.kotlin.verify
+import org.mockito.kotlin.*
 import java.io.*
 import java.util.zip.ZipInputStream
 
@@ -40,7 +34,7 @@ class MultiItemFetcherTest {
 
     private lateinit var tmpZipFile: File
 
-    private lateinit var mockFetchProgressListener: FetchProgressListener
+    private lateinit var mockRetrieverProgressListener: RetrieverProgressListener
 
     private val json = Json {
         encodeDefaults = true
@@ -98,7 +92,7 @@ class MultiItemFetcherTest {
 
         downloadDestDir = temporaryFolder.newFolder()
 
-        mockFetchProgressListener = mock { }
+        mockRetrieverProgressListener = mock { }
 
         downloadJobItems = RESOURCE_PATH_LIST.mapIndexed { index, resPath ->
             DownloadJobItem().apply {
@@ -116,16 +110,18 @@ class MultiItemFetcherTest {
         val multiItemFetcher = MultiItemFetcher(okHttpClient, json)
 
         runBlocking {
-            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockFetchProgressListener)
+            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
         }
 
         downloadJobItems.forEach {
             Assert.assertArrayEquals("Content for ${it.djiOriginUrl} is the same",
                 this::class.java.getResourceAsStream("${it.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
                 File(it.djiDestPath!!).readBytes())
-            verify(mockFetchProgressListener, atLeastOnce()).onFetchProgress(argWhere { evt ->
-                evt.downloadJobItemUid == it.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
-            })
+            verifyBlocking(mockRetrieverProgressListener, atLeastOnce()) {
+                onRetrieverProgress(argWhere { evt ->
+                    evt.downloadJobItemUid == it.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
+                })
+            }
         }
     }
 
@@ -136,7 +132,7 @@ class MultiItemFetcherTest {
         val multiItemFetcher = MultiItemFetcher(okHttpClient, json)
 
         runBlocking {
-            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockFetchProgressListener)
+            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
         }
     }
 
@@ -151,7 +147,7 @@ class MultiItemFetcherTest {
         val multiItemFetcher = MultiItemFetcher(okHttpClient, json)
 
         val fetchResult = runBlocking {
-            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockFetchProgressListener)
+            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
         }
 
 

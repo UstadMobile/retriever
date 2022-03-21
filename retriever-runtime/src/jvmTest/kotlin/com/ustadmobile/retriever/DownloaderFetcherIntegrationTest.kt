@@ -1,9 +1,6 @@
 package com.ustadmobile.retriever
 
 import com.ustadmobile.door.DatabaseBuilder
-import com.ustadmobile.door.DoorUri
-import com.ustadmobile.door.ext.toDoorUri
-import com.ustadmobile.door.ext.toFile
 import com.ustadmobile.door.ext.writeToFile
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.AvailabilityResponse
@@ -66,6 +63,7 @@ class DownloaderFetcherIntegrationTest {
 
     @Before
     fun setup() {
+        Napier.takeLogarithm()
         Napier.base(DebugAntilog())
         originHttpServer = RouterNanoHTTPD(0)
         originHttpServer.addRoute("/resources/.*", ResourcesResponder::class.java, "/resources")
@@ -97,7 +95,7 @@ class DownloaderFetcherIntegrationTest {
             DownloadJobItem().apply {
                 djiBatchId = batchId
                 djiOriginUrl = originHttpServer.url("/resources$resPath")
-                djiDestPath = File(downloadDestDir, resPath.substringAfterLast("/")).toDoorUri().toString()
+                djiDestPath = File(downloadDestDir, resPath.substringAfterLast("/")).absolutePath
                 djiStatus = DownloadJobItem.STATUS_QUEUED
             }
         }
@@ -129,7 +127,7 @@ class DownloaderFetcherIntegrationTest {
             Assert.assertArrayEquals(
                 "Item $index downloaded bytes as expected",
                 this::class.java.getResourceAsStream(resPath)!!.readAllBytes(),
-                DoorUri.parse(itemsToDownload[index].djiDestPath!!).toFile().readBytes())
+                File(itemsToDownload[index].djiDestPath!!).readBytes())
         }
     }
 
@@ -165,7 +163,7 @@ class DownloaderFetcherIntegrationTest {
             Assert.assertArrayEquals(
                 "Item $index downloaded bytes as expected",
                 this::class.java.getResourceAsStream(resPath)!!.readAllBytes(),
-                DoorUri.parse(itemsToDownload[index].djiDestPath!!).toFile().readBytes())
+                File(itemsToDownload[index].djiDestPath!!).readBytes())
         }
     }
 

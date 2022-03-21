@@ -9,6 +9,8 @@ import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.*
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Before
@@ -25,7 +27,7 @@ class DownloaderTest {
 
     private lateinit var mockMultiItemFetcher: MultiItemFetcher
 
-    private lateinit var mockProgressListener: ProgressListener
+    private lateinit var mockProgressListener: RetrieverProgressListener
 
     private lateinit var downloadJobItems: List<DownloadJobItem>
 
@@ -101,12 +103,16 @@ class DownloaderTest {
 
         mockMultiItemFetcher.stub {
             onBlocking { download(any(), any(), any()) }.thenAnswer {
-                val fetchProgressListener = it.arguments[2] as FetchProgressListener
+                val retrieverProgressListener = it.arguments[2] as RetrieverProgressListener
                 val downloadJobItems = it.arguments[1] as List<DownloadJobItem>
-                downloadJobItems.forEach {
-                    //send a complete event
-                    fetchProgressListener.onFetchProgress(FetchProgressEvent(it.djiUid, 1000, 1000))
+                GlobalScope.launch {
+                    downloadJobItems.forEach {
+                        //send a complete event
+                        retrieverProgressListener.onRetrieverProgress(RetrieverProgressEvent(it.djiUid, it.djiOriginUrl!!,
+                            1000, 1000, DownloadJobItem.STATUS_COMPLETE))
+                    }
                 }
+
 
                 FetchResult(200)
             }

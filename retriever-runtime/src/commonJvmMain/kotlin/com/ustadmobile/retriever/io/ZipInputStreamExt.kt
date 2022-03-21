@@ -8,13 +8,22 @@ import java.util.zip.ZipInputStream
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.isActive
 import com.ustadmobile.door.util.systemTimeInMillis
+import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_COMPLETE
+import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_QUEUED
+import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
+import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
+import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
 import com.ustadmobile.retriever.fetcher.ZipExtractionProgressListener
 
 
+/**
+ * urlToIdMap is used to fire RetrieverProgressEvents
+ */
 suspend fun ZipInputStream.extractToDir(
     destProvider: (ZipEntry) -> File,
+    urlToIdMap: Map<String, Long>,
     progressInterval: Int = 200,
-    progressListener: ZipExtractionProgressListener? = null,
+    progressListener: RetrieverProgressListener? = null,
 ) {
     lateinit var zipEntry: ZipEntry
     val buffer = ByteArray(8192)
@@ -24,7 +33,9 @@ suspend fun ZipInputStream.extractToDir(
 
     while(nextEntry?.also { zipEntry = it } != null) {
         val destFile = destProvider(zipEntry)
-        progressListener?.onProgress(zipEntry, 0, zipEntry.totalSize)
+        val downloadJobUid = urlToIdMap[zipEntry.name] ?: -1L
+        progressListener?.onRetrieverProgress(RetrieverProgressEvent(downloadJobUid, zipEntry.name, 0L,
+            zipEntry.size, STATUS_RUNNING))
         lastProgressUpdateTime = systemTimeInMillis()
 
         var entryBytesSoFar = 0L
@@ -33,14 +44,23 @@ suspend fun ZipInputStream.extractToDir(
                 fileOut.write(buffer, 0, bytesRead)
                 entryBytesSoFar += bytesRead
                 val timeNow = systemTimeInMillis()
-                if(timeNow - lastProgressUpdateTime >= progressInterval) {
-                    progressListener?.onProgress(zipEntry, entryBytesSoFar, zipEntry.size)
+                if(progressListener != null && timeNow - lastProgressUpdateTime >= progressInterval) {
+                    progressListener.onRetrieverProgress(
+                        RetrieverProgressEvent(downloadJobUid, zipEntry.name, entryBytesSoFar, zipEntry.size,
+                            STATUS_RUNNING))
                     lastProgressUpdateTime = timeNow
                 }
             }
             fileOut.flush()
 
-            progressListener?.onProgress(zipEntry, entryBytesSoFar, zipEntry.size)
+            val finalStatus = if(entryBytesSoFar == zipEntry.compressedSize) {
+                STATUS_COMPLETE
+            }else {
+                STATUS_QUEUED
+            }
+
+            progressListener?.onRetrieverProgress(RetrieverProgressEvent(downloadJobUid, zipEntry.name, entryBytesSoFar,
+                zipEntry.size, finalStatus))
         }
     }
 }

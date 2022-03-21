@@ -6,6 +6,7 @@ import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.MultiItemFetcher
+import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
 import com.ustadmobile.retriever.fetcher.SingleItemFetcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -70,7 +71,7 @@ abstract class RetrieverCommon(
 
     override suspend fun retrieve(
         retrieverRequests: List<RetrieverRequest>,
-        progressListener: ProgressListener
+        progressListener: RetrieverProgressListener
     ) {
         val batchId = systemTimeInMillis()
 

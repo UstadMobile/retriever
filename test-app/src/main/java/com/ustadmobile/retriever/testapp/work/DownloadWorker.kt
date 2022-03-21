@@ -4,10 +4,10 @@ import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.ustadmobile.retriever.ProgressEvent
-import com.ustadmobile.retriever.ProgressListener
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverRequest
+import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
+import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
@@ -17,13 +17,13 @@ import java.io.File
 class DownloadWorker(
     context: Context,
     params: WorkerParameters
-): CoroutineWorker(context, params), DIAware, ProgressListener{
+): CoroutineWorker(context, params), DIAware, RetrieverProgressListener{
 
     override val di: DI by closestDI(context)
 
     private val retriever: Retriever by instance()
 
-    override fun onProgress(progressEvent: ProgressEvent) {
+    override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
 
     }
 

@@ -12,7 +12,7 @@ expect class SingleItemFetcher {
 
     suspend fun download(
         downloadJobItem: DownloadJobItem,
-        fetchProgressListener: FetchProgressListener,
+        retrieverProgressListener: RetrieverProgressListener,
     )
 
 }

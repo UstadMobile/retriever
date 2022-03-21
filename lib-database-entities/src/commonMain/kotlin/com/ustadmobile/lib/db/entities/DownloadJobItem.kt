@@ -26,6 +26,8 @@ open class DownloadJobItem {
 
     var djiStatus = 0
 
+    var djiBytesSoFar = 0L
+
     var djiTotalSize = 0L
 
     var djiAttemptCount = 0

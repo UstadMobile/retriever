@@ -4,5 +4,5 @@ import com.ustadmobile.retriever.util.ZipEntryKmp
 
 
 fun interface ZipExtractionProgressListener {
-    fun onProgress(entry: ZipEntryKmp, bytesSoFar: Long, totalBytes: Long)
+    suspend fun onProgress(entry: ZipEntryKmp, bytesSoFar: Long, totalBytes: Long)
 }

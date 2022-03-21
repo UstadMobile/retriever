@@ -2,20 +2,21 @@ package com.ustadmobile.retriever.ext
 
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.isActive
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.retriever.fetcher.FetchProgressEvent
-import com.ustadmobile.retriever.fetcher.FetchProgressListener
+import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
+import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
+import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
 
 //The read/write has to actually happen somewhere. This function regularly checks
 //for cancellation and behaves appropriately.
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun InputStream.copyToAndUpdateProgress(
     dest: OutputStream,
-    progressListener: FetchProgressListener,
+    progressListener: RetrieverProgressListener,
     downloadJobItemUid: Long,
+    url: String,
     totalBytes: Long,
     progressInterval: Int = 333,
 ) {
@@ -29,11 +30,13 @@ suspend fun InputStream.copyToAndUpdateProgress(
         totalBytesRead += bytesRead
         val timeNow = systemTimeInMillis()
         if(timeNow - lastProgressTime >= progressInterval){
-            progressListener.onFetchProgress(FetchProgressEvent(downloadJobItemUid, totalBytesRead, totalBytes))
+            progressListener.onRetrieverProgress(
+                RetrieverProgressEvent(downloadJobItemUid, url, totalBytesRead, totalBytes, STATUS_RUNNING))
             lastProgressTime = timeNow
         }
     }
 
-    progressListener.onFetchProgress(FetchProgressEvent(downloadJobItemUid, totalBytesRead, totalBytes))
+    progressListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItemUid, url, totalBytesRead, totalBytes,
+        STATUS_RUNNING))
     dest.flush()
 }
