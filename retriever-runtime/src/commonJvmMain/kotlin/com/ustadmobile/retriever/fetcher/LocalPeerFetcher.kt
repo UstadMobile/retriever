@@ -17,7 +17,7 @@ import com.ustadmobile.retriever.ext.headerSize
 import java.io.*
 import java.util.*
 
-actual class MultiItemFetcher(
+actual class LocalPeerFetcher(
     private val okHttpClient: OkHttpClient,
     private val json: Json
 ) {

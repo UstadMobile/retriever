@@ -21,11 +21,11 @@ class DownloaderTest {
 
     private lateinit var db: RetrieverDatabase
 
-    private lateinit var mockSingleItemFetcher: SingleItemFetcher
+    private lateinit var mockOriginServerFetcher: OriginServerFetcher
 
     private lateinit var mockAvailabilityManager: AvailabilityManager
 
-    private lateinit var mockMultiItemFetcher: MultiItemFetcher
+    private lateinit var mockLocalPeerFetcher: LocalPeerFetcher
 
     private lateinit var mockProgressListener: RetrieverProgressListener
 
@@ -39,11 +39,11 @@ class DownloaderTest {
                 it.clearAllTables()
             }
 
-        mockSingleItemFetcher = mock {
+        mockOriginServerFetcher = mock {
 
         }
 
-        mockMultiItemFetcher = mock {
+        mockLocalPeerFetcher = mock {
 
         }
 
@@ -72,7 +72,7 @@ class DownloaderTest {
     @Test
     fun givenRequestNotAvailableLocally_whenDownloadCalled_thenShouldDownloadFromOriginServer() {
         val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
-            mockSingleItemFetcher, mockMultiItemFetcher, db)
+            mockOriginServerFetcher, mockLocalPeerFetcher, db)
 
         runBlocking {
             withTimeout(10000) {
@@ -81,7 +81,7 @@ class DownloaderTest {
         }
 
         downloadJobItems.forEach { downloadItem ->
-            verifyBlocking(mockSingleItemFetcher) {
+            verifyBlocking(mockOriginServerFetcher) {
                 download(argWhere {
                     it.djiOriginUrl == downloadItem.djiOriginUrl &&
                             it.djiDestPath == downloadItem.djiDestPath
@@ -101,7 +101,7 @@ class DownloaderTest {
             AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
         })
 
-        mockMultiItemFetcher.stub {
+        mockLocalPeerFetcher.stub {
             onBlocking { download(any(), any(), any()) }.thenAnswer {
                 val retrieverProgressListener = it.arguments[2] as RetrieverProgressListener
                 val downloadJobItems = it.arguments[1] as List<DownloadJobItem>
@@ -109,7 +109,8 @@ class DownloaderTest {
                     downloadJobItems.forEach {
                         //send a complete event
                         retrieverProgressListener.onRetrieverProgress(RetrieverProgressEvent(it.djiUid, it.djiOriginUrl!!,
-                            1000, 1000, DownloadJobItem.STATUS_COMPLETE))
+                            1000, 1000,0, 1000,
+                            DownloadJobItem.STATUS_COMPLETE))
                     }
                 }
 
@@ -119,7 +120,7 @@ class DownloaderTest {
         }
 
         val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
-            mockSingleItemFetcher, mockMultiItemFetcher, db)
+            mockOriginServerFetcher, mockLocalPeerFetcher, db)
 
         runBlocking {
             withTimeout(10000) {
@@ -128,7 +129,7 @@ class DownloaderTest {
         }
 
 
-        verifyBlocking(mockMultiItemFetcher) {
+        verifyBlocking(mockLocalPeerFetcher) {
             download(eq(networkNode.networkNodeEndpointUrl!!), argWhere { listArg ->
                 downloadJobItems.all { item ->  listArg.any { it.djiOriginUrl == item.djiOriginUrl } }
             }, any())

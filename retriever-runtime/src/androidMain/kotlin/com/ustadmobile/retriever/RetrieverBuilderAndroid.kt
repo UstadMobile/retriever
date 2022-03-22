@@ -3,8 +3,8 @@ package com.ustadmobile.retriever
 import android.content.Context
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.fetcher.MultiItemFetcher
-import com.ustadmobile.retriever.fetcher.SingleItemFetcher
+import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
+import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import io.ktor.client.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -32,7 +32,7 @@ class RetrieverBuilderAndroid private constructor(
         }
 
         return RetrieverAndroidImpl(db, nsdServiceName, context, AvailabilityCheckerAndroidImpl(db),
-            SingleItemFetcher(okHttpClient), MultiItemFetcher(okHttpClient, json))
+            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json))
     }
 
     companion object {

@@ -5,14 +5,15 @@
 
     <data>
         <import type="com.ustadmobile.lib.db.entities.LocallyStoredFile"/>
+        <import type="com.ustadmobile.lib.db.entities.DownloadJobItem"/>
         <import type="android.text.format.Formatter"/>
-
         <import type="android.view.View"/>
+        <import type="com.ustadmobile.retriever.testapp.util.FormatFileSizeTextKt"/>
 
-        <variable
-            name="availableFile"
-            type="com.ustadmobile.lib.db.entities.LocallyStoredFile" />
-        
+        <variable name="availableFile" type="LocallyStoredFile" />
+
+        <variable name="downloadJobItem" type="DownloadJobItem"/>
+
         <variable
             name="listener"
             type="com.ustadmobile.retriever.testapp.FileListener" />
@@ -42,11 +43,11 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:onClick="@{() -> listener.handleClickFile(availableFile)}"
-            android:paddingLeft="8dp"
             android:paddingTop="8dp"
-            android:paddingRight="8dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="8dp"
             android:paddingBottom="0dp"
-            android:text="@{availableFile.getFileName()}"
+            android:text="@{downloadJobItem.djiOriginUrl}"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             app:layout_constraintEnd_toStartOf="@+id/item_schedule_secondary_menu_imageview"
             app:layout_constraintStart_toEndOf="@+id/item_file_icon"
@@ -54,14 +55,35 @@
             tools:text="Potato.txt" />
 
         <TextView
+            android:id="@+id/file_size_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="@{availableFile.getFileSize()}"
+            android:text="@{FormatFileSizeTextKt.formatTextFileSize(downloadJobItem.djiTotalSize)}"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/item_file_name"
             app:layout_constraintTop_toBottomOf="@+id/item_file_name"
             tools:text="2MB" />
+
+        <TextView
+            android:id="@+id/local_download_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@{@string/downloaded_from_local_peer(FormatFileSizeTextKt.formatTextFileSize(downloadJobItem.djiLocalBytesSoFar))}"
+            app:layout_constraintStart_toStartOf="@+id/item_file_name"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/file_size_text"
+            tools:text="2MB downloaded from local peer"
+        />
+
+        <TextView
+            android:id="@+id/origin_download_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@{@string/downloaded_from_origin_server(FormatFileSizeTextKt.formatTextFileSize(downloadJobItem.djiOriginBytesSoFar))}"
+            app:layout_constraintStart_toStartOf="@+id/item_file_name"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/local_download_text"
+            tools:text="0MB downloaded from origin server"/>
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/item_schedule_secondary_menu_imageview"

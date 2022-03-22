@@ -19,4 +19,6 @@
     <string name="local">Local</string>
     <string name="nodes">Nodes</string>
     <string name="next">Next</string>
+    <string name="downloaded_from_local_peer">%1$s downloaded from local peers</string>
+    <string name="downloaded_from_origin_server">%1$s downloaded from origin server</string>
 </resources>

@@ -8,7 +8,7 @@ import com.ustadmobile.lib.db.entities.DownloadJobItem
  *
  * TODO: define behavior with accept-encoding (e.g. gzip) - probably best set to none
  */
-expect class SingleItemFetcher {
+expect class OriginServerFetcher {
 
     suspend fun download(
         downloadJobItem: DownloadJobItem,

@@ -2,6 +2,8 @@ package com.ustadmobile.retriever.fetcher
 
 import java.io.File
 import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_COMPLETE
+import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_QUEUED
 import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.ext.copyToAndUpdateProgress
 import okhttp3.OkHttpClient
@@ -9,7 +11,7 @@ import okhttp3.Request
 import java.io.FileOutputStream
 import java.io.IOException
 
-actual class SingleItemFetcher(
+actual class OriginServerFetcher(
     private val okHttpClient: OkHttpClient
 ) {
 
@@ -45,8 +47,8 @@ actual class SingleItemFetcher(
                 val totalBytes = response.header("content-length") ?.toLong()
                     ?: throw IllegalStateException("$url does not provide a content-length header.")
                 retrieverProgressListener.onRetrieverProgress(
-                    RetrieverProgressEvent(downloadJobItem.djiUid, url, bytesAlreadyDownloaded, totalBytes,
-                        STATUS_RUNNING)
+                    RetrieverProgressEvent(downloadJobItem.djiUid, url, bytesAlreadyDownloaded, 0L,
+                        bytesAlreadyDownloaded, totalBytes, STATUS_RUNNING)
                 )
 
                 val fetchProgressWrapper = if(bytesAlreadyDownloaded > 0L) {
@@ -61,12 +63,22 @@ actual class SingleItemFetcher(
                 }
 
                 val body = response.body ?: throw IllegalStateException("Response to $url has no body!")
-                body.byteStream().use { bodyIn ->
+                val bytesReadFromHttp = body.byteStream().use { bodyIn ->
                     FileOutputStream(destFile, bytesAlreadyDownloaded != 0L).use { fileOut ->
                         bodyIn.copyToAndUpdateProgress(fileOut, fetchProgressWrapper, downloadJobItem.djiUid,
                             url, totalBytes)
                     }
                 }
+
+                val finalStatus = if(totalBytes == bytesReadFromHttp + bytesAlreadyDownloaded) {
+                    STATUS_COMPLETE
+                }else {
+                    STATUS_QUEUED
+                }
+                retrieverProgressListener.onRetrieverProgress(
+                    RetrieverProgressEvent(downloadJobItem.djiUid, url,
+                        bytesReadFromHttp + bytesAlreadyDownloaded, 0L, bytesReadFromHttp,
+                        totalBytes, finalStatus))
             }
 
         }catch(e: Exception) {

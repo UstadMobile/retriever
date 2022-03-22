@@ -15,7 +15,7 @@ import org.mockito.kotlin.verifyBlocking
 import java.io.File
 import java.io.IOException
 
-class SingleItemFetcherTest {
+class OriginServerFetcherTest {
 
     private lateinit var originHttpServer: RouterNanoHTTPD
 
@@ -53,7 +53,7 @@ class SingleItemFetcherTest {
         val mockProgressListener = mock<RetrieverProgressListener>()
 
         runBlocking {
-            SingleItemFetcher(okHttpClient).download(
+            OriginServerFetcher(okHttpClient).download(
                 DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
                     djiDestPath = destFile.absolutePath
@@ -81,7 +81,7 @@ class SingleItemFetcherTest {
     fun givenUrlDoesntExist_whenDownloadCalled_thenShouldFail() {
         val destFile = File(downloadDestDir, "cat-pic0")
         runBlocking {
-            SingleItemFetcher(okHttpClient).download(DownloadJobItem().apply {
+            OriginServerFetcher(okHttpClient).download(DownloadJobItem().apply {
                 djiOriginUrl = originHttpServer.url("/doesnotexist.jpg")
                 djiDestPath = destFile.absolutePath
             }, { })
@@ -99,7 +99,7 @@ class SingleItemFetcherTest {
         val mockProgressListener = mock<RetrieverProgressListener>()
 
         runBlocking {
-            SingleItemFetcher(okHttpClient).download(
+            OriginServerFetcher(okHttpClient).download(
                 DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
                     djiDestPath = destFile.absolutePath

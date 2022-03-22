@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "0dc10f0a2b24f10d6e6c4e547a8dcf2d",
+    "identityHash": "5ad32231159f010ddc01017a347a5fa2",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -187,7 +187,7 @@
       },
       {
         "tableName": "DownloadJobItem",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`djiUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `djiBatchId` INTEGER NOT NULL, `djiOriginUrl` TEXT, `djiDestPath` TEXT, `djiStatus` INTEGER NOT NULL, `djiBytesSoFar` INTEGER NOT NULL, `djiTotalSize` INTEGER NOT NULL, `djiAttemptCount` INTEGER NOT NULL, `djiIndex` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`djiUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `djiBatchId` INTEGER NOT NULL, `djiOriginUrl` TEXT, `djiDestPath` TEXT, `djiStatus` INTEGER NOT NULL, `djiBytesSoFar` INTEGER NOT NULL, `djiTotalSize` INTEGER NOT NULL, `djiLocalBytesSoFar` INTEGER NOT NULL, `djiOriginBytesSoFar` INTEGER NOT NULL, `djiAttemptCount` INTEGER NOT NULL, `djiIndex` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "djiUid",
@@ -228,6 +228,18 @@
           {
             "fieldPath": "djiTotalSize",
             "columnName": "djiTotalSize",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "djiLocalBytesSoFar",
+            "columnName": "djiLocalBytesSoFar",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "djiOriginBytesSoFar",
+            "columnName": "djiOriginBytesSoFar",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -479,7 +491,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0dc10f0a2b24f10d6e6c4e547a8dcf2d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5ad32231159f010ddc01017a347a5fa2')"
     ]
   }
 }

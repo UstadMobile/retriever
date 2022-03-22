@@ -66,11 +66,20 @@ abstract class DownloadJobItemDao {
     @Query("""
         UPDATE DownloadJobItem
            SET djiBytesSoFar = :bytesSoFar,
+               djiLocalBytesSoFar = :localBytesSoFar,
+               djiOriginBytesSoFar = :originBytesSoFar,
                djiTotalSize = :totalSize,
                djiStatus = :status
          WHERE djiUid = :uid     
     """)
-    abstract suspend fun updateProgressAndStatusByUid(uid: Long, bytesSoFar: Long, totalSize: Long, status: Int)
+    abstract suspend fun updateProgressAndStatusByUid(
+        uid: Long,
+        bytesSoFar: Long,
+        localBytesSoFar: Long,
+        originBytesSoFar: Long,
+        totalSize: Long,
+        status: Int
+    )
 
     @Query("""
         SELECT NOT EXISTS(
@@ -80,6 +89,13 @@ abstract class DownloadJobItemDao {
                   AND djiStatus < ${DownloadJobItem.STATUS_COMPLETE}) 
     """)
     abstract suspend fun isBatchDone(batchId: Long): Boolean
+
+    @Query("""
+        SELECT DownloadJobItem.*
+          FROM DownloadJobItem
+         WHERE djiOriginUrl = :url 
+    """)
+    abstract suspend fun findByUrlFirstOrNull(url: String): DownloadJobItem?
 
 
 }

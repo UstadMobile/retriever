@@ -19,7 +19,7 @@ suspend fun InputStream.copyToAndUpdateProgress(
     url: String,
     totalBytes: Long,
     progressInterval: Int = 333,
-) {
+) : Long {
     val buf = ByteArray(8 * 1024)
     var bytesRead = 0
     var totalBytesRead = 0L
@@ -31,12 +31,13 @@ suspend fun InputStream.copyToAndUpdateProgress(
         val timeNow = systemTimeInMillis()
         if(timeNow - lastProgressTime >= progressInterval){
             progressListener.onRetrieverProgress(
-                RetrieverProgressEvent(downloadJobItemUid, url, totalBytesRead, totalBytes, STATUS_RUNNING))
+                RetrieverProgressEvent(downloadJobItemUid, url, totalBytesRead, totalBytesRead, 0L,
+                    totalBytes, STATUS_RUNNING))
             lastProgressTime = timeNow
         }
     }
 
-    progressListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItemUid, url, totalBytesRead, totalBytes,
-        STATUS_RUNNING))
     dest.flush()
+
+    return totalBytesRead
 }

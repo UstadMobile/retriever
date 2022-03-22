@@ -4,13 +4,12 @@ import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.lib.db.entities.DownloadJobItem
-import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_COMPLETE
 import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.fetcher.MultiItemFetcher
+import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
 import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
-import com.ustadmobile.retriever.fetcher.SingleItemFetcher
+import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -36,8 +35,8 @@ class Downloader(
     private val downloadBatchId: Long,
     private val availabilityManager: AvailabilityManager,
     private val progressListener: RetrieverProgressListener,
-    private val singleItemFetcher: SingleItemFetcher,
-    private val multiItemFetcher: MultiItemFetcher,
+    private val originServerFetcher: OriginServerFetcher,
+    private val localPeerFetcher: LocalPeerFetcher,
     private val db: RetrieverDatabase,
     private val maxConcurrent: Int = 8,
 ) {
@@ -117,7 +116,7 @@ class Downloader(
             db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                 updatesToCommit.forEach {
                     txDb.downloadJobItemDao.updateProgressAndStatusByUid(it.downloadJobItemUid,
-                        it.bytesSoFar, it.totalBytes, it.status)
+                        it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar,it.totalBytes, it.status)
                 }
             }
         }
@@ -131,6 +130,14 @@ class Downloader(
         for(item in channel) {
             Napier.d("$logPrefix - processor $id - start download of " +
                     item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
+
+            val progressListenerWrapper = RetrieverProgressListener {
+                progressUpdateMutex.withLock {
+                    pendingUpdates[it.downloadJobItemUid] = it
+                }
+
+                progressListener.onRetrieverProgress(it)
+            }
             try {
                 val host = item.host
                 if(host == null) {
@@ -140,7 +147,7 @@ class Downloader(
 
                     Napier.d("$logPrefix - processor $id - fetch from origin server " +
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
-                    singleItemFetcher.download(itemToDownload, progressListener)
+                    originServerFetcher.download(itemToDownload, progressListenerWrapper)
                     db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                         txDb.downloadJobItemDao.updateStatusByUid(itemToDownload.djiUid, DownloadJobItem.STATUS_COMPLETE)
                     }
@@ -150,35 +157,22 @@ class Downloader(
                     Napier.d("$logPrefix - processor $id - fetch from peer $host starting", tag = Retriever.LOGTAG)
 
                     try {
-                        multiItemFetcher.download(host, item.itemsToDownload) {
-                            val status = if(it.bytesSoFar > 0 && it.bytesSoFar == it.totalBytes) {
-                                STATUS_COMPLETE
-                            }else {
-                                STATUS_RUNNING
-                            }
-
-                            progressUpdateMutex.withLock {
-                                pendingUpdates[it.downloadJobItemUid] = RetrieverProgressEvent(
-                                    it.downloadJobItemUid, it.url, it.bytesSoFar, it.totalBytes, status)
-                            }
-
-                            progressListener.onRetrieverProgress(it)
-                        }
+                        localPeerFetcher.download(host, item.itemsToDownload, progressListenerWrapper)
                         Napier.d("$logPrefix - processor $id - fetch from peer $host done.",
                             tag = Retriever.LOGTAG)
                     }catch(e: Exception) {
                         throw e
-                    }finally {
-                        withContext(NonCancellable) {
-                            commitProgressUpdates()
-                        }
                     }
                 }
             }catch(e: Exception) {
                 //TODO: retry logic
                 throw e
             }finally {
-                checkQueueChannel.send(true)
+                withContext(NonCancellable) {
+                    commitProgressUpdates()
+                    checkQueueChannel.send(true)
+                }
+
             }
 
         }

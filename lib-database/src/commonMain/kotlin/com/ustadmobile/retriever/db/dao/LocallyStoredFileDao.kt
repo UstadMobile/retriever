@@ -4,8 +4,10 @@ import androidx.room.Dao
 import androidx.room.Query
 import com.ustadmobile.core.db.dao.BaseDao
 import com.ustadmobile.door.DoorDataSourceFactory
+import com.ustadmobile.door.DoorLiveData
 import com.ustadmobile.door.annotation.SqliteOnly
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFileAndDownloadJobItem
 
 @Dao
 abstract class LocallyStoredFileDao: BaseDao<LocallyStoredFile> {
@@ -54,9 +56,12 @@ abstract class LocallyStoredFileDao: BaseDao<LocallyStoredFile> {
 
 
     @Query("""
-        SELECT * FROM LocallyStoredFile
+        SELECT LocallyStoredFile.*, DownloadJobItem.*
+          FROM DownloadJobItem
+               LEFT JOIN LocallyStoredFile
+                    ON LocallyStoredFile.lsfOriginUrl = DownloadJobItem.djiOriginUrl
     """)
     @SqliteOnly
-    abstract fun findAllAvailableFilesLive(): DoorDataSourceFactory<Int, LocallyStoredFile>
+    abstract fun findAllAvailableFilesLive(): DoorLiveData<List<LocallyStoredFileAndDownloadJobItem>>
 
 }

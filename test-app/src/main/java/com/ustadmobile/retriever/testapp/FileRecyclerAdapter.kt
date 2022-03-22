@@ -4,9 +4,11 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ustadmobile.retriever.testapp.databinding.ItemFileBinding
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFileAndDownloadJobItem
 
 interface FileListener{
     fun deleteFile(availableFile: LocallyStoredFile)
@@ -14,11 +16,9 @@ interface FileListener{
 }
 
 
-class FilesRecyclerAdapter(val fileListener: FileListener):
-    PagedListAdapter<
-            LocallyStoredFile,
-            FilesRecyclerAdapter.FilesRecyclerViewHolder>
-        (DIFF_CALLBACK){
+class FilesRecyclerAdapter(
+    val fileListener: FileListener
+): ListAdapter<LocallyStoredFileAndDownloadJobItem, FilesRecyclerAdapter.FilesRecyclerViewHolder>(DIFF_CALLBACK){
 
     inner class FilesRecyclerViewHolder(val itemBinding: ItemFileBinding) :
         RecyclerView.ViewHolder(itemBinding.root)
@@ -34,23 +34,28 @@ class FilesRecyclerAdapter(val fileListener: FileListener):
 
     override fun onBindViewHolder(holder: FilesRecyclerViewHolder, position: Int) {
         val item = getItem(position)
-        holder.itemBinding.availableFile = item
+        holder.itemBinding.availableFile = item?.locallyStoredFile
+        holder.itemBinding.downloadJobItem = item?.downloadJobItem
     }
 
 
     companion object {
 
-        val DIFF_CALLBACK: DiffUtil.ItemCallback<LocallyStoredFile> = object
-            : DiffUtil.ItemCallback<LocallyStoredFile>() {
-            override fun areItemsTheSame(oldItem: LocallyStoredFile,
-                                         newItem: LocallyStoredFile): Boolean {
-                return oldItem.locallyStoredFileUid == newItem.locallyStoredFileUid
+        val DIFF_CALLBACK: DiffUtil.ItemCallback<LocallyStoredFileAndDownloadJobItem> = object
+            : DiffUtil.ItemCallback<LocallyStoredFileAndDownloadJobItem>() {
+            override fun areItemsTheSame(
+                oldItem: LocallyStoredFileAndDownloadJobItem,
+                newItem: LocallyStoredFileAndDownloadJobItem
+            ): Boolean {
+                return oldItem.locallyStoredFile?.locallyStoredFileUid == newItem.locallyStoredFile?.locallyStoredFileUid
+                        && oldItem.downloadJobItem?.djiUid == newItem.downloadJobItem?.djiUid
             }
 
-            override fun areContentsTheSame(oldItem: LocallyStoredFile,
-                                            newItem: LocallyStoredFile): Boolean {
-                return oldItem.locallyStoredFileUid == newItem.locallyStoredFileUid &&
-                        oldItem.locallyStoredFileUid == newItem.locallyStoredFileUid
+            override fun areContentsTheSame(
+                oldItem: LocallyStoredFileAndDownloadJobItem,
+                newItem: LocallyStoredFileAndDownloadJobItem
+            ) : Boolean {
+                return oldItem.locallyStoredFile?.lsfFileSize == newItem.locallyStoredFile?.lsfFileSize
             }
 
         }

@@ -6,12 +6,11 @@ import android.net.nsd.NsdServiceInfo
 import com.soywiz.klock.DateTime
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.fetcher.MultiItemFetcher
-import com.ustadmobile.retriever.fetcher.SingleItemFetcher
+import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
+import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import com.ustadmobile.retriever.responder.AvailabilityResponder
 import com.ustadmobile.retriever.responder.ZippedItemsResponder
 import java.net.InetAddress
-import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.GlobalScope
@@ -20,13 +19,13 @@ import java.net.NetworkInterface
 import java.util.*
 
 class RetrieverAndroidImpl internal constructor(
-        db: RetrieverDatabase,
-        nsdServiceName: String,
-        private val applicationContext: Context,
-        availabilityChecker: AvailabilityChecker,
-        singleItemFetcher: SingleItemFetcher,
-        multiItemFetcher: MultiItemFetcher,
-): RetrieverCommonJvm(db, nsdServiceName, availabilityChecker, singleItemFetcher, multiItemFetcher) {
+    db: RetrieverDatabase,
+    nsdServiceName: String,
+    private val applicationContext: Context,
+    availabilityChecker: AvailabilityChecker,
+    originServerFetcher: OriginServerFetcher,
+    localPeerFetcher: LocalPeerFetcher,
+): RetrieverCommonJvm(db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher) {
 
     val database = db
 

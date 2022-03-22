@@ -10,8 +10,8 @@ import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.crc32
 import com.ustadmobile.retriever.ext.url
-import com.ustadmobile.retriever.fetcher.MultiItemFetcher
-import com.ustadmobile.retriever.fetcher.SingleItemFetcher
+import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
+import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import com.ustadmobile.retriever.responder.ZippedItemsResponder
 import fi.iki.elonen.router.RouterNanoHTTPD
 import io.github.aakira.napier.DebugAntilog
@@ -49,9 +49,9 @@ class DownloaderFetcherIntegrationTest {
 
     private lateinit var okHttpClient: OkHttpClient
 
-    private lateinit var singleItemFetcher: SingleItemFetcher
+    private lateinit var originServerFetcher: OriginServerFetcher
 
-    private lateinit var multiItemFetcher: MultiItemFetcher
+    private lateinit var localPeerFetcher: LocalPeerFetcher
 
     private lateinit var json: Json
 
@@ -87,8 +87,8 @@ class DownloaderFetcherIntegrationTest {
             .build()
 
         json = Json { encodeDefaults = true }
-        singleItemFetcher = SingleItemFetcher(okHttpClient)
-        multiItemFetcher = MultiItemFetcher(okHttpClient, json)
+        originServerFetcher = OriginServerFetcher(okHttpClient)
+        localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
         batchId = systemTimeInMillis()
         itemsToDownload = RESOURCE_PATHS.map { resPath ->
@@ -115,7 +115,7 @@ class DownloaderFetcherIntegrationTest {
     @Test
     fun givenOriginUrlsNotAvailableFromPeers_whenDownloadRuns_thenShouldDownloadFromOriginServer() {
 
-        val downloader = Downloader(batchId, mockAvailabilityManager, { }, singleItemFetcher, multiItemFetcher, localDb)
+        val downloader = Downloader(batchId, mockAvailabilityManager, { }, originServerFetcher, localPeerFetcher, localDb)
 
         runBlocking {
             withTimeout(10000) {
@@ -124,10 +124,18 @@ class DownloaderFetcherIntegrationTest {
         }
 
         RESOURCE_PATHS.forEachIndexed { index, resPath ->
+            val destFile = File(itemsToDownload[index].djiDestPath!!)
             Assert.assertArrayEquals(
                 "Item $index downloaded bytes as expected",
                 this::class.java.getResourceAsStream(resPath)!!.readAllBytes(),
-                File(itemsToDownload[index].djiDestPath!!).readBytes())
+                destFile.readBytes())
+
+            val downloadDbItem = runBlocking {
+                localDb.downloadJobItemDao.findByUrlFirstOrNull(originHttpServer.url("/resources$resPath"))
+            }
+
+            Assert.assertEquals("Downloaded bytes total from origin is equal to total", destFile.length(),
+                downloadDbItem?.djiOriginBytesSoFar ?: -1L)
         }
     }
 
@@ -151,7 +159,7 @@ class DownloaderFetcherIntegrationTest {
                     localFile.length(), localFile.crc32)
             })
 
-        val downloader = Downloader(batchId, mockAvailabilityManager, { }, singleItemFetcher, multiItemFetcher, localDb)
+        val downloader = Downloader(batchId, mockAvailabilityManager, { }, originServerFetcher, localPeerFetcher, localDb)
 
         runBlocking {
             withTimeout(10000) {
@@ -160,10 +168,19 @@ class DownloaderFetcherIntegrationTest {
         }
 
         RESOURCE_PATHS.forEachIndexed { index, resPath ->
+            val destFile = File(itemsToDownload[index].djiDestPath!!)
+
             Assert.assertArrayEquals(
                 "Item $index downloaded bytes as expected",
                 this::class.java.getResourceAsStream(resPath)!!.readAllBytes(),
-                File(itemsToDownload[index].djiDestPath!!).readBytes())
+                destFile.readBytes())
+
+            val downloadDbItem = runBlocking {
+                localDb.downloadJobItemDao.findByUrlFirstOrNull(originHttpServer.url("/resources$resPath"))
+            }
+
+            Assert.assertEquals("Downloaded bytes total from peers is equal to total", destFile.length(),
+                downloadDbItem?.djiLocalBytesSoFar ?: -1L)
         }
     }
 

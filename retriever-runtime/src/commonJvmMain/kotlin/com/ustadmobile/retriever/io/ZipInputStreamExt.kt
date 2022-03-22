@@ -17,7 +17,8 @@ import com.ustadmobile.retriever.fetcher.ZipExtractionProgressListener
 
 
 /**
- * urlToIdMap is used to fire RetrieverProgressEvents
+ * urlToIdMap is used to fire RetrieverProgressEvents. Zips are only used to handle locally downloaded content, so
+ * we are assuming bytes extracted count against locally downloaded bytes.
  */
 suspend fun ZipInputStream.extractToDir(
     destProvider: (ZipEntry) -> File,
@@ -35,7 +36,7 @@ suspend fun ZipInputStream.extractToDir(
         val destFile = destProvider(zipEntry)
         val downloadJobUid = urlToIdMap[zipEntry.name] ?: -1L
         progressListener?.onRetrieverProgress(RetrieverProgressEvent(downloadJobUid, zipEntry.name, 0L,
-            zipEntry.size, STATUS_RUNNING))
+            0L, 0L, zipEntry.size, STATUS_RUNNING))
         lastProgressUpdateTime = systemTimeInMillis()
 
         var entryBytesSoFar = 0L
@@ -46,21 +47,21 @@ suspend fun ZipInputStream.extractToDir(
                 val timeNow = systemTimeInMillis()
                 if(progressListener != null && timeNow - lastProgressUpdateTime >= progressInterval) {
                     progressListener.onRetrieverProgress(
-                        RetrieverProgressEvent(downloadJobUid, zipEntry.name, entryBytesSoFar, zipEntry.size,
-                            STATUS_RUNNING))
+                        RetrieverProgressEvent(downloadJobUid, zipEntry.name, entryBytesSoFar, entryBytesSoFar,
+                            0L, zipEntry.size, STATUS_RUNNING))
                     lastProgressUpdateTime = timeNow
                 }
             }
             fileOut.flush()
 
-            val finalStatus = if(entryBytesSoFar == zipEntry.compressedSize) {
+            val finalStatus = if(entryBytesSoFar == zipEntry.size) {
                 STATUS_COMPLETE
             }else {
                 STATUS_QUEUED
             }
 
             progressListener?.onRetrieverProgress(RetrieverProgressEvent(downloadJobUid, zipEntry.name, entryBytesSoFar,
-                zipEntry.size, finalStatus))
+                entryBytesSoFar, 0L, zipEntry.size, finalStatus))
         }
     }
 }

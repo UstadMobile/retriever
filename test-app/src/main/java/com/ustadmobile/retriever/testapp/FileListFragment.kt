@@ -27,6 +27,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.lib.db.entities.LocallyStoredFileAndDownloadJobItem
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.testapp.controller.FileListController
@@ -47,61 +48,34 @@ class FileListFragment(): Fragment(), FileListView, ClickAddLocalFile, FileListe
 
     override val di: DI by closestDI()
 
-    private lateinit var binding: FragmentFileListBinding
+    private var binding: FragmentFileListBinding? = null
 
     private lateinit var controller: FileListController
-
-    private lateinit var localFileListRecyclerView: RecyclerView
-
-    private var localFileListLiveData: LiveData<PagedList<LocallyStoredFile>>? = null
 
     private var localFileListRecyclerAdapter : FilesRecyclerAdapter? = null
 
     private val retriever: Retriever by instance()
 
-    private val localFileListObserver = Observer<PagedList<LocallyStoredFile>?>{ t->
-        run{
-            localFileListRecyclerAdapter?.submitList(t)
-        }
-    }
-
-    private var fabClicked: Boolean = false
-
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            // Do if the permission is granted
-        }
-        else {
-            // Do otherwise
-        }
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-
+    private val localFileListObserver = Observer<List<LocallyStoredFileAndDownloadJobItem>?>{ t->
+        localFileListRecyclerAdapter?.submitList(t)
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-
+    ): View {
         val rootView: View
         binding = FragmentFileListBinding.inflate(inflater, container, false).also{
             rootView = it.root
             it.listener = this
         }
 
-        localFileListRecyclerView = rootView.findViewById(R.id.fragment_local_file_list_rv)
-        localFileListRecyclerView.layoutManager = LinearLayoutManager(context)
+        binding?.fragmentLocalFileListRv?.layoutManager = LinearLayoutManager(context)
 
         localFileListRecyclerAdapter = FilesRecyclerAdapter(this)
 
-        localFileListRecyclerView.adapter = localFileListRecyclerAdapter
+        binding?.fragmentLocalFileListRv?.adapter = localFileListRecyclerAdapter
 
         controller = FileListController(requireContext(), (retriever as RetrieverAndroidImpl).database, this)
         controller.onCreate()
@@ -115,26 +89,17 @@ class FileListFragment(): Fragment(), FileListView, ClickAddLocalFile, FileListe
 
     }
 
-    private fun showFabItems(view: View, visibility: Int){
-        if(visibility == View.VISIBLE) {
-            view.findViewById<FloatingActionButton>(R.id.fragment_local_file_list_fab_random).show()
-            view.findViewById<FloatingActionButton>(R.id.fragment_local_file_list_fab_url).show()
-        }else{
-            view.findViewById<FloatingActionButton>(R.id.fragment_local_file_list_fab_random).hide()
-            view.findViewById<FloatingActionButton>(R.id.fragment_local_file_list_fab_url).hide()
-        }
-        view.findViewById<TextView>(R.id.fragment_local_file_list_random_tv).visibility = visibility
-        view.findViewById<TextView>(R.id.fragment_local_file_list_url_tv).visibility = visibility
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding?.fragmentLocalFileListRv?.adapter = null
+        binding = null
     }
 
-    override var localFileList: DoorDataSourceFactory<Int, LocallyStoredFile>? = null
+    override var localFileList: LiveData<List<LocallyStoredFileAndDownloadJobItem>>? = null
         set(value) {
-            localFileListLiveData?.removeObserver(localFileListObserver)
-            localFileListLiveData = value?.asRepositoryLiveData(
-                (retriever as RetrieverAndroidImpl).database.locallyStoredFileDao
-            )
+            field?.removeObserver(localFileListObserver)
             field = value
-            localFileListLiveData?.observe(this, localFileListObserver)
+            field?.observe(viewLifecycleOwner, localFileListObserver)
         }
 
     override fun onClickAddRandom() {

@@ -3,17 +3,17 @@ package com.ustadmobile.retriever
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.crc32
-import com.ustadmobile.retriever.fetcher.MultiItemFetcher
-import com.ustadmobile.retriever.fetcher.SingleItemFetcher
+import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
+import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import java.io.File
 
 abstract class RetrieverCommonJvm(
     db: RetrieverDatabase,
     nsdServiceName: String,
     availabilityChecker: AvailabilityChecker,
-    singleItemFetcher: SingleItemFetcher,
-    multiItemFetcher: MultiItemFetcher,
-): RetrieverCommon(db, nsdServiceName, availabilityChecker, singleItemFetcher, multiItemFetcher) {
+    originServerFetcher: OriginServerFetcher,
+    localPeerFetcher: LocalPeerFetcher,
+): RetrieverCommon(db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher) {
 
     override suspend fun addFiles(files: List<LocalFileInfo>) {
         val locallyStoredFiles = files.map {

@@ -5,9 +5,9 @@ import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.fetcher.MultiItemFetcher
+import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
-import com.ustadmobile.retriever.fetcher.SingleItemFetcher
+import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -15,8 +15,8 @@ abstract class RetrieverCommon(
     protected val db: RetrieverDatabase,
     protected val nsdServiceName: String,
     private val availabilityChecker: AvailabilityChecker,
-    private val singleItemFetcher: SingleItemFetcher,
-    private val multiItemFetcher: MultiItemFetcher,
+    private val originServerFetcher: OriginServerFetcher,
+    private val localPeerFetcher: LocalPeerFetcher,
 ) : Retriever {
 
     protected val availabilityManager = AvailabilityManager(db, availabilityChecker)
@@ -84,7 +84,7 @@ abstract class RetrieverCommon(
             }
         })
 
-        Downloader(batchId, availabilityManager, progressListener, singleItemFetcher, multiItemFetcher, db).download()
+        Downloader(batchId, availabilityManager, progressListener, originServerFetcher, localPeerFetcher, db).download()
 
         addFiles(retrieverRequests.map { LocalFileInfo(it.originUrl, it.destinationFilePath) })
     }

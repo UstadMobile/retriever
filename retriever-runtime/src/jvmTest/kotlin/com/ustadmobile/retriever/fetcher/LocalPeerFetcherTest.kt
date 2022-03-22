@@ -24,7 +24,7 @@ import org.mockito.kotlin.*
 import java.io.*
 import java.util.zip.ZipInputStream
 
-class MultiItemFetcherTest {
+class LocalPeerFetcherTest {
 
     private lateinit var peerHttpServer: RouterNanoHTTPD
 
@@ -107,10 +107,10 @@ class MultiItemFetcherTest {
     fun givenHostWithFiles_whenDownloadCalled_thenShouldDownloadToDestination()  {
         peerHttpServer.addRoute("/retriever/zipped", PostFileResponder::class.java, tmpZipFile)
         val hostEndpoint = peerHttpServer.url("/retriever/")
-        val multiItemFetcher = MultiItemFetcher(okHttpClient, json)
+        val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
         runBlocking {
-            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
+            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
         }
 
         downloadJobItems.forEach {
@@ -129,10 +129,10 @@ class MultiItemFetcherTest {
     fun givenHostWithErrorResponse_whenDownloadCalled_thenShouldThrowIllegalStateException() {
         peerHttpServer.addRoute("/retriever/zipped", PostFileResponder::class.java, File("/does/not/exist"))
         val hostEndpoint = peerHttpServer.url("/retriever/")
-        val multiItemFetcher = MultiItemFetcher(okHttpClient, json)
+        val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
         runBlocking {
-            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
+            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
         }
     }
 
@@ -144,10 +144,10 @@ class MultiItemFetcherTest {
         val resource1Bytes = this::class.java.getResourceAsStream(RESOURCE_PATH_LIST[0])!!.readBytes()
         File(downloadJobItems[0].djiDestPath!!).writeBytes(resource1Bytes.copyOf(resource1Bytes.size / 2))
 
-        val multiItemFetcher = MultiItemFetcher(okHttpClient, json)
+        val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
         val fetchResult = runBlocking {
-            multiItemFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
+            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
         }
 
 

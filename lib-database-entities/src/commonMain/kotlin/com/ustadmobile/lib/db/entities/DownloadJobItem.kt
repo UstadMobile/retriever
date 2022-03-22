@@ -30,6 +30,16 @@ open class DownloadJobItem {
 
     var djiTotalSize = 0L
 
+    /**
+     * The number of bytes downloaded from local peers so far
+     */
+    var djiLocalBytesSoFar = 0L
+
+    /**
+     * The number of bytes downloaded direct from the origin server itself so far
+     */
+    var djiOriginBytesSoFar = 0L
+
     var djiAttemptCount = 0
 
     /**
