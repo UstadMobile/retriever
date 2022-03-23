@@ -88,19 +88,16 @@ abstract class DownloadJobItemDao {
                djiOriginBytesSoFar = :originBytesSoFar,
                djiTotalSize = :totalSize, 
                djiAttemptCount = djiAttemptCount + 1,
-               djiStatus = 
-                   CASE 
-                   WHEN djiAttemptCount > :maxAttempts THEN $STATUS_FAILED
-                   ELSE $STATUS_QUEUED
-                   END
+               djiStatus = :status
+         WHERE djiUid = :uid          
     """)
-    abstract suspend fun updateProgressAndStatusOfFailedAttempt(
+    abstract suspend fun updateProgressAndIncrementAttemptCount(
         uid: Long,
         bytesSoFar: Long,
         localBytesSoFar: Long,
         originBytesSoFar: Long,
         totalSize: Long,
-        maxAttempts: Int
+        status: Int,
     )
 
     @Query("""

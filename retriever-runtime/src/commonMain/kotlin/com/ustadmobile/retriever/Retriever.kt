@@ -27,7 +27,9 @@ interface Retriever{
 
         const val STATUS_RUNNING = 12
 
-        const val STATUS_COMPLETE = 24
+        internal const val STATUS_COMPLETE_MIN = 20
+
+        const val STATUS_SUCCESSFUL = 24
 
         const val STATUS_ATTEMPT_FAILED = 25
 

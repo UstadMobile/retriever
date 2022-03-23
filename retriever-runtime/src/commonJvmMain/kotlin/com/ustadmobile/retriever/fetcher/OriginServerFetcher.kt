@@ -3,7 +3,7 @@ package com.ustadmobile.retriever.fetcher
 import java.io.File
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_COMPLETE
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.ext.copyToAndUpdateProgress
@@ -27,17 +27,18 @@ actual class OriginServerFetcher(
         downloadJobItem: DownloadJobItem,
         retrieverProgressListener: RetrieverProgressListener,
     ) {
-        try {
-            val url = downloadJobItem.djiOriginUrl
-                ?: throw IllegalArgumentException("Null URL on ${downloadJobItem.djiUid}")
-            val destFile = downloadJobItem.djiDestPath?.let { File(it) }
-                ?: throw IllegalArgumentException("Null destination uri on ${downloadJobItem.djiUid}")
+        val url = downloadJobItem.djiOriginUrl
+            ?: throw IllegalArgumentException("Null URL on ${downloadJobItem.djiUid}")
+        val destFile = downloadJobItem.djiDestPath?.let { File(it) }
+            ?: throw IllegalArgumentException("Null destination uri on ${downloadJobItem.djiUid}")
+        val bytesAlreadyDownloaded = destFile.length()
+        var totalBytes = 0L
 
+        try {
             val (digestName, expectedDigest) =  downloadJobItem.djiIntegrity?.let { parseIntegrity(it) }
                 ?: (null to null)
             val messageDigest = digestName?.let { MessageDigest.getInstance(it) }
 
-            val bytesAlreadyDownloaded = destFile.length()
 
             if(bytesAlreadyDownloaded > 0 && messageDigest != null) {
                 FileInputStream(destFile).use { fileIn ->
@@ -67,7 +68,7 @@ actual class OriginServerFetcher(
                     throw IOException("$url response code was ${response.code} : expected 200 OK response")
                 }
 
-                val totalBytes = response.header("content-length") ?.toLong()
+                totalBytes = response.header("content-length") ?.toLong()
                     ?: throw IllegalStateException("$url does not provide a content-length header.")
                 retrieverProgressListener.onRetrieverProgress(
                     RetrieverProgressEvent(downloadJobItem.djiUid, url, bytesAlreadyDownloaded, 0L,
@@ -105,7 +106,7 @@ actual class OriginServerFetcher(
                     destFile.delete()
                     STATUS_ATTEMPT_FAILED
                 }else if(totalBytes == bytesReadFromHttp + bytesAlreadyDownloaded) {
-                    STATUS_COMPLETE
+                    STATUS_SUCCESSFUL
                 }else {
                     STATUS_QUEUED
                 }
@@ -117,7 +118,12 @@ actual class OriginServerFetcher(
             }
 
         }catch(e: Exception) {
-            throw e
+            //Don't just throw an exception, because we could be handling multiple downloads (hence should continue
+            // with the next ones)
+            retrieverProgressListener.onRetrieverProgress(
+                RetrieverProgressEvent(downloadJobItem.djiUid, url, destFile.length(), 0, destFile.length(),
+                    totalBytes, STATUS_ATTEMPT_FAILED)
+            )
         }
     }
 

@@ -5,7 +5,9 @@ import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_COMPLETE
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.*
@@ -17,6 +19,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Before
 import org.junit.Test
+import org.mockito.invocation.InvocationOnMock
 import org.mockito.kotlin.*
 
 class DownloaderTest {
@@ -71,8 +74,26 @@ class DownloaderTest {
         }
     }
 
+    private fun KStubbing<OriginServerFetcher>.onOriginDownloadThenAnswerAndFireProgressUpdate(
+        statusBlock: (InvocationOnMock) -> Int
+    ) = onBlocking {
+        download(any(), any())
+    }.thenAnswer {
+        val downloadJobItem = it.arguments[0] as DownloadJobItem
+        val retrieverProgressListener = it.arguments[1] as RetrieverProgressListener
+        GlobalScope.launch {
+            retrieverProgressListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid,
+                downloadJobItem.djiOriginUrl!!, 1000, 0, 1000, 1000,
+                statusBlock(it)))
+        }
+    }
+
     @Test
     fun givenRequestNotAvailableLocally_whenDownloadCalled_thenShouldDownloadFromOriginServer() {
+        mockOriginServerFetcher.stub {
+            onOriginDownloadThenAnswerAndFireProgressUpdate { STATUS_SUCCESSFUL }
+        }
+
         val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
             mockOriginServerFetcher, mockLocalPeerFetcher, db)
 
@@ -85,8 +106,7 @@ class DownloaderTest {
         downloadJobItems.forEach { downloadItem ->
             verifyBlocking(mockOriginServerFetcher) {
                 download(argWhere {
-                    it.djiOriginUrl == downloadItem.djiOriginUrl &&
-                            it.djiDestPath == downloadItem.djiDestPath
+                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
                 }, any())
             }
         }
@@ -112,7 +132,7 @@ class DownloaderTest {
                         //send a complete event
                         retrieverProgressListener.onRetrieverProgress(RetrieverProgressEvent(it.djiUid, it.djiOriginUrl!!,
                             1000, 1000,0, 1000,
-                            STATUS_COMPLETE))
+                            STATUS_SUCCESSFUL))
                     }
                 }
 
@@ -138,6 +158,88 @@ class DownloaderTest {
         }
     }
 
+    @Test
+    fun givenServerFailsRepeatedly_whenDownloadCalled_thenShouldFail() {
+        val maxNumAttempts = 4
+
+        mockOriginServerFetcher.stub {
+            onOriginDownloadThenAnswerAndFireProgressUpdate { STATUS_ATTEMPT_FAILED }
+        }
+
+        val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
+            mockOriginServerFetcher, mockLocalPeerFetcher, db, maxAttempts = maxNumAttempts, attemptRetryDelay = 100)
+
+        runBlocking {
+            withTimeout(10000) {
+                downloader.download()
+            }
+        }
+
+        downloadJobItems.forEach { downloadItem ->
+            verifyBlocking(mockOriginServerFetcher, times(maxNumAttempts)) {
+                download(argWhere {
+                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                }, any())
+            }
+        }
+
+        downloadJobItems.forEach { jobItem ->
+            verifyBlocking(mockProgressListener) {
+                onRetrieverProgress(argWhere {
+                    it.url == jobItem.djiOriginUrl && it.status == STATUS_FAILED
+                })
+            }
+        }
+    }
 
 
+    @Test
+    fun givenServerFailsOnce_whenDownloadCalled_thenShouldRetry() {
+        val maxNumAttempts = 4
+        val timesToFail = 2
+        var failCount = timesToFail
+
+        //Make the first item fail twice, then succeed
+        mockOriginServerFetcher.stub {
+            onOriginDownloadThenAnswerAndFireProgressUpdate {
+                val jobItem = it.arguments.first() as DownloadJobItem
+                if(jobItem.djiOriginUrl == downloadJobItems.first().djiOriginUrl) {
+                    failCount--
+                    if(failCount >= 0)
+                        STATUS_ATTEMPT_FAILED
+                    else
+                        STATUS_SUCCESSFUL
+                }else {
+                    STATUS_SUCCESSFUL
+                }
+            }
+        }
+
+        val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
+            mockOriginServerFetcher, mockLocalPeerFetcher, db, maxAttempts = maxNumAttempts, attemptRetryDelay = 100)
+
+        runBlocking {
+            withTimeout(10000) {
+                downloader.download()
+            }
+        }
+
+        verifyBlocking(mockOriginServerFetcher, times(timesToFail + 1)) {
+            download(argWhere { it.djiOriginUrl == downloadJobItems.first().djiOriginUrl }, any())
+        }
+
+        downloadJobItems.forEach { downloadItem ->
+            verifyBlocking(mockOriginServerFetcher, atLeastOnce()) {
+                download(argWhere {
+                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                }, any())
+            }
+
+            verifyBlocking(mockProgressListener) {
+                onRetrieverProgress(argWhere {
+                    it.url == downloadItem.djiOriginUrl && it.status == STATUS_SUCCESSFUL
+                })
+            }
+        }
+    }
 }

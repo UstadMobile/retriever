@@ -3,7 +3,7 @@ package com.ustadmobile.retriever.fetcher
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ResourcesResponder
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_COMPLETE
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.ext.url
 import fi.iki.elonen.router.RouterNanoHTTPD
 import kotlinx.coroutines.runBlocking
@@ -15,7 +15,6 @@ import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verifyBlocking
 import java.io.File
-import java.io.IOException
 import java.security.MessageDigest
 import java.util.*
 
@@ -81,19 +80,24 @@ class OriginServerFetcherTest {
 
         verifyBlocking(mockProgressListener) {
             onRetrieverProgress(argWhere {
-                it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes && it.status == STATUS_COMPLETE
+                it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes && it.status == STATUS_SUCCESSFUL
             })
         }
     }
 
-    @Test(expected = IOException::class)
+    @Test
     fun givenUrlDoesntExist_whenDownloadCalled_thenShouldFail() {
         val destFile = File(downloadDestDir, "cat-pic0")
+        val mockProgressListener = mock<RetrieverProgressListener>{ }
         runBlocking {
             OriginServerFetcher(okHttpClient).download(DownloadJobItem().apply {
                 djiOriginUrl = originHttpServer.url("/doesnotexist.jpg")
                 djiDestPath = destFile.absolutePath
-            }, { })
+            }, mockProgressListener)
+        }
+
+        verifyBlocking(mockProgressListener) {
+            onRetrieverProgress(argWhere { it.status == STATUS_ATTEMPT_FAILED })
         }
     }
 

@@ -5,7 +5,6 @@ import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_COMPLETE
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.db.RetrieverDatabase
@@ -122,7 +121,9 @@ class Downloader(
             }
 
             db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                val (attemptFailedUpdates, normalUpdates) = updatesToCommit.partition { it.status == STATUS_ATTEMPT_FAILED }
+                val (attemptFailedUpdates, normalUpdates) = updatesToCommit.partition {
+                    it.status == STATUS_ATTEMPT_FAILED
+                }
 
                 normalUpdates.forEach {
                     txDb.downloadJobItemDao.updateProgressAndStatusByUid(it.downloadJobItemUid,
@@ -130,8 +131,8 @@ class Downloader(
                 }
 
                 attemptFailedUpdates.forEach {
-                    txDb.downloadJobItemDao.updateProgressAndStatusOfFailedAttempt(it.downloadJobItemUid,
-                        it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar,it.totalBytes, maxAttempts)
+                    txDb.downloadJobItemDao.updateProgressAndIncrementAttemptCount(it.downloadJobItemUid,
+                        it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar, it.totalBytes, maxAttempts)
                 }
             }
         }
@@ -146,12 +147,22 @@ class Downloader(
             Napier.d("$logPrefix - processor $id - start download of " +
                     item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
 
+            var hasFailedAttempts = false
             val progressListenerWrapper = RetrieverProgressListener { evt ->
-                progressUpdateMutex.withLock {
-                    pendingUpdates[evt.downloadJobItemUid] = evt
+                hasFailedAttempts = hasFailedAttempts || evt.status == STATUS_ATTEMPT_FAILED
+
+                val newEvt = if(evt.status == STATUS_ATTEMPT_FAILED &&
+                    (item.itemsToDownload.first {it.djiUid == evt.downloadJobItemUid }.djiAttemptCount + 1) >= maxAttempts) {
+                    evt.copy(status = STATUS_FAILED)
+                }else {
+                    evt
                 }
 
-                progressListener.onRetrieverProgress(evt)
+                progressUpdateMutex.withLock {
+                    pendingUpdates[evt.downloadJobItemUid] = newEvt
+                }
+
+                progressListener.onRetrieverProgress(newEvt)
             }
 
             try {
@@ -164,9 +175,6 @@ class Downloader(
                     Napier.d("$logPrefix - processor $id - fetch from origin server " +
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
                     originServerFetcher.download(itemToDownload, progressListenerWrapper)
-                    db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                        txDb.downloadJobItemDao.updateStatusByUid(itemToDownload.djiUid, STATUS_COMPLETE)
-                    }
                     Napier.d("$logPrefix - processor $id - fetch from origin server done" +
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
                 }else {
@@ -181,10 +189,12 @@ class Downloader(
                     }
                 }
             }catch(e: Exception) {
-                //TODO: retry logic
                 throw e
             }finally {
                 withContext(NonCancellable) {
+                    if(hasFailedAttempts)
+                        delay(attemptRetryDelay.toLong())
+
                     commitProgressUpdates()
                     checkQueueChannel.send(true)
                 }
