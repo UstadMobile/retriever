@@ -49,7 +49,7 @@ abstract class DownloadJobItemDao {
                                 WHERE AvailableFile.originUrl = DownloadJobItem.djiOriginUrl)) 
                
          WHERE djiBatchId = :batchId
-           AND djiStatus = ${DownloadJobItem.STATUS_QUEUED}
+           AND djiStatus = $STATUS_QUEUED   
     """)
     abstract suspend fun findNextItemsToDownload(batchId: Long): List<DownloadJobItemAndNodeInfo>
 
@@ -82,11 +82,33 @@ abstract class DownloadJobItemDao {
     )
 
     @Query("""
+        UPDATE DownloadJobItem
+           SET djiBytesSoFar = :bytesSoFar,
+               djiLocalBytesSoFar = :localBytesSoFar,
+               djiOriginBytesSoFar = :originBytesSoFar,
+               djiTotalSize = :totalSize, 
+               djiAttemptCount = djiAttemptCount + 1,
+               djiStatus = 
+                   CASE 
+                   WHEN djiAttemptCount > :maxAttempts THEN $STATUS_FAILED
+                   ELSE $STATUS_QUEUED
+                   END
+    """)
+    abstract suspend fun updateProgressAndStatusOfFailedAttempt(
+        uid: Long,
+        bytesSoFar: Long,
+        localBytesSoFar: Long,
+        originBytesSoFar: Long,
+        totalSize: Long,
+        maxAttempts: Int
+    )
+
+    @Query("""
         SELECT NOT EXISTS(
                SELECT djiUid
                  FROM DownloadJobItem
                 WHERE djiBatchId = :batchId
-                  AND djiStatus < ${DownloadJobItem.STATUS_COMPLETE}) 
+                  AND djiStatus < $STATUS_COMPLETE) 
     """)
     abstract suspend fun isBatchDone(batchId: Long): Boolean
 
@@ -98,4 +120,18 @@ abstract class DownloadJobItemDao {
     abstract suspend fun findByUrlFirstOrNull(url: String): DownloadJobItem?
 
 
+    companion object {
+
+        //Copies of values found on Retriever interface so they can be used here:
+
+
+        internal const val STATUS_QUEUED = 4
+
+        internal const val STATUS_RUNNING = 12
+
+        internal const val STATUS_COMPLETE = 24
+
+        internal const val STATUS_FAILED = 26
+
+    }
 }

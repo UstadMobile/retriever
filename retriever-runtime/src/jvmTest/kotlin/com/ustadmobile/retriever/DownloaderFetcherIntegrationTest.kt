@@ -7,6 +7,7 @@ import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.crc32
 import com.ustadmobile.retriever.ext.url
@@ -96,7 +97,7 @@ class DownloaderFetcherIntegrationTest {
                 djiBatchId = batchId
                 djiOriginUrl = originHttpServer.url("/resources$resPath")
                 djiDestPath = File(downloadDestDir, resPath.substringAfterLast("/")).absolutePath
-                djiStatus = DownloadJobItem.STATUS_QUEUED
+                djiStatus = STATUS_QUEUED
             }
         }
 

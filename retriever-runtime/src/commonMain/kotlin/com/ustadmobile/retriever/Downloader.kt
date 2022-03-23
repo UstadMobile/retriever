@@ -4,7 +4,10 @@ import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.lib.db.entities.DownloadJobItem
-import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_COMPLETE
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
@@ -39,6 +42,8 @@ class Downloader(
     private val localPeerFetcher: LocalPeerFetcher,
     private val db: RetrieverDatabase,
     private val maxConcurrent: Int = 8,
+    private val maxAttempts: Int = 8,
+    private val attemptRetryDelay: Int = 1000,
 ) {
 
     private val checkQueueChannel = Channel<Boolean>(capacity = Channel.UNLIMITED)
@@ -71,7 +76,9 @@ class Downloader(
                     //turn these into batches
                     val groupedByNode = queueItems.groupBy { it.networkNodeId }.toMutableMap()
                     val locallyAvailableBatches = groupedByNode.entries.filter { it.key != 0L }
-                        .map { DownloadBatch(it.value.first().networkNodeEndpointUrl, it.value) }
+                        .map {  entry ->
+                            DownloadBatch(entry.value.first().networkNodeEndpointUrl, entry.value.sortedBy { it.djiIndex })
+                        }
                     val locallyAvailableBatchesToSend = locallyAvailableBatches.subList(0,
                         min(numProcessorsAvailable, locallyAvailableBatches.size))
 
@@ -110,13 +117,21 @@ class Downloader(
 
     private suspend fun commitProgressUpdates() {
         progressUpdateMutex.withLock {
-            val updatesToCommit = pendingUpdates.values.toList()
-            pendingUpdates.clear()
+            val updatesToCommit = pendingUpdates.values.toList().also {
+                pendingUpdates.clear()
+            }
 
             db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                updatesToCommit.forEach {
+                val (attemptFailedUpdates, normalUpdates) = updatesToCommit.partition { it.status == STATUS_ATTEMPT_FAILED }
+
+                normalUpdates.forEach {
                     txDb.downloadJobItemDao.updateProgressAndStatusByUid(it.downloadJobItemUid,
                         it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar,it.totalBytes, it.status)
+                }
+
+                attemptFailedUpdates.forEach {
+                    txDb.downloadJobItemDao.updateProgressAndStatusOfFailedAttempt(it.downloadJobItemUid,
+                        it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar,it.totalBytes, maxAttempts)
                 }
             }
         }
@@ -131,13 +146,14 @@ class Downloader(
             Napier.d("$logPrefix - processor $id - start download of " +
                     item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
 
-            val progressListenerWrapper = RetrieverProgressListener {
+            val progressListenerWrapper = RetrieverProgressListener { evt ->
                 progressUpdateMutex.withLock {
-                    pendingUpdates[it.downloadJobItemUid] = it
+                    pendingUpdates[evt.downloadJobItemUid] = evt
                 }
 
-                progressListener.onRetrieverProgress(it)
+                progressListener.onRetrieverProgress(evt)
             }
+
             try {
                 val host = item.host
                 if(host == null) {
@@ -149,7 +165,7 @@ class Downloader(
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
                     originServerFetcher.download(itemToDownload, progressListenerWrapper)
                     db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                        txDb.downloadJobItemDao.updateStatusByUid(itemToDownload.djiUid, DownloadJobItem.STATUS_COMPLETE)
+                        txDb.downloadJobItemDao.updateStatusByUid(itemToDownload.djiUid, STATUS_COMPLETE)
                     }
                     Napier.d("$logPrefix - processor $id - fetch from origin server done" +
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)

@@ -19,6 +19,8 @@ open class DownloadJobItem {
      */
     var djiOriginUrl: String? = null
 
+    var djiIntegrity: String? = null
+
     /**
      * The destination path (native file system path) e.g. as per File.absolutePath
      */
@@ -52,11 +54,7 @@ open class DownloadJobItem {
 
     companion object {
 
-        const val STATUS_QUEUED = 4
 
-        const val STATUS_RUNNING = 12
-
-        const val STATUS_COMPLETE = 24
 
     }
 

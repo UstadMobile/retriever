@@ -1,6 +1,7 @@
 package com.ustadmobile.retriever.fetcher
 
 import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.ext.headerSize
 import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.responder.AbstractUriResponder
@@ -22,6 +23,8 @@ import java.util.zip.ZipOutputStream
 import com.ustadmobile.retriever.io.RangeInputStream
 import org.mockito.kotlin.*
 import java.io.*
+import java.security.MessageDigest
+import java.util.*
 import java.util.zip.ZipInputStream
 
 class LocalPeerFetcherTest {
@@ -35,6 +38,8 @@ class LocalPeerFetcherTest {
     private lateinit var tmpZipFile: File
 
     private lateinit var mockRetrieverProgressListener: RetrieverProgressListener
+
+    private lateinit var integrityMap: MutableMap<String, String>
 
     private val json = Json {
         encodeDefaults = true
@@ -59,15 +64,20 @@ class LocalPeerFetcherTest {
         }
     }
 
-    @Before
-    fun setup() {
-        tmpZipFile = temporaryFolder.newFile()
+    fun makeTempZipFile(
+        byteReader: (index: Int, path: String) -> ByteArray = { _, path ->
+            this::class.java.getResourceAsStream(path)!!.readAllBytes()
+        }
+    ) {
         val zout = ZipOutputStream(FileOutputStream(tmpZipFile))
         zout.setMethod(ZipOutputStream.STORED)
         val crc32 = CRC32()
-        RESOURCE_PATH_LIST.forEach { resPath ->
-            val entryBytes = this::class.java.getResourceAsStream(resPath)!!.readAllBytes()
+        val messageDigest = MessageDigest.getInstance("SHA-384")
+        RESOURCE_PATH_LIST.forEachIndexed { index, resPath ->
+            val entryBytes = byteReader(index, resPath)
             crc32.update(entryBytes)
+            messageDigest.update(entryBytes)
+            integrityMap[resPath] = "sha384-" + Base64.getEncoder().encodeToString(messageDigest.digest())
             zout.putNextEntry(ZipEntry("$originUrlPrefix$resPath").apply {
                 crc = crc32.value
                 compressedSize = entryBytes.size.toLong()
@@ -75,13 +85,22 @@ class LocalPeerFetcherTest {
             })
             zout.write(entryBytes)
             crc32.reset()
+            messageDigest.reset()
             zout.closeEntry()
         }
         zout.flush()
         zout.close()
+    }
+
+    @Before
+    fun setup() {
+        tmpZipFile = temporaryFolder.newFile()
+        integrityMap = mutableMapOf()
+        makeTempZipFile()
 
         peerHttpServer = RouterNanoHTTPD(0)
         peerHttpServer.start()
+
 
         okHttpClient = OkHttpClient.Builder()
             .dispatcher(Dispatcher().also {
@@ -99,6 +118,7 @@ class LocalPeerFetcherTest {
                 djiOriginUrl = "$originUrlPrefix$resPath"
                 djiDestPath = File(downloadDestDir, resPath.substringAfterLast("/")).absolutePath
                 djiIndex = index
+                djiIntegrity = integrityMap[resPath]
             }
         }
     }
@@ -146,7 +166,7 @@ class LocalPeerFetcherTest {
 
         val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
-        val fetchResult = runBlocking {
+        runBlocking {
             localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
         }
 
@@ -163,7 +183,7 @@ class LocalPeerFetcherTest {
     fun testZipSplit() {
         val zipEntry1 = ZipEntry(downloadJobItems.first().djiOriginUrl!!)
         val firstHeaderBytes = tmpZipFile.readBytes().copyOf(zipEntry1.headerSize)
-        val partFirstFileBytes = this::class.java.getResourceAsStream(RESOURCE_PATH_LIST.first()).readBytes()
+        val partFirstFileBytes = this::class.java.getResourceAsStream(RESOURCE_PATH_LIST.first())!!.readBytes()
         val partSize = partFirstFileBytes.size / 2
 
         val byteArrOut = ByteArrayOutputStream()
@@ -186,16 +206,63 @@ class LocalPeerFetcherTest {
 
         val zipIn = ZipInputStream(ByteArrayInputStream(combined))
         var entryCount = 0
-        lateinit var entry: ZipEntry
-        while (zipIn.nextEntry?.also { entry = it } != null) {
+
+        while (zipIn.nextEntry != null) {
             val entryBytes = zipIn.readAllBytes()
             val resourceBytes = this::class.java.getResourceAsStream(RESOURCE_PATH_LIST[entryCount])!!.readAllBytes()
             Assert.assertArrayEquals(resourceBytes, entryBytes)
             entryCount++
         }
-
     }
 
+
+    @Test
+    fun givenInvalidDataOnOneItem_whenDownloaded_thenItemAttemptShouldFailForFileWithInvalidDataOthersShouldSucceed() {
+        val corruptResIndex = 0
+
+        makeTempZipFile {index, resPath ->
+            if(index == 0) {
+                "Corrupt Data".toByteArray()
+            }else {
+                this::class.java.getResourceAsStream(resPath)!!.readAllBytes()
+            }
+        }
+
+        peerHttpServer.addRoute("/retriever/zipped", PostFileResponder::class.java, tmpZipFile)
+
+
+        val hostEndpoint = peerHttpServer.url("/retriever/")
+        val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
+
+        runBlocking {
+            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
+        }
+
+        downloadJobItems.forEachIndexed { index, jobItem ->
+            if(index == corruptResIndex) {
+                verifyBlocking(mockRetrieverProgressListener, atLeastOnce()) {
+                    onRetrieverProgress(argWhere { evt ->
+                        evt.downloadJobItemUid == jobItem.djiUid && evt.bytesSoFar > 0 && evt.status == STATUS_ATTEMPT_FAILED
+                    })
+                }
+
+                Assert.assertFalse("Corrupt download was deleted", File(jobItem.djiDestPath!!).exists())
+
+            }else {
+                verifyBlocking(mockRetrieverProgressListener, atLeastOnce()) {
+                    onRetrieverProgress(argWhere { evt ->
+                        evt.downloadJobItemUid == jobItem.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
+                    })
+                }
+
+                Assert.assertArrayEquals("Content for ${jobItem.djiOriginUrl} is the same",
+                    this::class.java.getResourceAsStream("${jobItem.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
+                    File(jobItem.djiDestPath!!).readBytes())
+
+            }
+
+        }
+    }
 
 
     companion object {

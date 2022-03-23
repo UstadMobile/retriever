@@ -4,6 +4,7 @@ import com.soywiz.klock.DateTime
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
@@ -75,12 +76,14 @@ abstract class RetrieverCommon(
     ) {
         val batchId = systemTimeInMillis()
 
-        db.downloadJobItemDao.insertList(retrieverRequests.map { request ->
+        db.downloadJobItemDao.insertList(retrieverRequests.mapIndexed { index, request ->
             DownloadJobItem().apply {
                 djiBatchId = batchId
-                djiStatus = DownloadJobItem.STATUS_QUEUED
+                djiStatus = STATUS_QUEUED
                 djiOriginUrl = request.originUrl
                 djiDestPath = request.destinationFilePath
+                djiIndex = index
+                djiIntegrity = request.sriIntegrity
             }
         })
 

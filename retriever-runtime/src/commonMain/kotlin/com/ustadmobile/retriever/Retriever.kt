@@ -22,6 +22,17 @@ interface Retriever{
         const val DBNAME: String = "retreiverdb"
 
         const val LOGTAG = "RetrieverLog"
+
+        const val STATUS_QUEUED = 4
+
+        const val STATUS_RUNNING = 12
+
+        const val STATUS_COMPLETE = 24
+
+        const val STATUS_ATTEMPT_FAILED = 25
+
+        const val STATUS_FAILED = 26
+
     }
 
 }

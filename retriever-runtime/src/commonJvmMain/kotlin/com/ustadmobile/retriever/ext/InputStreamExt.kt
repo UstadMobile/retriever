@@ -5,7 +5,7 @@ import java.io.OutputStream
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.isActive
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.DownloadJobItem.Companion.STATUS_RUNNING
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
 import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
 

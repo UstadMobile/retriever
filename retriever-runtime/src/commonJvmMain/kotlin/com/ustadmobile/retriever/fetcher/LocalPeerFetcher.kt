@@ -31,13 +31,11 @@ actual class LocalPeerFetcher(
 
         var firstFileTmp: File? = null
         val firstFile = File(downloadJobItems[0].djiDestPath!!)
-        val urlToJobItemMap = downloadJobItems.associateBy { it.djiOriginUrl }
+        val jobItemUrlMap = downloadJobItems.associateBy { it.djiOriginUrl!! }
 
         try {
             val url = endpointUrl.requirePostfix("/") + "zipped"
             val originUrlsList = JsonArray(downloadJobItems.map { JsonPrimitive(it.djiOriginUrl) })
-            val jobItemUrlMap = downloadJobItems.associateBy { it.djiOriginUrl!! }
-
 
             //move first file out of the way, otherwise the extractor will attempt
             val firstFileZipHeader = File(firstFile.parentFile, "${firstFile.name}.zipentry")
@@ -80,7 +78,7 @@ actual class LocalPeerFetcher(
                 }
                 .build()
 
-            val responseCode = okHttpClient.newCall(request).execute().use { response ->
+            okHttpClient.newCall(request).execute().use { response ->
                 if(bytesAlreadyDownloaded == 0L && response.code != 200)
                     throw IllegalStateException("Expected 200 OK response: got ${response.code}")
                 else if(bytesAlreadyDownloaded > 0 && response.code != 206)
@@ -88,9 +86,9 @@ actual class LocalPeerFetcher(
 
                 val body = response.body ?: throw IllegalStateException("Response has no body!")
 
-                val destFileProvider: (ZipEntry) -> File = {
-                    jobItemUrlMap[it.name]?.djiDestPath?.let { File(it) }
-                        ?: throw IllegalArgumentException("Unexpected entry in result stream: ${it.name}")
+                val destFileProvider: (ZipEntry) -> File = { zipEntry ->
+                    jobItemUrlMap[zipEntry.name]?.djiDestPath?.let { File(it) }
+                        ?: throw IllegalArgumentException("Unexpected entry in result stream: ${zipEntry.name}")
                 }
 
                 val sourceInput = if(firstFileTmp != null) {
@@ -104,14 +102,11 @@ actual class LocalPeerFetcher(
                 }
 
                 ZipInputStream(sourceInput).use { zipIn ->
-                    zipIn.extractToDir(destFileProvider, jobItemUrlMap.map { it.key to it.value.djiUid }.toMap(),
-                        progressListener = retrieverProgressListener)
+                    zipIn.extractToDir(destFileProvider, jobItemUrlMap, progressListener = retrieverProgressListener)
                 }
-
-                response.code
             }
 
-            return FetchResult(responseCode)
+            return FetchResult()
         }catch (e: Exception) {
             throw e
         }finally {

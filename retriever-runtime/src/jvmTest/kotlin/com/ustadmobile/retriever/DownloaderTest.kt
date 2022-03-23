@@ -5,6 +5,8 @@ import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_COMPLETE
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.*
 import io.github.aakira.napier.DebugAntilog
@@ -60,7 +62,7 @@ class DownloaderTest {
                 djiBatchId = 42
                 djiOriginUrl = "http://server.com/file$index.zip"
                 djiDestPath = "file://folder/file$index.zip"
-                djiStatus = DownloadJobItem.STATUS_QUEUED
+                djiStatus = STATUS_QUEUED
             }
         }
 
@@ -110,12 +112,12 @@ class DownloaderTest {
                         //send a complete event
                         retrieverProgressListener.onRetrieverProgress(RetrieverProgressEvent(it.djiUid, it.djiOriginUrl!!,
                             1000, 1000,0, 1000,
-                            DownloadJobItem.STATUS_COMPLETE))
+                            STATUS_COMPLETE))
                     }
                 }
 
 
-                FetchResult(200)
+                FetchResult()
             }
         }
 

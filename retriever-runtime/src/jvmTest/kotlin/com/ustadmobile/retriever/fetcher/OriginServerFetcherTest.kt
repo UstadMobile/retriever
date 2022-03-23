@@ -2,6 +2,8 @@ package com.ustadmobile.retriever.fetcher
 
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ResourcesResponder
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_COMPLETE
 import com.ustadmobile.retriever.ext.url
 import fi.iki.elonen.router.RouterNanoHTTPD
 import kotlinx.coroutines.runBlocking
@@ -14,6 +16,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verifyBlocking
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
+import java.util.*
 
 class OriginServerFetcherTest {
 
@@ -53,10 +57,15 @@ class OriginServerFetcherTest {
         val mockProgressListener = mock<RetrieverProgressListener>()
 
         runBlocking {
+            val resourceBytes = this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.readAllBytes()
+            val messageDigest = MessageDigest.getInstance("SHA-384")
+            messageDigest.update(resourceBytes)
+
             OriginServerFetcher(okHttpClient).download(
                 DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
                     djiDestPath = destFile.absolutePath
+                    djiIntegrity = "sha384-" + Base64.getEncoder().encodeToString(messageDigest.digest())
                 } , mockProgressListener)
         }
 
@@ -72,7 +81,7 @@ class OriginServerFetcherTest {
 
         verifyBlocking(mockProgressListener) {
             onRetrieverProgress(argWhere {
-                it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes
+                it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes && it.status == STATUS_COMPLETE
             })
         }
     }
@@ -92,7 +101,7 @@ class OriginServerFetcherTest {
     fun givenPartialDownloadExists_whenDownloadCalled_thenShouldResume() {
         val destFile = File(downloadDestDir, "cat-pic0")
 
-        val bytesInItem = this::class.java.getResourceAsStream("/cat-pic0.jpg").readBytes()
+        val bytesInItem = this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.readBytes()
         val partialBytes = bytesInItem.copyOf(bytesInItem.size / 2)
         destFile.writeBytes(partialBytes)
 
@@ -110,5 +119,34 @@ class OriginServerFetcherTest {
             this::class.java.getResource("/cat-pic0.jpg")!!.readBytes(),
             destFile.readBytes())
     }
+
+    @Test
+    fun givenValidUrl_whenIntegrityDoesNotMatch_thenAttemptShouldFail() {
+        val destFile = File(downloadDestDir, "cat-pic0")
+        val mockProgressListener = mock<RetrieverProgressListener>()
+
+        runBlocking {
+            val resourceBytes = this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.readAllBytes()
+            val messageDigest = MessageDigest.getInstance("SHA-384")
+            messageDigest.update(resourceBytes)
+
+            OriginServerFetcher(okHttpClient).download(
+                DownloadJobItem().apply {
+                    djiOriginUrl = originHttpServer.url("/resources/animated-overlay.gif")
+                    djiDestPath = destFile.absolutePath
+                    djiIntegrity = "sha384-" + Base64.getEncoder().encodeToString(messageDigest.digest())
+                } , mockProgressListener)
+        }
+
+        verifyBlocking(mockProgressListener) {
+            onRetrieverProgress(argWhere {
+                it.status == STATUS_ATTEMPT_FAILED
+            })
+        }
+
+        Assert.assertFalse("If checksum does not match, file does not exist",
+            destFile.exists())
+    }
+
 
 }
