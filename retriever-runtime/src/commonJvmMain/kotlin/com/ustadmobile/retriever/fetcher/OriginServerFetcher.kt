@@ -6,6 +6,7 @@ import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
+import com.ustadmobile.retriever.RetrieverStatusUpdateEvent
 import com.ustadmobile.retriever.ext.copyToAndUpdateProgress
 import com.ustadmobile.retriever.io.parseIntegrity
 import okhttp3.OkHttpClient
@@ -25,7 +26,7 @@ actual class OriginServerFetcher(
 
     actual suspend fun download(
         downloadJobItem: DownloadJobItem,
-        retrieverProgressListener: RetrieverProgressListener,
+        retrieverListener: RetrieverListener,
     ) {
         val url = downloadJobItem.djiOriginUrl
             ?: throw IllegalArgumentException("Null URL on ${downloadJobItem.djiUid}")
@@ -70,22 +71,26 @@ actual class OriginServerFetcher(
 
                 totalBytes = response.header("content-length") ?.toLong()
                     ?: throw IllegalStateException("$url does not provide a content-length header.")
-                retrieverProgressListener.onRetrieverProgress(
+                retrieverListener.onRetrieverProgress(
                     RetrieverProgressEvent(downloadJobItem.djiUid, url, bytesAlreadyDownloaded, 0L,
-                        bytesAlreadyDownloaded, totalBytes, STATUS_RUNNING)
+                        bytesAlreadyDownloaded, totalBytes)
                 )
 
                 val fetchProgressWrapper = if(bytesAlreadyDownloaded > 0L) {
-                    object : RetrieverProgressListener {
+                    object : RetrieverListener {
                         override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
-                            retrieverProgressListener.onRetrieverProgress(retrieverProgressEvent.copy(
+                            retrieverListener.onRetrieverProgress(retrieverProgressEvent.copy(
                                 bytesSoFar = retrieverProgressEvent.bytesSoFar + bytesAlreadyDownloaded,
                                 totalBytes = retrieverProgressEvent.totalBytes + bytesAlreadyDownloaded
                             ))
                         }
+
+                        override suspend fun onRetrieverStatusUpdate(retrieverStatusEvent: RetrieverStatusUpdateEvent) {
+                            retrieverListener.onRetrieverStatusUpdate(retrieverStatusEvent)
+                        }
                     }
                 }else {
-                    retrieverProgressListener
+                    retrieverListener
                 }
 
                 val body = response.body ?: throw IllegalStateException("Response to $url has no body!")
@@ -113,19 +118,21 @@ actual class OriginServerFetcher(
                     STATUS_QUEUED
                 }
 
-                retrieverProgressListener.onRetrieverProgress(
+                retrieverListener.onRetrieverProgress(
                     RetrieverProgressEvent(downloadJobItem.djiUid, url,
                         bytesReadFromHttp + bytesAlreadyDownloaded, 0L, bytesReadFromHttp,
-                        totalBytes, finalStatus))
+                        totalBytes))
+                retrieverListener.onRetrieverStatusUpdate(
+                    RetrieverStatusUpdateEvent(
+                    downloadJobItem.djiUid, url, finalStatus)
+                )
             }
 
         }catch(e: Exception) {
             //Don't just throw an exception, because we could be handling multiple downloads (hence should continue
             // with the next ones)
-            retrieverProgressListener.onRetrieverProgress(
-                RetrieverProgressEvent(downloadJobItem.djiUid, url, destFile.length(), 0, destFile.length(),
-                    totalBytes, STATUS_ATTEMPT_FAILED)
-            )
+            retrieverListener.onRetrieverStatusUpdate(
+                RetrieverStatusUpdateEvent(downloadJobItem.djiUid, url, STATUS_ATTEMPT_FAILED))
         }
     }
 

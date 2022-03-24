@@ -116,7 +116,8 @@ class DownloaderFetcherIntegrationTest {
     @Test
     fun givenOriginUrlsNotAvailableFromPeers_whenDownloadRuns_thenShouldDownloadFromOriginServer() {
 
-        val downloader = Downloader(batchId, mockAvailabilityManager, { }, originServerFetcher, localPeerFetcher, localDb)
+        val downloader = Downloader(batchId, mockAvailabilityManager, mock { }, originServerFetcher, localPeerFetcher,
+            localDb)
 
         runBlocking {
             withTimeout(10000) {
@@ -160,7 +161,8 @@ class DownloaderFetcherIntegrationTest {
                     localFile.length(), localFile.crc32)
             })
 
-        val downloader = Downloader(batchId, mockAvailabilityManager, { }, originServerFetcher, localPeerFetcher, localDb)
+        val downloader = Downloader(batchId, mockAvailabilityManager, mock { }, originServerFetcher, localPeerFetcher,
+            localDb)
 
         runBlocking {
             withTimeout(10000) {

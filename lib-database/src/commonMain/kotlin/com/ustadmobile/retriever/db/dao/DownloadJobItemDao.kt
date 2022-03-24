@@ -68,36 +68,27 @@ abstract class DownloadJobItemDao {
            SET djiBytesSoFar = :bytesSoFar,
                djiLocalBytesSoFar = :localBytesSoFar,
                djiOriginBytesSoFar = :originBytesSoFar,
-               djiTotalSize = :totalSize,
-               djiStatus = :status
+               djiTotalSize = :totalSize
          WHERE djiUid = :uid     
     """)
-    abstract suspend fun updateProgressAndStatusByUid(
+    abstract suspend fun updateProgressByUid(
         uid: Long,
         bytesSoFar: Long,
         localBytesSoFar: Long,
         originBytesSoFar: Long,
         totalSize: Long,
-        status: Int
     )
 
     @Query("""
         UPDATE DownloadJobItem
-           SET djiBytesSoFar = :bytesSoFar,
-               djiLocalBytesSoFar = :localBytesSoFar,
-               djiOriginBytesSoFar = :originBytesSoFar,
-               djiTotalSize = :totalSize, 
-               djiAttemptCount = djiAttemptCount + 1,
+           SET djiAttemptCount = :attemptCount,
                djiStatus = :status
          WHERE djiUid = :uid          
     """)
-    abstract suspend fun updateProgressAndIncrementAttemptCount(
+    abstract suspend fun updateStatusAndAttemptCountByUid(
         uid: Long,
-        bytesSoFar: Long,
-        localBytesSoFar: Long,
-        originBytesSoFar: Long,
-        totalSize: Long,
         status: Int,
+        attemptCount: Int,
     )
 
     @Query("""

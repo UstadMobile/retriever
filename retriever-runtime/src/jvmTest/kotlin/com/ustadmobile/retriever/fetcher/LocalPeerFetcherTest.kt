@@ -37,7 +37,7 @@ class LocalPeerFetcherTest {
 
     private lateinit var tmpZipFile: File
 
-    private lateinit var mockRetrieverProgressListener: RetrieverProgressListener
+    private lateinit var mockRetrieverListener: RetrieverListener
 
     private lateinit var integrityMap: MutableMap<String, String>
 
@@ -111,7 +111,7 @@ class LocalPeerFetcherTest {
 
         downloadDestDir = temporaryFolder.newFolder()
 
-        mockRetrieverProgressListener = mock { }
+        mockRetrieverListener = mock { }
 
         downloadJobItems = RESOURCE_PATH_LIST.mapIndexed { index, resPath ->
             DownloadJobItem().apply {
@@ -130,14 +130,14 @@ class LocalPeerFetcherTest {
         val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
         runBlocking {
-            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
+            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverListener)
         }
 
         downloadJobItems.forEach {
             Assert.assertArrayEquals("Content for ${it.djiOriginUrl} is the same",
                 this::class.java.getResourceAsStream("${it.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
                 File(it.djiDestPath!!).readBytes())
-            verifyBlocking(mockRetrieverProgressListener, atLeastOnce()) {
+            verifyBlocking(mockRetrieverListener, atLeastOnce()) {
                 onRetrieverProgress(argWhere { evt ->
                     evt.downloadJobItemUid == it.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
                 })
@@ -152,7 +152,7 @@ class LocalPeerFetcherTest {
         val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
         runBlocking {
-            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
+            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverListener)
         }
     }
 
@@ -167,7 +167,7 @@ class LocalPeerFetcherTest {
         val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
         runBlocking {
-            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
+            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverListener)
         }
 
 
@@ -235,21 +235,21 @@ class LocalPeerFetcherTest {
         val localPeerFetcher = LocalPeerFetcher(okHttpClient, json)
 
         runBlocking {
-            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverProgressListener)
+            localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverListener)
         }
 
         downloadJobItems.forEachIndexed { index, jobItem ->
             if(index == corruptResIndex) {
-                verifyBlocking(mockRetrieverProgressListener, atLeastOnce()) {
-                    onRetrieverProgress(argWhere { evt ->
-                        evt.downloadJobItemUid == jobItem.djiUid && evt.bytesSoFar > 0 && evt.status == STATUS_ATTEMPT_FAILED
+                verifyBlocking(mockRetrieverListener, atLeastOnce()) {
+                    onRetrieverStatusUpdate(argWhere { evt ->
+                        evt.downloadJobItemUid == jobItem.djiUid && evt.status == STATUS_ATTEMPT_FAILED
                     })
                 }
 
                 Assert.assertFalse("Corrupt download was deleted", File(jobItem.djiDestPath!!).exists())
 
             }else {
-                verifyBlocking(mockRetrieverProgressListener, atLeastOnce()) {
+                verifyBlocking(mockRetrieverListener, atLeastOnce()) {
                     onRetrieverProgress(argWhere { evt ->
                         evt.downloadJobItemUid == jobItem.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
                     })

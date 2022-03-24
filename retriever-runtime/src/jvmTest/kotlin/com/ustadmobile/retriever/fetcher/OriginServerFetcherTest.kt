@@ -53,7 +53,7 @@ class OriginServerFetcherTest {
     @Test
     fun givenValidUrl_whenDownloadCalled_thenShouldDownloadToDestination() {
         val destFile = File(downloadDestDir, "cat-pic0")
-        val mockProgressListener = mock<RetrieverProgressListener>()
+        val mockProgressListener = mock<RetrieverListener>()
 
         runBlocking {
             val resourceBytes = this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.readAllBytes()
@@ -80,7 +80,11 @@ class OriginServerFetcherTest {
 
         verifyBlocking(mockProgressListener) {
             onRetrieverProgress(argWhere {
-                it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes && it.status == STATUS_SUCCESSFUL
+                it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes
+            })
+
+            onRetrieverStatusUpdate(argWhere {
+                it.status == STATUS_SUCCESSFUL
             })
         }
     }
@@ -88,7 +92,7 @@ class OriginServerFetcherTest {
     @Test
     fun givenUrlDoesntExist_whenDownloadCalled_thenShouldFail() {
         val destFile = File(downloadDestDir, "cat-pic0")
-        val mockProgressListener = mock<RetrieverProgressListener>{ }
+        val mockProgressListener = mock<RetrieverListener>{ }
         runBlocking {
             OriginServerFetcher(okHttpClient).download(DownloadJobItem().apply {
                 djiOriginUrl = originHttpServer.url("/doesnotexist.jpg")
@@ -97,7 +101,7 @@ class OriginServerFetcherTest {
         }
 
         verifyBlocking(mockProgressListener) {
-            onRetrieverProgress(argWhere { it.status == STATUS_ATTEMPT_FAILED })
+            onRetrieverStatusUpdate(argWhere { it.status == STATUS_ATTEMPT_FAILED })
         }
     }
 
@@ -109,7 +113,7 @@ class OriginServerFetcherTest {
         val partialBytes = bytesInItem.copyOf(bytesInItem.size / 2)
         destFile.writeBytes(partialBytes)
 
-        val mockProgressListener = mock<RetrieverProgressListener>()
+        val mockProgressListener = mock<RetrieverListener>()
 
         runBlocking {
             OriginServerFetcher(okHttpClient).download(
@@ -127,7 +131,7 @@ class OriginServerFetcherTest {
     @Test
     fun givenValidUrl_whenIntegrityDoesNotMatch_thenAttemptShouldFail() {
         val destFile = File(downloadDestDir, "cat-pic0")
-        val mockProgressListener = mock<RetrieverProgressListener>()
+        val mockProgressListener = mock<RetrieverListener>()
 
         runBlocking {
             val resourceBytes = this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.readAllBytes()
@@ -143,7 +147,7 @@ class OriginServerFetcherTest {
         }
 
         verifyBlocking(mockProgressListener) {
-            onRetrieverProgress(argWhere {
+            onRetrieverStatusUpdate(argWhere {
                 it.status == STATUS_ATTEMPT_FAILED
             })
         }

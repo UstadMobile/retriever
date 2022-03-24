@@ -7,14 +7,14 @@ import kotlinx.coroutines.isActive
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
-import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
+import com.ustadmobile.retriever.fetcher.RetrieverListener
 
 //The read/write has to actually happen somewhere. This function regularly checks
 //for cancellation and behaves appropriately.
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun InputStream.copyToAndUpdateProgress(
     dest: OutputStream,
-    progressListener: RetrieverProgressListener,
+    progressListener: RetrieverListener,
     downloadJobItemUid: Long,
     url: String,
     totalBytes: Long,
@@ -32,7 +32,7 @@ suspend fun InputStream.copyToAndUpdateProgress(
         if(timeNow - lastProgressTime >= progressInterval){
             progressListener.onRetrieverProgress(
                 RetrieverProgressEvent(downloadJobItemUid, url, totalBytesRead, totalBytesRead, 0L,
-                    totalBytes, STATUS_RUNNING))
+                    totalBytes))
             lastProgressTime = timeNow
         }
     }

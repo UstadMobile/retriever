@@ -12,8 +12,9 @@ import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
+import com.ustadmobile.retriever.RetrieverStatusUpdateEvent
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
-import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
+import com.ustadmobile.retriever.fetcher.RetrieverListener
 import java.security.DigestOutputStream
 import java.security.MessageDigest
 import java.util.*
@@ -31,7 +32,7 @@ suspend fun ZipInputStream.extractToDir(
     destProvider: (ZipEntry) -> File,
     urlToJobMap: Map<String, DownloadJobItem>,
     progressInterval: Int = 200,
-    progressListener: RetrieverProgressListener? = null,
+    progressListener: RetrieverListener? = null,
 ) {
     lateinit var zipEntry: ZipEntry
     val buffer = ByteArray(8192)
@@ -54,8 +55,8 @@ suspend fun ZipInputStream.extractToDir(
                 val destFile = destProvider(zipEntry)
                 val downloadJobItem = urlToJobMap[zipEntry.name]
                     ?: throw IllegalStateException("exactToDir: Zip Entry with name: ${zipEntry.name} is not in urlToJobMap")
-                progressListener?.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid, zipEntry.name, 0L,
-                    0L, 0L, zipEntry.size, STATUS_RUNNING))
+                progressListener?.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid, zipEntry.name,
+                    0L,0L, 0L, zipEntry.size))
                 lastProgressUpdateTime = systemTimeInMillis()
 
                 var entryBytesSoFar = 0L
@@ -78,8 +79,8 @@ suspend fun ZipInputStream.extractToDir(
                         entryBytesSoFar += bytesRead
                         val timeNow = systemTimeInMillis()
                         if(progressListener != null && timeNow - lastProgressUpdateTime >= progressInterval) {
-                            channel.send(RetrieverProgressEvent(downloadJobItem.djiUid, zipEntry.name, entryBytesSoFar, entryBytesSoFar,
-                                0L, zipEntry.size, STATUS_RUNNING))
+                            channel.send(RetrieverProgressEvent(downloadJobItem.djiUid, zipEntry.name, entryBytesSoFar,
+                                entryBytesSoFar,0L, zipEntry.size))
                             lastProgressUpdateTime = timeNow
                         }
                     }
@@ -97,8 +98,10 @@ suspend fun ZipInputStream.extractToDir(
                         STATUS_QUEUED
                     }
 
-                    channel.send(RetrieverProgressEvent(downloadJobItem.djiUid, zipEntry.name, entryBytesSoFar, entryBytesSoFar,
-                        0L, zipEntry.size, finalStatus))
+                    channel.send(RetrieverProgressEvent(downloadJobItem.djiUid, zipEntry.name, entryBytesSoFar,
+                        entryBytesSoFar,0L, zipEntry.size))
+                    progressListener?.onRetrieverStatusUpdate(RetrieverStatusUpdateEvent(downloadJobItem.djiUid,
+                        zipEntry.name, finalStatus))
                 }
             }
         }catch(e: Exception) {

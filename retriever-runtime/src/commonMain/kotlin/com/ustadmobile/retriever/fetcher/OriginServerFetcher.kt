@@ -12,7 +12,7 @@ expect class OriginServerFetcher {
 
     suspend fun download(
         downloadJobItem: DownloadJobItem,
-        retrieverProgressListener: RetrieverProgressListener,
+        retrieverListener: RetrieverListener,
     )
 
 }

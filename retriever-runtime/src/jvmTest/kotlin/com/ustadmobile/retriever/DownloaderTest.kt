@@ -11,6 +11,7 @@ import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.*
+import com.ustadmobile.retriever.fetcher.RetrieverListener
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.GlobalScope
@@ -21,6 +22,7 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.kotlin.*
+import java.io.IOException
 
 class DownloaderTest {
 
@@ -32,7 +34,7 @@ class DownloaderTest {
 
     private lateinit var mockLocalPeerFetcher: LocalPeerFetcher
 
-    private lateinit var mockProgressListener: RetrieverProgressListener
+    private lateinit var mockProgressListener: RetrieverListener
 
     private lateinit var downloadJobItems: List<DownloadJobItem>
 
@@ -74,24 +76,27 @@ class DownloaderTest {
         }
     }
 
-    private fun KStubbing<OriginServerFetcher>.onOriginDownloadThenAnswerAndFireProgressUpdate(
+    private fun KStubbing<OriginServerFetcher>.onOriginDownloadThenAnswerAndFireUpdate(
         statusBlock: (InvocationOnMock) -> Int
     ) = onBlocking {
         download(any(), any())
     }.thenAnswer {
         val downloadJobItem = it.arguments[0] as DownloadJobItem
-        val retrieverProgressListener = it.arguments[1] as RetrieverProgressListener
+        val retrieverListener = it.arguments[1] as RetrieverListener
         GlobalScope.launch {
-            retrieverProgressListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid,
-                downloadJobItem.djiOriginUrl!!, 1000, 0, 1000, 1000,
-                statusBlock(it)))
+            retrieverListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid,
+                downloadJobItem.djiOriginUrl!!, 1000, 0, 1000, 1000))
+            retrieverListener.onRetrieverStatusUpdate(
+                RetrieverStatusUpdateEvent(downloadJobItem.djiUid,
+                downloadJobItem.djiOriginUrl!!, statusBlock(it))
+            )
         }
     }
 
     @Test
     fun givenRequestNotAvailableLocally_whenDownloadCalled_thenShouldDownloadFromOriginServer() {
         mockOriginServerFetcher.stub {
-            onOriginDownloadThenAnswerAndFireProgressUpdate { STATUS_SUCCESSFUL }
+            onOriginDownloadThenAnswerAndFireUpdate { STATUS_SUCCESSFUL }
         }
 
         val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
@@ -125,14 +130,15 @@ class DownloaderTest {
 
         mockLocalPeerFetcher.stub {
             onBlocking { download(any(), any(), any()) }.thenAnswer {
-                val retrieverProgressListener = it.arguments[2] as RetrieverProgressListener
+                val retrieverListener = it.arguments[2] as RetrieverListener
                 val downloadJobItems = it.arguments[1] as List<DownloadJobItem>
                 GlobalScope.launch {
                     downloadJobItems.forEach {
                         //send a complete event
-                        retrieverProgressListener.onRetrieverProgress(RetrieverProgressEvent(it.djiUid, it.djiOriginUrl!!,
-                            1000, 1000,0, 1000,
-                            STATUS_SUCCESSFUL))
+                        retrieverListener.onRetrieverProgress(RetrieverProgressEvent(it.djiUid, it.djiOriginUrl!!,
+                            1000, 1000,0, 1000))
+                        retrieverListener.onRetrieverStatusUpdate(RetrieverStatusUpdateEvent(it.djiUid,
+                            it.djiOriginUrl!!, STATUS_SUCCESSFUL))
                     }
                 }
 
@@ -163,7 +169,7 @@ class DownloaderTest {
         val maxNumAttempts = 4
 
         mockOriginServerFetcher.stub {
-            onOriginDownloadThenAnswerAndFireProgressUpdate { STATUS_ATTEMPT_FAILED }
+            onOriginDownloadThenAnswerAndFireUpdate { STATUS_ATTEMPT_FAILED }
         }
 
         val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
@@ -185,7 +191,7 @@ class DownloaderTest {
 
         downloadJobItems.forEach { jobItem ->
             verifyBlocking(mockProgressListener) {
-                onRetrieverProgress(argWhere {
+                onRetrieverStatusUpdate(argWhere {
                     it.url == jobItem.djiOriginUrl && it.status == STATUS_FAILED
                 })
             }
@@ -201,7 +207,7 @@ class DownloaderTest {
 
         //Make the first item fail twice, then succeed
         mockOriginServerFetcher.stub {
-            onOriginDownloadThenAnswerAndFireProgressUpdate {
+            onOriginDownloadThenAnswerAndFireUpdate {
                 val jobItem = it.arguments.first() as DownloadJobItem
                 if(jobItem.djiOriginUrl == downloadJobItems.first().djiOriginUrl) {
                     failCount--
@@ -236,10 +242,73 @@ class DownloaderTest {
             }
 
             verifyBlocking(mockProgressListener) {
-                onRetrieverProgress(argWhere {
+                onRetrieverStatusUpdate(argWhere {
                     it.url == downloadItem.djiOriginUrl && it.status == STATUS_SUCCESSFUL
                 })
             }
         }
     }
+
+    /**
+     * Test what will happen when a downloader does not fire a status change event (e.g. because it threw an exception)
+     */
+    @Test
+    fun givenServerFailsInMiddle_whenDownloadCalled_thenShouldSetStatusAndRetry() {
+        val maxNumAttempts = 4
+        val timesToFail = 2
+        var failCount = timesToFail
+
+        //Make the first item fail twice, then succeed
+        mockOriginServerFetcher.stub {
+            onBlocking { download(any(), any()) }.thenAnswer {
+                val downloadJobItem = it.arguments[0] as DownloadJobItem
+                val retrieverListener = it.arguments[1] as RetrieverListener
+
+                if(failCount-- >= 0) {
+                    runBlocking {
+                        retrieverListener.onRetrieverProgress(RetrieverProgressEvent(
+                            downloadJobItem.djiUid, downloadJobItem.djiOriginUrl!!, 0, 0,
+                            0, 1000))
+                    }
+
+                    throw IOException("Fail!")
+                }else {
+                    runBlocking {
+                        retrieverListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid,
+                            downloadJobItem.djiOriginUrl!!, 1000, 0, 1000, 1000))
+                        retrieverListener.onRetrieverStatusUpdate(
+                            RetrieverStatusUpdateEvent(downloadJobItem.djiUid,
+                                downloadJobItem.djiOriginUrl!!, STATUS_SUCCESSFUL)
+                        )
+                    }
+                }
+            }
+        }
+
+        val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
+            mockOriginServerFetcher, mockLocalPeerFetcher, db, maxAttempts = maxNumAttempts, attemptRetryDelay = 100)
+
+        runBlocking {
+            withTimeout(10000) {
+                downloader.download()
+            }
+        }
+
+        downloadJobItems.forEach { downloadItem ->
+            verifyBlocking(mockOriginServerFetcher, atLeastOnce()) {
+                download(argWhere {
+                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                }, any())
+            }
+
+            verifyBlocking(mockProgressListener) {
+                onRetrieverStatusUpdate(argWhere {
+                    it.url == downloadItem.djiOriginUrl && it.status == STATUS_SUCCESSFUL
+                })
+            }
+        }
+
+
+    }
+
 }

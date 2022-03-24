@@ -6,11 +6,12 @@ import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
-import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
+import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -36,7 +37,7 @@ import kotlinx.coroutines.sync.withLock
 class Downloader(
     private val downloadBatchId: Long,
     private val availabilityManager: AvailabilityManager,
-    private val progressListener: RetrieverProgressListener,
+    private val progressListener: RetrieverListener,
     private val originServerFetcher: OriginServerFetcher,
     private val localPeerFetcher: LocalPeerFetcher,
     private val db: RetrieverDatabase,
@@ -114,25 +115,16 @@ class Downloader(
         }
     }
 
-    private suspend fun commitProgressUpdates() {
+    private suspend fun RetrieverDatabase.commitProgressUpdates() {
         progressUpdateMutex.withLock {
             val updatesToCommit = pendingUpdates.values.toList().also {
                 pendingUpdates.clear()
             }
 
-            db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                val (attemptFailedUpdates, normalUpdates) = updatesToCommit.partition {
-                    it.status == STATUS_ATTEMPT_FAILED
-                }
-
-                normalUpdates.forEach {
-                    txDb.downloadJobItemDao.updateProgressAndStatusByUid(it.downloadJobItemUid,
-                        it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar,it.totalBytes, it.status)
-                }
-
-                attemptFailedUpdates.forEach {
-                    txDb.downloadJobItemDao.updateProgressAndIncrementAttemptCount(it.downloadJobItemUid,
-                        it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar, it.totalBytes, maxAttempts)
+            withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                updatesToCommit.forEach {
+                    txDb.downloadJobItemDao.updateProgressByUid(it.downloadJobItemUid,
+                        it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar, it.totalBytes)
                 }
             }
         }
@@ -143,27 +135,51 @@ class Downloader(
         id: Int,
         channel: ReceiveChannel<DownloadBatch>
     ) = launch {
+        class StatusCommit(val status: Int, val attempts: Int)
+
+        fun DownloadJobItem.statusIfAttemptFailed() : Int{
+            return if ((djiAttemptCount + 1) >= maxAttempts) { STATUS_FAILED } else { STATUS_QUEUED }
+        }
+
         for(item in channel) {
             Napier.d("$logPrefix - processor $id - start download of " +
                     item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
 
             var hasFailedAttempts = false
-            val progressListenerWrapper = object: RetrieverProgressListener {
-                override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
-                    hasFailedAttempts = hasFailedAttempts || retrieverProgressEvent.status == STATUS_ATTEMPT_FAILED
 
-                    val newEvt = if(retrieverProgressEvent.status == STATUS_ATTEMPT_FAILED &&
-                        (item.itemsToDownload.first {it.djiUid == retrieverProgressEvent.downloadJobItemUid }.djiAttemptCount + 1) >= maxAttempts) {
-                        retrieverProgressEvent.copy(status = STATUS_FAILED)
-                    }else {
-                        retrieverProgressEvent
-                    }
+            val jobItemIdsStarted = mutableSetOf<Long>()
+
+            //The final statuses of items that we will commit to the database when this run is finished
+            val statusCommits = concurrentSafeMapOf<Long, StatusCommit>()
+            val progressListenerWrapper = object: RetrieverListener {
+                override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
+                    jobItemIdsStarted += retrieverProgressEvent.downloadJobItemUid
 
                     progressUpdateMutex.withLock {
-                        pendingUpdates[retrieverProgressEvent.downloadJobItemUid] = newEvt
+                        pendingUpdates[retrieverProgressEvent.downloadJobItemUid] = retrieverProgressEvent
                     }
 
-                    progressListener.onRetrieverProgress(newEvt)
+                    progressListener.onRetrieverProgress(retrieverProgressEvent)
+                }
+
+                override suspend fun onRetrieverStatusUpdate(retrieverStatusEvent: RetrieverStatusUpdateEvent) {
+                    hasFailedAttempts = hasFailedAttempts || retrieverStatusEvent.status == STATUS_ATTEMPT_FAILED
+
+                    val isFailedAttempt = (retrieverStatusEvent.status == STATUS_ATTEMPT_FAILED)
+                    val downloadItem = item.itemsToDownload.first {it.djiUid == retrieverStatusEvent.downloadJobItemUid }
+                    var attemptCount = downloadItem.djiAttemptCount
+                    val newEvt =  when {
+                        isFailedAttempt -> {
+                            attemptCount++
+                            retrieverStatusEvent.copy(status = downloadItem.statusIfAttemptFailed())
+                        }
+                        else -> retrieverStatusEvent
+                    }
+
+                    statusCommits[retrieverStatusEvent.downloadJobItemUid] = StatusCommit(newEvt.status,
+                        attemptCount)
+
+                    progressListener.onRetrieverStatusUpdate(newEvt)
                 }
             }
 
@@ -191,13 +207,49 @@ class Downloader(
                     }
                 }
             }catch(e: Exception) {
-                throw e
+                Napier.e("Exception running downloader", e)
             }finally {
                 withContext(NonCancellable) {
                     if(hasFailedAttempts)
                         delay(attemptRetryDelay.toLong())
 
-                    commitProgressUpdates()
+                    db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                        statusCommits.forEach {
+                            txDb.downloadJobItemDao.updateStatusAndAttemptCountByUid(it.key, it.value.status,
+                                it.value.attempts)
+                        }
+
+                        /*
+                         * Normally the Fetcher (e.g. local or peer) should send a final status change event for each item.
+                         * In case that doesn't happen (eg interrupted, exception, etc), we need to make sure that we
+                         * set a valid final status for each downloadjobitem in the list that was supposed to be downloaded
+                         * so it will be either marked for retry (with attemptcount incremented) or marked as having
+                         * permanently failed as appropriate.
+                         */
+                        val itemIdsWithFinalStatus = statusCommits.keys
+
+                        val itemsWithoutFinalStatus = item.itemsToDownload.filter { it.djiUid !in itemIdsWithFinalStatus }
+
+                        itemsWithoutFinalStatus.forEach {
+                            val itemStarted = it.djiUid in jobItemIdsStarted
+                            val statusToSet: Int
+                            val attemptCountToSet: Int
+                            if(itemStarted) {
+                                statusToSet = it.statusIfAttemptFailed()
+                                attemptCountToSet = it.djiAttemptCount + 1
+                            }else {
+                                statusToSet = STATUS_QUEUED
+                                attemptCountToSet = it.djiAttemptCount
+                            }
+
+                            txDb.downloadJobItemDao.updateStatusAndAttemptCountByUid(it.djiUid, statusToSet,
+                                attemptCountToSet)
+                        }
+
+
+                        txDb.commitProgressUpdates()
+                    }
+
                     checkQueueChannel.send(true)
                 }
 

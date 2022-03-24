@@ -7,5 +7,4 @@ data class RetrieverProgressEvent(
     val localBytesSoFar: Long,
     val originBytesSoFar: Long,
     val totalBytes: Long,
-    val status: Int,
 )

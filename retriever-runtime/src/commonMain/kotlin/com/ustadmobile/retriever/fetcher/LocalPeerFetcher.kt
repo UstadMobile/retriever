@@ -10,7 +10,7 @@ expect class LocalPeerFetcher {
     suspend fun download(
         endpointUrl: String,
         downloadJobItems: List<DownloadJobItem>,
-        retrieverProgressListener: RetrieverProgressListener,
+        retrieverListener: RetrieverListener,
     ): FetchResult
 
 }

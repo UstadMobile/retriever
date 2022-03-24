@@ -4,6 +4,7 @@ import com.ustadmobile.door.ext.writeToFile
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
+import com.ustadmobile.retriever.RetrieverStatusUpdateEvent
 import com.ustadmobile.retriever.ext.requirePostfix
 import com.ustadmobile.retriever.io.extractToDir
 import kotlinx.serialization.json.Json
@@ -27,21 +28,20 @@ actual class LocalPeerFetcher(
     actual suspend fun download(
         endpointUrl: String,
         downloadJobItems: List<DownloadJobItem>,
-        retrieverProgressListener: RetrieverProgressListener
+        retrieverListener: RetrieverListener
     ): FetchResult {
         //Validate input here
 
         var firstFileTmp: File? = null
         val firstFile = File(downloadJobItems[0].djiDestPath!!)
         val jobItemUrlMap = downloadJobItems.associateBy { it.djiOriginUrl!! }
-        val completedJobUids = mutableListOf<Long>() //All jobs for which we have sent a final status
-        val retrieverProgressWrapper = object: RetrieverProgressListener {
+        val listenerWrapper = object: RetrieverListener {
             override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
-                if(retrieverProgressEvent.status >= Retriever.STATUS_COMPLETE_MIN) {
-                    completedJobUids += retrieverProgressEvent.downloadJobItemUid
-                }
+                retrieverListener.onRetrieverProgress(retrieverProgressEvent)
+            }
 
-                retrieverProgressListener.onRetrieverProgress(retrieverProgressEvent)
+            override suspend fun onRetrieverStatusUpdate(retrieverStatusEvent: RetrieverStatusUpdateEvent) {
+                retrieverListener.onRetrieverStatusUpdate(retrieverStatusEvent)
             }
         }
 
@@ -114,18 +114,12 @@ actual class LocalPeerFetcher(
                 }
 
                 ZipInputStream(sourceInput).use { zipIn ->
-                    zipIn.extractToDir(destFileProvider, jobItemUrlMap, progressListener = retrieverProgressWrapper)
+                    zipIn.extractToDir(destFileProvider, jobItemUrlMap, progressListener = listenerWrapper)
                 }
             }
 
             return FetchResult()
         }catch (e: Exception) {
-            downloadJobItems.filter { it.djiUid  !in completedJobUids}.forEach { jobItem ->
-                retrieverProgressListener.onRetrieverProgress(RetrieverProgressEvent(jobItem.djiUid,
-                    jobItem.djiOriginUrl ?: "err", 0, 0, 0, -1,
-                    STATUS_ATTEMPT_FAILED))
-            }
-
             throw e
         }finally {
             if(firstFileTmp?.exists() == true && firstFile.exists())

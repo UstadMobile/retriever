@@ -13,8 +13,9 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverRequest
+import com.ustadmobile.retriever.RetrieverStatusUpdateEvent
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
-import com.ustadmobile.retriever.fetcher.RetrieverProgressListener
+import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.testapp.R
 import org.kodein.di.DI
 import org.kodein.di.DIAware
@@ -25,7 +26,7 @@ import java.io.File
 class DownloadWorker(
     context: Context,
     params: WorkerParameters
-): CoroutineWorker(context, params), DIAware, RetrieverProgressListener{
+): CoroutineWorker(context, params), DIAware, RetrieverListener{
 
     override val di: DI by closestDI(context)
 
@@ -82,6 +83,10 @@ class DownloadWorker(
         setForegroundAsync(ForegroundInfo(notificationId.hashCode(), notificationBuilder.build()))
     }
 
+    override suspend fun onRetrieverStatusUpdate(retrieverStatusEvent: RetrieverStatusUpdateEvent) {
+
+    }
+
     override suspend fun doWork(): Result {
         val downloadUrl = inputData.getString(KEY_URL) ?: throw IllegalArgumentException("No url!")
         notificationBuilder = createNotificationBuilder(downloadUrl)
@@ -90,7 +95,7 @@ class DownloadWorker(
         val fileName = downloadUrl.substringAfterLast("/")
         val downloadDestFile = File(downloadDir, fileName)
 
-        val retrieverRequests = listOf(RetrieverRequest(downloadUrl, downloadDestFile.absolutePath, 0))
+        val retrieverRequests = listOf(RetrieverRequest(downloadUrl, downloadDestFile.absolutePath, null))
         retriever.retrieve(retrieverRequests, this)
         return Result.success()
     }
