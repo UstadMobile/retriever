@@ -76,11 +76,13 @@ actual class OriginServerFetcher(
                 )
 
                 val fetchProgressWrapper = if(bytesAlreadyDownloaded > 0L) {
-                    RetrieverProgressListener {
-                        retrieverProgressListener.onRetrieverProgress(it.copy(
-                            bytesSoFar = it.bytesSoFar + bytesAlreadyDownloaded,
-                            totalBytes = it.totalBytes + bytesAlreadyDownloaded
-                        ))
+                    object : RetrieverProgressListener {
+                        override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
+                            retrieverProgressListener.onRetrieverProgress(retrieverProgressEvent.copy(
+                                bytesSoFar = retrieverProgressEvent.bytesSoFar + bytesAlreadyDownloaded,
+                                totalBytes = retrieverProgressEvent.totalBytes + bytesAlreadyDownloaded
+                            ))
+                        }
                     }
                 }else {
                     retrieverProgressListener

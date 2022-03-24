@@ -148,21 +148,23 @@ class Downloader(
                     item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
 
             var hasFailedAttempts = false
-            val progressListenerWrapper = RetrieverProgressListener { evt ->
-                hasFailedAttempts = hasFailedAttempts || evt.status == STATUS_ATTEMPT_FAILED
+            val progressListenerWrapper = object: RetrieverProgressListener {
+                override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
+                    hasFailedAttempts = hasFailedAttempts || retrieverProgressEvent.status == STATUS_ATTEMPT_FAILED
 
-                val newEvt = if(evt.status == STATUS_ATTEMPT_FAILED &&
-                    (item.itemsToDownload.first {it.djiUid == evt.downloadJobItemUid }.djiAttemptCount + 1) >= maxAttempts) {
-                    evt.copy(status = STATUS_FAILED)
-                }else {
-                    evt
+                    val newEvt = if(retrieverProgressEvent.status == STATUS_ATTEMPT_FAILED &&
+                        (item.itemsToDownload.first {it.djiUid == retrieverProgressEvent.downloadJobItemUid }.djiAttemptCount + 1) >= maxAttempts) {
+                        retrieverProgressEvent.copy(status = STATUS_FAILED)
+                    }else {
+                        retrieverProgressEvent
+                    }
+
+                    progressUpdateMutex.withLock {
+                        pendingUpdates[retrieverProgressEvent.downloadJobItemUid] = newEvt
+                    }
+
+                    progressListener.onRetrieverProgress(newEvt)
                 }
-
-                progressUpdateMutex.withLock {
-                    pendingUpdates[evt.downloadJobItemUid] = newEvt
-                }
-
-                progressListener.onRetrieverProgress(newEvt)
             }
 
             try {

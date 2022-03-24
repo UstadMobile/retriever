@@ -35,12 +35,14 @@ actual class LocalPeerFetcher(
         val firstFile = File(downloadJobItems[0].djiDestPath!!)
         val jobItemUrlMap = downloadJobItems.associateBy { it.djiOriginUrl!! }
         val completedJobUids = mutableListOf<Long>() //All jobs for which we have sent a final status
-        val retrieverProgressWrapper = RetrieverProgressListener {  evt ->
-            if(evt.status >= Retriever.STATUS_COMPLETE_MIN) {
-                completedJobUids += evt.downloadJobItemUid
-            }
+        val retrieverProgressWrapper = object: RetrieverProgressListener {
+            override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
+                if(retrieverProgressEvent.status >= Retriever.STATUS_COMPLETE_MIN) {
+                    completedJobUids += retrieverProgressEvent.downloadJobItemUid
+                }
 
-            retrieverProgressListener.onRetrieverProgress(evt)
+                retrieverProgressListener.onRetrieverProgress(retrieverProgressEvent)
+            }
         }
 
         try {
