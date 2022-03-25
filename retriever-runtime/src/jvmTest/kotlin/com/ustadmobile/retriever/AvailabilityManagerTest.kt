@@ -47,8 +47,8 @@ class AvailabilityManagerTest {
     /**
      * List of maps of what is available on each node. One file is on each node
      */
-    private val nodeAvailabilityMaps: List<Map<String, Boolean>> = (0..4).map { nodeIndex ->
-        (1..5).map { "http://path.to/file$it" to (it == (nodeIndex + 1)) }.toMap()
+    private val nodeAvailabilityResponses: List<List<FileAvailableResponse>> = (0..4).map { nodeIndex ->
+        listOf(FileAvailableResponse("http://path.to/file${nodeIndex + 1}", "ab", 42))
     }
 
     @Before
@@ -69,7 +69,7 @@ class AvailabilityManagerTest {
                         argThat{ networkNodeId == defaultNetworkNodeList[networkNodeIndex].networkNodeId } ,
                         any())
                 }.thenReturn(AvailabilityCheckerResult(
-                    nodeAvailabilityMaps[networkNodeIndex], defaultNetworkNodeList[networkNodeIndex].networkNodeId))
+                    nodeAvailabilityResponses[networkNodeIndex], defaultNetworkNodeList[networkNodeIndex].networkNodeId))
             }
         }
 
@@ -118,7 +118,7 @@ class AvailabilityManagerTest {
                 .onAvailabilityChanged(capture())
 
             lastValue.originUrlsToAvailable.forEach { originUrlEntry ->
-                Assert.assertEquals(nodeAvailabilityMaps.any { it[originUrlEntry.key] == true },
+                Assert.assertEquals(nodeAvailabilityResponses.flatten().any { it.originUrl == originUrlEntry.key },
                     originUrlEntry.value)
             }
 
@@ -145,7 +145,7 @@ class AvailabilityManagerTest {
             testOriginUrls.forEach { originUrl ->
                 runBlocking {
                     val expectedEndpointsForOriginUrl = defaultNetworkNodeList.filterIndexed { index, networkNode ->
-                        availabilityChecker.checkAvailability(networkNode, listOf(originUrl)).result[originUrl] == true
+                        availabilityChecker.checkAvailability(networkNode, listOf(originUrl)).hasOriginUrl(originUrl)
                     }.map { it.networkNodeEndpointUrl }
 
                     val hasAllExpectedEndpoints = lastValue.availabilityInfo[originUrl]?.availableEndpoints

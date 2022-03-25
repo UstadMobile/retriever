@@ -41,14 +41,6 @@ interface BaseDao<T> {
     @Update
     fun updateList(entityList: List<T>)
 
-    /**
-     * Find the given entity by the primary key
-     *
-     * @param uid uid to find
-     * @return the object represented by the primary key, or null if there is no such object
-     */
-    //fun findByUid(uid: Long): T?
-
     @Update
     fun update(entity: T)
 

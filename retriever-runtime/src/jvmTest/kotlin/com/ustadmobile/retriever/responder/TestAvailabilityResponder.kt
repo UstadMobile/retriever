@@ -11,6 +11,7 @@ import com.ustadmobile.retriever.responder.AvailabilityResponder.Companion.PARAM
 import com.ustadmobile.retriever.responder.AvailabilityResponder.Companion.PARAM_DB_INDEX
 import com.google.gson.reflect.TypeToken
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.FileAvailableResponse
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -146,9 +147,9 @@ class TestAvailabilityResponder {
             response.status)
 
         val responseStr = String(response.data.readBytes())
-        val responseEntryList = Gson().fromJson<List<AvailabilityResponder.FileAvailableResponse>>(
+        val responseEntryList = Gson().fromJson<List<FileAvailableResponse>>(
             responseStr,
-            object: TypeToken<List<AvailabilityResponder.FileAvailableResponse>>(){
+            object: TypeToken<List<FileAvailableResponse>>(){
 
             }.type
         )

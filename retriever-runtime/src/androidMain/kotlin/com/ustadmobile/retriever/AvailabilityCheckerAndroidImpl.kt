@@ -48,7 +48,7 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
 
 
 
-        val fileAvailableResponses: List<AvailabilityResponder.FileAvailableResponse>? =
+        val fileAvailableResponses: List<FileAvailableResponse>? =
           try{
               val os: OutputStream = connection.outputStream
               os.write(bodyByteArray, 0, bodyByteArray.size)
@@ -59,9 +59,9 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
               connection.connect()
               val responseStr = connection.inputStream.bufferedReader().readText()
               val responseEntryList =
-               Gson().fromJson<List<AvailabilityResponder.FileAvailableResponse>>(
+               Gson().fromJson<List<FileAvailableResponse>>(
                   responseStr,
-                    object : TypeToken<List<AvailabilityResponder.FileAvailableResponse>>() {
+                    object : TypeToken<List<FileAvailableResponse>>() {
                     }.type
                )
 
@@ -86,8 +86,8 @@ class AvailabilityCheckerAndroidImpl(val db: RetrieverDatabase): AvailabilityChe
 
             originUrl to available
         }
-
-        return AvailabilityCheckerResult(requestMap, networkNode.networkNodeId)
+        TODO("Remove this")
+        //return AvailabilityCheckerResult(requestMap, networkNode.networkNodeId)
 
     }
 

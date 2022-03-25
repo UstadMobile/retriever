@@ -24,7 +24,8 @@ class FileListController(
 
     fun deleteFile(availableFile: LocallyStoredFile){
         GlobalScope.launch {
-            db.locallyStoredFileDao?.removeFile(availableFile.locallyStoredFileUid)
+            TODO("Fix this implementation - should actually delete file")
+            //db.locallyStoredFileDao.removeFile(availableFile.locallyStoredFileUid)
         }
     }
 

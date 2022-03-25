@@ -1,8 +1,10 @@
 package com.ustadmobile.retriever
 
 class AvailabilityCheckerResult(
-    val result: Map<String, Boolean>,
-    val networkNodeId: Int
-    ){
+    val results: List<FileAvailableResponse>,
+    val networkNodeId: Int,
+) {
+
+    fun hasOriginUrl(originUrl: String) = results.any { it.originUrl == originUrl }
 
 }

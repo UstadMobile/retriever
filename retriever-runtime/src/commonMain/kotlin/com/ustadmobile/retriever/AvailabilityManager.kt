@@ -138,8 +138,10 @@ class AvailabilityManager(
 
                 // Add to AvailabilityResponse table
                 val currentTime = systemTimeInMillis()
-                val allResponses = availabilityCheckerResult.result.map {
-                    AvailabilityResponse(item.networkNode.networkNodeId, it.key, it.value, currentTime)
+                val responseMap = availabilityCheckerResult.results.map { it.originUrl to it }.toMap()
+                val allResponses = item.fileUrls.map { originUrl ->
+                    AvailabilityResponse(item.networkNode.networkNodeId, originUrl,
+                        responseMap.containsKey(originUrl), currentTime)
                 }
 
                 val affectedResult = database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->

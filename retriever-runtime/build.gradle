@@ -104,6 +104,7 @@ kotlin {
                 implementation project(":lib-database")
 
 
+                implementation "com.squareup.okhttp3:mockwebserver:$version_mockwebserver"
                 implementation "org.jetbrains.kotlin:kotlin-test:$version_kotlin"
                 implementation "org.jetbrains.kotlin:kotlin-test-junit:$version_kotlin"
                 implementation "org.mockito.kotlin:mockito-kotlin:$version_kotlin_mockito"

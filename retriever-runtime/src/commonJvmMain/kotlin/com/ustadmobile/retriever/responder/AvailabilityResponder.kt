@@ -2,6 +2,7 @@ package com.ustadmobile.retriever.responder
 
 import com.google.gson.Gson
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.FileAvailableResponse
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.receiveRequestBody
@@ -40,7 +41,7 @@ class AvailabilityResponder:RouterNanoHTTPD.UriResponder{
             status, "application/json", gson.toJson(fileAvailability))
     }
 
-    data class FileAvailableResponse(val originUrl: String, val sha256: String, val size: Long)
+
 
     override fun post(
         uriResource: RouterNanoHTTPD.UriResource,
