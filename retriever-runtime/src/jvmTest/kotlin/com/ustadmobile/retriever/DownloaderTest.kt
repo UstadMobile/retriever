@@ -121,7 +121,7 @@ class DownloaderTest {
     fun givenRequestAvailableLocally_whenDownloadCalled_thenShouldDownloadFromPeer() {
         val networkNode = NetworkNode().apply {
             networkNodeEndpointUrl = "http://192.168.0.4:12131/retriever/"
-            networkNodeId = db.networkNodeDao.insert(this)
+            networkNodeId = db.networkNodeDao.insert(this).toInt()
         }
 
         db.availabilityResponseDao.insertList(downloadJobItems.map {

@@ -44,8 +44,11 @@ class AvailabilityManagerTest {
         NetworkNode("100.1.1.5", "http://100.1.1.5:8081/", DateTime.nowUnixLong(), 5)
     )
 
-    private val nodeAvailabilityMaps = (0..4).map {
-        (1..5).map { "http://path.to/file$it" to (it.mod(2) == 0) }.toMap()
+    /**
+     * List of maps of what is available on each node. One file is on each node
+     */
+    private val nodeAvailabilityMaps: List<Map<String, Boolean>> = (0..4).map { nodeIndex ->
+        (1..5).map { "http://path.to/file$it" to (it == (nodeIndex + 1)) }.toMap()
     }
 
     @Before
@@ -63,7 +66,7 @@ class AvailabilityManagerTest {
             (0..4).forEach { networkNodeIndex ->
                 onBlocking {
                     checkAvailability(
-                        argThat{ networkNodeId == defaultNetworkNodeList[networkNodeIndex].networkNodeId} ,
+                        argThat{ networkNodeId == defaultNetworkNodeList[networkNodeIndex].networkNodeId } ,
                         any())
                 }.thenReturn(AvailabilityCheckerResult(
                     nodeAvailabilityMaps[networkNodeIndex], defaultNetworkNodeList[networkNodeIndex].networkNodeId))
@@ -105,8 +108,6 @@ class AvailabilityManagerTest {
                 it.networkNodeUid == networkNode.networkNodeId
             })
         }
-
-
 
         //Verify for onAvailabilityChanged event was called for every Node and its result matches
         // pre determined nodeAvailabilityMaps as defined.
@@ -161,7 +162,26 @@ class AvailabilityManagerTest {
 
     }
 
+    @Test
     fun givenActiveAvailabilityListener_whenNodeLost_thenShouldUpdateAvailability() {
+        availabilityObserver = AvailabilityObserver(testOriginUrls, onAvailabilityChanged,
+            AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES)
+
+        runBlocking {
+            availabilityManager.addAvailabilityObserver(availabilityObserver)
+        }
+
+        verify(onAvailabilityChanged, timeout(2000).times(defaultNetworkNodeList.size + 1))
+            .onAvailabilityChanged(any())
+
+        availabilityManager.handleNodeLost("http://100.1.1.1:8081/")
+
+        argumentCaptor<AvailabilityEvent> {
+            verify(onAvailabilityChanged, timeout(5000).times(defaultNetworkNodeList.size + 2))
+                .onAvailabilityChanged(capture())
+            Assert.assertFalse("First file is not available after first node is lost",
+                lastValue.availabilityInfo[testOriginUrls.first()]!!.available)
+        }
 
     }
 

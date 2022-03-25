@@ -75,6 +75,7 @@ class AvailabilityManager(
         return listenerUid
     }
 
+
     /**
      * Remove observer information from the map and watchlist
      */
@@ -156,7 +157,7 @@ class AvailabilityManager(
 
     private fun fireAvailabilityEvent(
         availabilityAndListenersList: List<FileAvailabilityWithListener>,
-        fromNetworkNodeId: Long
+        fromNetworkNodeId: Int
     ) {
         availabilityAndListenersList.groupBy {
             it.listenerUid
@@ -180,6 +181,23 @@ class AvailabilityManager(
 
     internal fun checkQueue() {
         checkQueueSignalChannel.trySend(true)
+    }
+
+    internal fun handleNodeLost(endpointUrl: String) {
+        GlobalScope.launch {
+            database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                val nodeLostId = txDb.networkNodeDao.findNetworkNodeIdByEndpointUrl(endpointUrl)
+                val affectedListeners = txDb.availabilityResponseDao.findListenersAffectedByNodeLost(nodeLostId)
+
+                txDb.availabilityResponseDao.deleteByNetworkNode(nodeLostId.toLong())
+                txDb.networkNodeDao.deleteByEndpointUrl(endpointUrl)
+
+                affectedListeners.forEach {
+                    val updatedResponses = txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(0, it)
+                    fireAvailabilityEvent(updatedResponses, it)
+                }
+            }
+        }
     }
 
     fun close() {

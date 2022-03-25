@@ -61,7 +61,7 @@ abstract class DownloadJobItemDao {
            SET djiStatus = :newStatus
          WHERE djiUid = :uid    
     """)
-    abstract suspend fun updateStatusByUid(uid: Long, newStatus: Int)
+    abstract suspend fun updateStatusByUid(uid: Int, newStatus: Int)
 
     @Query("""
         UPDATE DownloadJobItem
@@ -72,7 +72,7 @@ abstract class DownloadJobItemDao {
          WHERE djiUid = :uid     
     """)
     abstract suspend fun updateProgressByUid(
-        uid: Long,
+        uid: Int,
         bytesSoFar: Long,
         localBytesSoFar: Long,
         originBytesSoFar: Long,
@@ -86,7 +86,7 @@ abstract class DownloadJobItemDao {
          WHERE djiUid = :uid          
     """)
     abstract suspend fun updateStatusAndAttemptCountByUid(
-        uid: Long,
+        uid: Int,
         status: Int,
         attemptCount: Int,
     )

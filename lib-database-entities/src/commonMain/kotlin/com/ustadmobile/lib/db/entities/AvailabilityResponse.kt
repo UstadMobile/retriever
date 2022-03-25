@@ -21,9 +21,9 @@ import kotlin.math.log
 open class AvailabilityResponse {
 
     @PrimaryKey(autoGenerate = true)
-    var availabilityResponseUid: Long = 0
+    var availabilityResponseUid: Int = 0
 
-    var availabilityNetworkNode: Long = 0
+    var availabilityNetworkNode: Int = 0
 
     var availabilityOriginUrl: String? = ""
 
@@ -35,7 +35,7 @@ open class AvailabilityResponse {
 
 
     constructor()
-    constructor(networkNodeUid: Long, originUrl: String, available: Boolean, logged: Long){
+    constructor(networkNodeUid: Int, originUrl: String, available: Boolean, logged: Long){
         availabilityNetworkNode = networkNodeUid
         availabilityOriginUrl = originUrl
         availabilityAvailable = available

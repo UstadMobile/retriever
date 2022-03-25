@@ -51,4 +51,12 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     """)
     abstract suspend fun clearAllNodes()
 
+    @Query("""
+        SELECT COALESCE(
+               (SELECT networkNodeId
+                  FROM NetworkNode
+                 WHERE networkNodeEndpointUrl = :endpointUrl), 0)
+    """)
+    abstract suspend fun findNetworkNodeIdByEndpointUrl(endpointUrl: String): Int
+
 }

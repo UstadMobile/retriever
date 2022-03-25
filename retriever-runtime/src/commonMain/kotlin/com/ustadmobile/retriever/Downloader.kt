@@ -56,7 +56,7 @@ class Downloader(
 
     private val progressUpdateMutex = Mutex()
 
-    private val pendingUpdates = concurrentSafeMapOf<Long, RetrieverProgressEvent>()
+    private val pendingUpdates = concurrentSafeMapOf<Int, RetrieverProgressEvent>()
 
     /**
      * Produce items -
@@ -75,7 +75,7 @@ class Downloader(
                     val queueItems = txDb.downloadJobItemDao.findNextItemsToDownload(downloadBatchId)
                     //turn these into batches
                     val groupedByNode = queueItems.groupBy { it.networkNodeId }.toMutableMap()
-                    val locallyAvailableBatches = groupedByNode.entries.filter { it.key != 0L }
+                    val locallyAvailableBatches = groupedByNode.entries.filter { it.key != 0 }
                         .map {  entry ->
                             DownloadBatch(entry.value.first().networkNodeEndpointUrl, entry.value.sortedBy { it.djiIndex })
                         }
@@ -147,10 +147,10 @@ class Downloader(
 
             var hasFailedAttempts = false
 
-            val jobItemIdsStarted = mutableSetOf<Long>()
+            val jobItemIdsStarted = mutableSetOf<Int>()
 
             //The final statuses of items that we will commit to the database when this run is finished
-            val statusCommits = concurrentSafeMapOf<Long, StatusCommit>()
+            val statusCommits = concurrentSafeMapOf<Int, StatusCommit>()
             val progressListenerWrapper = object: RetrieverListener {
                 override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
                     jobItemIdsStarted += retrieverProgressEvent.downloadJobItemUid
@@ -264,12 +264,22 @@ class Downloader(
             val producer = produceJobs()
             val jobList = mutableListOf<Job>()
             try {
+                val progressUpdateJob = async {
+                    while(coroutineContext.isActive) {
+                        db.commitProgressUpdates()
+                        delay(500)
+                    }
+                }
+
                 coroutineScope {
                     repeat(maxConcurrent) {
                         jobList += launchProcessor(it, producer)
                     }
                     checkQueueChannel.send(true)
                 }
+
+                Napier.i("Download scope done")
+                progressUpdateJob.cancel()
             }catch(e: Exception) {
                 throw e
             }

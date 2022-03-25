@@ -1,7 +1,7 @@
 package com.ustadmobile.retriever.fetcher
 
 data class RetrieverProgressEvent(
-    val downloadJobItemUid: Long,
+    val downloadJobItemUid: Int,
     val url: String,
     val bytesSoFar: Long,
     val localBytesSoFar: Long,

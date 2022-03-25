@@ -59,6 +59,27 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
         listenerUidFilter: Int,
     ): List<FileAvailabilityWithListener>
 
+    /**
+     *
+     */
+    @Query("""
+        SELECT DISTINCT AvailabilityObserverItem.aoiListenerUid
+          FROM AvailabilityResponse
+               JOIN AvailabilityObserverItem
+                    ON AvailabilityObserverItem.aoiOriginalUrl = AvailabilityResponse.availabilityOriginUrl
+         WHERE AvailabilityResponse.availabilityNetworkNode = :networkNodeId
+           AND CAST(AvailabilityResponse.availabilityAvailable AS INTEGER) = 1
+    """)
+    abstract suspend fun findListenersAffectedByNodeLost(networkNodeId: Int): List<Int>
+
+
+    @Query("""
+        DELETE 
+          FROM AvailabilityResponse
+         WHERE availabilityNetworkNode = :networkNodeId
+    """)
+    abstract suspend fun deleteByNetworkNode(networkNodeId: Long)
+
     @Query("""
         DELETE FROM AvailabilityResponse
     """)

@@ -15,7 +15,7 @@ import com.ustadmobile.retriever.fetcher.RetrieverListener
 suspend fun InputStream.copyToAndUpdateProgress(
     dest: OutputStream,
     progressListener: RetrieverListener,
-    downloadJobItemUid: Long,
+    downloadJobItemUid: Int,
     url: String,
     totalBytes: Long,
     progressInterval: Int = 333,

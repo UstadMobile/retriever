@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 open class DownloadJobItem {
 
     @PrimaryKey(autoGenerate = true)
-    var djiUid: Long = 0
+    var djiUid: Int = 0
 
     /**
      * Just the timestamp - we do not expect to launch more than one batch per millisecond

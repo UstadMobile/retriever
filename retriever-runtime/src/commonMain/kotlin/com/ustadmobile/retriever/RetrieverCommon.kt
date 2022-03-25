@@ -1,6 +1,7 @@
 package com.ustadmobile.retriever
 
 import com.soywiz.klock.DateTime
+import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
@@ -50,12 +51,7 @@ abstract class RetrieverCommon(
     }
 
     fun updateNetworkNodeLost(endpointUrl: String){
-
-        //TODO: Should also delete responses from that node
-        //TODO: Availability observers should be updated.
-        GlobalScope.launch {
-            db.networkNodeDao.deleteByEndpointUrl(endpointUrl)
-        }
+        availabilityManager.handleNodeLost(endpointUrl)
     }
 
     override fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver) {

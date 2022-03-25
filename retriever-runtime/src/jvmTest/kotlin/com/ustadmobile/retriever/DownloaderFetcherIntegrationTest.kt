@@ -145,7 +145,7 @@ class DownloaderFetcherIntegrationTest {
     fun givenOriginUrlAvailableFromPeer_whenDownloadRuns_thenShouldDownloadFromPeer() {
         val networkNode = NetworkNode().apply {
             networkNodeEndpointUrl = peerHttpServer.url("/retriever/")
-            networkNodeId = localDb.networkNodeDao.insert(this)
+            networkNodeId = localDb.networkNodeDao.insert(this).toInt()
         }
 
         localDb.availabilityResponseDao.insertList(itemsToDownload.map {

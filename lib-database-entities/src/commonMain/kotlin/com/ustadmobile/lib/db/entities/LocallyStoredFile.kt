@@ -14,7 +14,7 @@ import kotlin.math.round
 open class LocallyStoredFile() {
 
     @PrimaryKey(autoGenerate = true)
-    var locallyStoredFileUid: Long = 0
+    var locallyStoredFileUid: Int = 0
 
     /**
      * Origin URL for this file

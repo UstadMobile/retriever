@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
 open class NetworkNode {
 
     @PrimaryKey(autoGenerate = true)
-    var networkNodeId: Long = 0
+    var networkNodeId: Int = 0
 
     /**
      * E.g http://ipaddr:port/retriever/
@@ -33,7 +33,7 @@ open class NetworkNode {
         networkNodeDiscovered = discovered
     }
 
-    constructor(ipAddress: String, endpointUrl: String, discovered: Long, id: Long){
+    constructor(ipAddress: String, endpointUrl: String, discovered: Long, id: Int){
         networkNodeEndpointUrl = endpointUrl
         networkNodeDiscovered = discovered
         networkNodeId = id
