@@ -16,7 +16,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.mockito.kotlin.any
 
 
-class TestAvailabilityResponder {
+class AvailabilityResponderTest {
 
     private lateinit var db: RetrieverDatabase
 

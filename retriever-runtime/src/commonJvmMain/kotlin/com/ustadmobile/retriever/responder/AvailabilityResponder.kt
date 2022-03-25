@@ -45,8 +45,8 @@ class AvailabilityResponder:RouterNanoHTTPD.UriResponder{
                 "Empty list urls to retrieve")
         }
 
-        val db: RetrieverDatabase = uriResource.initParameter(RetrieverDatabase::class.java)
-        val json: Json = uriResource.initParameter(Json::class.java)
+        val db: RetrieverDatabase = uriResource.initParameter(PARAM_DB_INDEX, RetrieverDatabase::class.java)
+        val json: Json = uriResource.initParameter(PARAM_JSON_INDEX, Json::class.java)
         val locallyStoredFiles = db.withDoorTransaction(RetrieverDatabase::class) { txDb ->
             fileUrlList.chunked(100).flatMap {
                 db.locallyStoredFileDao.findAvailableFilesByUrlList(it)
@@ -84,6 +84,7 @@ class AvailabilityResponder:RouterNanoHTTPD.UriResponder{
 
     companion object{
         const val PARAM_FILE_REQUEST_URL = "fileUrl"
-        const val   PARAM_DB_INDEX = 0
+        const val PARAM_DB_INDEX = 0
+        const val PARAM_JSON_INDEX = 1
     }
 }
