@@ -15,6 +15,7 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import java.net.NetworkInterface
 import java.util.*
 
@@ -25,6 +26,7 @@ class RetrieverAndroidImpl internal constructor(
     availabilityChecker: AvailabilityChecker,
     originServerFetcher: OriginServerFetcher,
     localPeerFetcher: LocalPeerFetcher,
+    private val json: Json,
 ): RetrieverCommonJvm(db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher) {
 
     val database = db
@@ -184,9 +186,8 @@ class RetrieverAndroidImpl internal constructor(
         //Start nanohttpd server
         server.addRoute(
             "/:${AvailabilityResponder.PARAM_FILE_REQUEST_URL}/",
-            AvailabilityResponder::class.java,
-            db
-        )
+            AvailabilityResponder::class.java, db, json)
+
         server.addRoute("/zipped", ZippedItemsResponder::class.java, db)
         server.start()
 

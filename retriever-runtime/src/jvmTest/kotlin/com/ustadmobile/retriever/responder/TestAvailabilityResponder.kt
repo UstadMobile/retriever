@@ -7,8 +7,6 @@ import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
 import org.junit.*
 import org.mockito.kotlin.mock
-import com.ustadmobile.retriever.responder.AvailabilityResponder.Companion.PARAM_FILE_REQUEST_URL
-import com.ustadmobile.retriever.responder.AvailabilityResponder.Companion.PARAM_DB_INDEX
 import com.google.gson.reflect.TypeToken
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.FileAvailableResponse
@@ -21,19 +19,14 @@ import org.mockito.kotlin.any
 class TestAvailabilityResponder {
 
     private lateinit var db: RetrieverDatabase
+
     private lateinit var context: Any
 
-    private val availableFilesToInsert: List<LocallyStoredFile> = listOf(
-        LocallyStoredFile("http://path.to/file1", "http://local.path.to/file1", 0 , 0),
-        LocallyStoredFile("http://path.to/file2", "http://local.path.to/file2", 0 , 0),
-        LocallyStoredFile("http://path.to/file3", "http://local.path.to/file3", 0 , 0),
-        LocallyStoredFile("http://path.to/file4", "http://local.path.to/file4", 0 , 0),
-        LocallyStoredFile("http://path.to/file5", "http://local.path.to/file5", 0 , 0),
-        LocallyStoredFile("http://path.to/file6", "http://local.path.to/file6", 0 , 0),
-        LocallyStoredFile("http://path.to/file7", "http://local.path.to/file7", 0 , 0),
+    private lateinit var json: Json
 
-    )
-
+    private val availableFiles: List<LocallyStoredFile> = (0..7).map {
+        LocallyStoredFile("http://path.to/file$it", "/storage/file$it", 42, 0)
+    }
 
     @Before
     fun setup(){
@@ -41,72 +34,12 @@ class TestAvailabilityResponder {
         db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb").build()
         db.clearAllTables()
 
-        //Add Available files
-        if(db.locallyStoredFileDao.findAllAvailableFiles().isEmpty()){
-            db.locallyStoredFileDao.insertList(availableFilesToInsert)
-        }
-
-
-    }
-
-    @Test
-    fun givenRequestResponder_whenGetRequestMadeForAvailableFile_thenShouldReturnAvailableResponse(){
-        val responder = AvailabilityResponder()
-
-        val mockUriResource = mock<RouterNanoHTTPD.UriResource> {
-            on {initParameter(PARAM_DB_INDEX, RetrieverDatabase::class.java)}.thenReturn(db)
-        }
-
-        val mockSessionAvailable = mock<NanoHTTPD.IHTTPSession>{
-            on { parameters }.thenReturn(
-                mutableMapOf(PARAM_FILE_REQUEST_URL to listOf("http://path.to/file1"))
-            )
-        }
-        val response = responder.get(mockUriResource, mutableMapOf(), mockSessionAvailable)
-
-        Assert.assertNotNull("Response is not null", response)
-
-        val responseStr = String(response.data.readBytes())
-        val responseEntryList = Gson().fromJson<List<LocallyStoredFile>>(
-                responseStr,
-                object: TypeToken<List<LocallyStoredFile>>(){
-
-                }.type
-            )
-        Assert.assertEquals("Node has file", 1, responseEntryList.size)
-    }
-
-    @Test
-    fun givenRequestResponder_whenGetRequestMadeForUnavailableFile_thenShouldReturnNoResponse(){
-        val responder = AvailabilityResponder()
-
-        val mockUriResource = mock<RouterNanoHTTPD.UriResource> {
-            on {initParameter(PARAM_DB_INDEX, RetrieverDatabase::class.java)}.thenReturn(db)
-        }
-
-
-        val mockSessionUnavailable = mock<NanoHTTPD.IHTTPSession>{
-            on { parameters }.thenReturn(
-                mutableMapOf(PARAM_FILE_REQUEST_URL to listOf("http://path.to/file42"))
-            )
-        }
-
-        val responseUnavailable = responder.get(mockUriResource, mutableMapOf(), mockSessionUnavailable)
-
-        Assert.assertNotNull("Response is not null", responseUnavailable)
-
-        val responseStrUnavailable = String(responseUnavailable.data.readBytes())
-        val responseEntryListUnavailable = Gson().fromJson<List<LocallyStoredFile>>(
-            responseStrUnavailable,
-            object: TypeToken<List<LocallyStoredFile>>(){
-
-            }.type
-        )
-        Assert.assertEquals("Node has not found the file", 0, responseEntryListUnavailable.size)
-
+        db.locallyStoredFileDao.insertList(availableFiles)
+        json = Json { encodeDefaults = true }
     }
 
 
+    @Suppress("UNCHECKED_CAST")
     private fun makeMockUriSession(urlsToRetrieve: List<String>) : NanoHTTPD.IHTTPSession {
         return mock {
             on { uri }.thenReturn("/retriever/")
@@ -132,15 +65,13 @@ class TestAvailabilityResponder {
         val mockUriResource: RouterNanoHTTPD.UriResource = mock {
             on { initParameter(RetrieverDatabase::class.java) }
                 .thenReturn(db)
+            on { initParameter(Json::class.java)}.thenReturn(json)
         }
 
-        val urlsToRetrieve = listOf("http://path.to/file1", "http://path.to/file2",
-            "http://path.to/nofile3", "http://path.to/nofile4",
-            "http://path.to/file3", "http://path.to/file4", "http://path.to/file5",
-            "http://path.to/nofile3", "http://path.to/nofile4",
-            "http://path.to/file6", "http://path.to/file7")
+        //0-7 are available, remainder are not
+        val urlsToQuery = (0..9).map { "http://path.to/file$it" }
 
-        val mockUriSession = makeMockUriSession(urlsToRetrieve)
+        val mockUriSession = makeMockUriSession(urlsToQuery)
         val response = responder.post(mockUriResource, mutableMapOf(), mockUriSession)
 
         Assert.assertEquals("Response status is 200 OK", NanoHTTPD.Response.Status.OK,
@@ -148,19 +79,15 @@ class TestAvailabilityResponder {
 
         val responseStr = String(response.data.readBytes())
         val responseEntryList = Gson().fromJson<List<FileAvailableResponse>>(
-            responseStr,
-            object: TypeToken<List<FileAvailableResponse>>(){
+            responseStr, object: TypeToken<List<FileAvailableResponse>>(){ }.type)
 
-            }.type
-        )
         Assert.assertEquals(
-            "Node has response OK",
-            availableFilesToInsert.size,
-            responseEntryList.size)
+            "Response list has same number of entries as those that are available",
+            availableFiles.size, responseEntryList.size)
 
-
-
-
+        availableFiles.forEach { localFile ->
+            Assert.assertTrue(responseEntryList.any { it.originUrl == localFile.lsfOriginUrl })
+        }
 
     }
 

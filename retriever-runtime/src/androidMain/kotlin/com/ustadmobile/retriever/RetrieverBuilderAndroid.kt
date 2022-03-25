@@ -26,13 +26,14 @@ class RetrieverBuilderAndroid private constructor(
         val db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class, DB_NAME)
             .build()
 
+        //This would be better as a callback
         GlobalScope.launch {
             db.networkNodeDao.clearAllNodes()
             db.availabilityResponseDao.clearAllResponses()
         }
 
-        return RetrieverAndroidImpl(db, nsdServiceName, context, AvailabilityCheckerAndroidImpl(db),
-            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json))
+        return RetrieverAndroidImpl(db, nsdServiceName, context, AvailabilityCheckerHttp(ktorClient),
+            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json)
     }
 
     companion object {
