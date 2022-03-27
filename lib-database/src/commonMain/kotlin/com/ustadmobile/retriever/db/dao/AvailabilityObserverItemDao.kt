@@ -24,7 +24,7 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
         countFailuresSince: Long,
     ): List<AvailabilityObserverItemWithNetworkNode>
 
-    @Query(Companion.QUERY_GET_WATCHLIST_WITH_NUM_NODES)
+    @Query(QUERY_GET_WATCHLIST_WITH_NUM_NODES)
     abstract fun getWatchListLive(): DoorDataSourceFactory<Int, AvailabilityFileWithNumNodes>
 
     @Query("""
@@ -33,6 +33,33 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
          WHERE aoiListenerUid = :listenerUid
     """)
     abstract suspend fun deleteByListenerUid(listenerUid: Int)
+
+
+    /**
+     * Find the ids of observers where they were expecting answers on availability checks, however because of failures
+     * by that node, these checks are not going to be tried again. This is important so we can deliver a
+     * checksPending = false which will be used by the downloader
+     */
+    @Query("""
+           SELECT DISTINCT AvailabilityObserverItem.aoiListenerUid
+             FROM AvailabilityObserverItem
+                  JOIN NetworkNode ON NetworkNode.networkNodeId = NetworkNode.networkNodeId 
+                       AND :maxPeerNodeFailuresAllowed <= 
+                        COALESCE((SELECT COUNT(*) 
+                                   FROM NetworkNodeFailure
+                                  WHERE NetworkNodeFailure.failNetworkNodeId = NetworkNode.networkNodeId
+                                     AND NetworkNodeFailure.failTime > :countFailuresSince), 0)
+            WHERE NOT EXISTS (
+                  SELECT AvailabilityResponse.availabilityOriginUrl 
+                    FROM AvailabilityResponse 
+                   WHERE AvailabilityResponse.availabilityNetworkNode = NetworkNode.networkNodeId
+                     AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
+                  )
+       """)
+    abstract suspend fun findObserverIdsAffectedByNodeFailure(
+        maxPeerNodeFailuresAllowed: Int,
+        countFailuresSince: Long,
+    ): List<Int>
 
    companion object{
        const val QUERY_FINDPENDINGITEMS= """
@@ -50,7 +77,6 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
                  WHERE AvailabilityResponse.availabilityNetworkNode = NetworkNode.networkNodeId
                    AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
                 )  """
-
 
        const val QUERY_GET_WATCHLIST_WITH_NUM_NODES= """
             SELECT

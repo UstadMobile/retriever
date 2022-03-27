@@ -18,7 +18,8 @@ class AvailabilityManager(
     val database: RetrieverDatabase,
     private val availabilityChecker: AvailabilityChecker,
     private val maxPeerNodeFailuresAllowed: Int = 3,
-    private val peerNodeFailureTimeThreshold: Long = (1000 * 60 * 3),
+    private val peerNodeFailureTimePeriod: Long = (1000 * 60 * 3),
+    private val retryDelay: Long = 1000,
     coroutineScope: CoroutineScope = GlobalScope,
 ) {
 
@@ -27,6 +28,10 @@ class AvailabilityManager(
     /**
      * Sending anything on this channel will result in one queue check. If there is an available
      * processor, one new item will be started.
+     *
+     * The channel receives a boolean. A value of true indicates that a previous check failed,
+     * and we need to run a check if there are any observers where there are no longer cheks
+     * pending due to the failure.
      */
     private val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
 
@@ -48,7 +53,7 @@ class AvailabilityManager(
                 launchProcessor(it, jobItemProducer)
             }
 
-            checkQueueSignalChannel.send(true)
+            checkQueueSignalChannel.send(false)
         }
     }
 
@@ -68,9 +73,10 @@ class AvailabilityManager(
                     }
                 )
 
-                txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(0, listenerUid)
+                txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(0, listenerUid,
+                    maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod)
             }
-            checkQueueSignalChannel.trySend(true)
+            checkQueueSignalChannel.trySend(false)
             fireAvailabilityEvent(initialInfo, 0)
         }
 
@@ -91,19 +97,41 @@ class AvailabilityManager(
 
     @ExperimentalCoroutinesApi
     private fun CoroutineScope.produceJobs() = produce<AvailabilityCheckJob> {
-
-        println("Retriever: AvailabilityManager :  produceJobs() called ..")
         do{
-            checkQueueSignalChannel.receive()
+            val hadFailure = checkQueueSignalChannel.receive()
+            println("hadFailure? : $hadFailure")
+            val availabilityUpdatesToFire = mutableMapOf<Int, List<FileAvailabilityWithListener>>()
 
             val inProgressEndpoints = checkJobsInProgress.mapNotNull { it.networkNode.networkNodeEndpointUrl }
             //Get all available items(files) that are pending (no response of)
-            val pendingItems : List<AvailabilityObserverItemWithNetworkNode> =
-                database.availabilityObserverItemDao.findPendingItems(
-                    maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimeThreshold
+            val pendingItems : List<AvailabilityObserverItemWithNetworkNode> = database
+                    .withDoorTransactionAsync(RetrieverDatabase::class
+            ) { txDb ->
+                /**
+                 * If there was a failure, then we need to check if there are any observers where the availability info
+                 * can now be considered final. This is important to make sure that we deliver an AvailabilityEvent
+                 * where checksPending = false (e.g. so a Downloader knows there is nothing left to wait for etc).
+                 */
+                if(hadFailure) {
+                    val listenerIdsAffectedByFailure = txDb.availabilityObserverItemDao
+                        .findObserverIdsAffectedByNodeFailure(maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod)
+                    listenerIdsAffectedByFailure.forEach { listenerId ->
+                        availabilityUpdatesToFire[listenerId] = txDb.availabilityResponseDao
+                            .findAllListenersAndAvailabilityByTime(0, listenerId,
+                                maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod)
+                    }
+                }
+
+                txDb.availabilityObserverItemDao.findPendingItems(
+                    maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod
                 ).filter {
                     it.networkNode.networkNodeEndpointUrl !in inProgressEndpoints
                 }
+            }
+
+            availabilityUpdatesToFire.forEach { entry ->
+                fireAvailabilityEvent(entry.value, 0)
+            }
 
             println("Retriever: AvailabilityManager :  produceJobs(): " + pendingItems.size + " pendingItems.")
 
@@ -133,6 +161,7 @@ class AvailabilityManager(
         //Runs checkAvailability (that checks availability and populates AvailabilityResponse)
         // for every node id
         for(item in channel){
+            var itemFailed = false
             try {
                 Napier.d("AvailabilityManager $id: item networkid: " +  item.networkNode.networkNodeId)
 
@@ -150,7 +179,8 @@ class AvailabilityManager(
 
                 val affectedResult = database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                     txDb.availabilityResponseDao.insertList(allResponses)
-                    txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime, 0)
+                    txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime, 0,
+                        maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod)
                 }
 
                 fireAvailabilityEvent(affectedResult, item.networkNode.networkNodeId)
@@ -160,9 +190,11 @@ class AvailabilityManager(
                     failNetworkNodeId = item.networkNode.networkNodeId
                     failTime = systemTimeInMillis()
                 })
+                itemFailed = true
+                delay(retryDelay)
             }finally {
                 checkJobsInProgress -= item
-                checkQueueSignalChannel.send(true)
+                checkQueueSignalChannel.send(itemFailed)
             }
         }
     }
@@ -192,7 +224,7 @@ class AvailabilityManager(
 
 
     internal fun checkQueue() {
-        checkQueueSignalChannel.trySend(true)
+        checkQueueSignalChannel.trySend(false)
     }
 
     internal fun handleNodeLost(endpointUrl: String) {
@@ -206,7 +238,9 @@ class AvailabilityManager(
                 txDb.networkNodeFailureDao.deleteByNetworkNodeId(nodeLostId)
 
                 affectedListeners.forEach {
-                    val updatedResponses = txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(0, it)
+                    val updatedResponses = txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(
+                        0, it, maxPeerNodeFailuresAllowed,
+                        systemTimeInMillis() - peerNodeFailureTimePeriod)
                     fireAvailabilityEvent(updatedResponses, it)
                 }
             }

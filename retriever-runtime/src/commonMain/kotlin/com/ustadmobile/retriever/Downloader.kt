@@ -1,4 +1,4 @@
-    package com.ustadmobile.retriever
+package com.ustadmobile.retriever
 
 import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.ext.concurrentSafeMapOf
@@ -61,14 +61,12 @@ class Downloader(
 
     private val logPrefix = "[Retriever-Downloader #$downloadBatchId] "
 
-    private val progressUpdateMutex = Mutex()
-
-    private val statusUpdateMutex = Mutex()
+    private val downloadJobItemUpdateMutex = Mutex()
 
     private val pendingUpdates = concurrentSafeMapOf<Int, RetrieverProgressEvent>()
 
-    private suspend fun <R> updateStatusTransaction(block: suspend (RetrieverDatabase) -> R): R {
-        return statusUpdateMutex.withLock {
+    private suspend fun <R> updateDownloadJobItemTransaction(block: suspend (RetrieverDatabase) -> R): R {
+        return downloadJobItemUpdateMutex.withLock {
             db.withDoorTransactionAsync(RetrieverDatabase::class) {txDb ->
                 block(txDb)
             }
@@ -88,7 +86,7 @@ class Downloader(
                 checkQueueChannel.receive()
                 Napier.d("$logPrefix: checking queue", tag = Retriever.LOGTAG)
                 val numProcessorsAvailable = maxConcurrent - activeBatches.size
-                val batchesToSend = updateStatusTransaction { txDb ->
+                val batchesToSend = updateDownloadJobItemTransaction { txDb ->
                     val queueItems = txDb.downloadJobItemDao.findNextItemsToDownload(downloadBatchId,
                         maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimeThreshold)
                     //turn these into batches
@@ -134,17 +132,13 @@ class Downloader(
     }
 
     private suspend fun RetrieverDatabase.commitProgressUpdates() {
-        progressUpdateMutex.withLock {
-            val updatesToCommit = pendingUpdates.values.toList().also {
-                pendingUpdates.clear()
-            }
+        val updatesToCommit = pendingUpdates.values.toList().also {
+            pendingUpdates.clear()
+        }
 
-            withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                updatesToCommit.forEach {
-                    txDb.downloadJobItemDao.updateProgressByUid(it.downloadJobItemUid,
-                        it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar, it.totalBytes)
-                }
-            }
+        updatesToCommit.forEach {
+            downloadJobItemDao.updateProgressByUid(it.downloadJobItemUid,
+                it.bytesSoFar, it.localBytesSoFar, it.originBytesSoFar, it.totalBytes)
         }
     }
 
@@ -174,7 +168,7 @@ class Downloader(
                 override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
                     jobItemIdsStarted += retrieverProgressEvent.downloadJobItemUid
 
-                    progressUpdateMutex.withLock {
+                    downloadJobItemUpdateMutex.withLock {
                         pendingUpdates[retrieverProgressEvent.downloadJobItemUid] = retrieverProgressEvent
                     }
 
@@ -230,15 +224,19 @@ class Downloader(
             }finally {
                 withContext(NonCancellable) {
                     if(hasFailedAttempts) {
-                        if(host != null)
-                            db.networkNodeFailureDao.insertFailureUsingEndpoint(host, systemTimeInMillis())
+                        if(host != null) {
+                            updateDownloadJobItemTransaction { txDb ->
+                                txDb.networkNodeFailureDao.insertFailureUsingEndpoint(host, systemTimeInMillis())
+                            }
+                        }
 
                         delay(attemptRetryDelay.toLong())
                     }
 
 
-                    updateStatusTransaction { txDb ->
+                    updateDownloadJobItemTransaction { txDb ->
                         statusCommits.forEach {
+                            Napier.d("$logPrefix - processor $id Update Job status of # ${it.key} = ${it.value.status} (${systemTimeInMillis()})")
                             txDb.downloadJobItemDao.updateStatusAndAttemptCountByUid(it.key, it.value.status,
                                 it.value.attempts)
                         }
@@ -266,6 +264,7 @@ class Downloader(
                                 attemptCountToSet = it.djiAttemptCount
                             }
 
+                            Napier.d("$logPrefix - processor $id Update Job status of # ${it.djiUid} = ${statusToSet} (${systemTimeInMillis()})")
                             txDb.downloadJobItemDao.updateStatusAndAttemptCountByUid(it.djiUid, statusToSet,
                                 attemptCountToSet)
                         }
@@ -274,6 +273,7 @@ class Downloader(
                         txDb.commitProgressUpdates()
                     }
 
+                    Napier.d("$logPrefix - processor $id Requesting queue check ${systemTimeInMillis()}")
                     checkQueueChannel.send(true)
                 }
 
@@ -290,7 +290,12 @@ class Downloader(
             try {
                 val progressUpdateJob = async {
                     while(coroutineContext.isActive) {
-                        db.commitProgressUpdates()
+                        if(pendingUpdates.isNotEmpty()) {
+                            updateDownloadJobItemTransaction { txDb ->
+                                txDb.commitProgressUpdates()
+                            }
+                        }
+
                         delay(500)
                     }
                 }
@@ -302,7 +307,6 @@ class Downloader(
                     checkQueueChannel.send(true)
                 }
 
-                Napier.i("Download scope done")
                 progressUpdateJob.cancel()
             }catch(e: Exception) {
                 throw e

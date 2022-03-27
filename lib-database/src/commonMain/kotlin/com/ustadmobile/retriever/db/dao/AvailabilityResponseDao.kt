@@ -32,13 +32,17 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
                 EXISTS
                 (
                  SELECT NetworkNode.networkNodeId
-                   FROM NetworkNode
+                   FROM NetworkNode 
                   WHERE NOT EXISTS(
                         SELECT AvailabilityResponse.availabilityResponseUid
                           FROM AvailabilityResponse
                          WHERE AvailabilityResponse.availabilityNetworkNode = NetworkNode.networkNodeId
-                           AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
-                  )         
+                           AND AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl)
+                    AND :maxPeerNodeFailuresAllowed > 
+                        COALESCE((SELECT COUNT(*) 
+                                   FROM NetworkNodeFailure
+                                  WHERE NetworkNodeFailure.failNetworkNodeId = NetworkNode.networkNodeId
+                                    AND NetworkNodeFailure.failTime > :countFailuresSince), 0)       
                 ) as checksPending,
                 NetworkNode.networkNodeEndpointUrl AS networkNodeEndpointUrl
            FROM AvailabilityObserverItem
@@ -57,6 +61,8 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
     abstract fun findAllListenersAndAvailabilityByTime(
         responseTimeFilter: Long,
         listenerUidFilter: Int,
+        maxPeerNodeFailuresAllowed: Int,
+        countFailuresSince: Long,
     ): List<FileAvailabilityWithListener>
 
     /**

@@ -88,7 +88,7 @@ class AvailabilityManagerTest {
         onAvailabilityChanged = mock { }
         availabilityObserver = AvailabilityObserver(testOriginUrls, onAvailabilityChanged)
 
-        availabilityManager = AvailabilityManager(db, availabilityChecker)
+        availabilityManager = AvailabilityManager(db, availabilityChecker, retryDelay = 200)
     }
 
     fun tearDown() {
@@ -167,6 +167,10 @@ class AvailabilityManagerTest {
                 }
             }
         }
+
+        verify(onAvailabilityChanged, timeout(2000).atLeastOnce()).onAvailabilityChanged(argWhere {
+            !it.checksPending
+        })
     }
 
 
@@ -218,6 +222,10 @@ class AvailabilityManagerTest {
                 it.networkNodeEndpointUrl == endpointToFail
             }, any())
         }
+
+        verify(onAvailabilityChanged, timeout(5000 * 1000)).onAvailabilityChanged(argWhere {
+            !it.checksPending
+        })
     }
 
 
