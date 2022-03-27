@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "90d1a24beb2d6e5d0091e73b555929ad",
+    "identityHash": "89de3120a1484c232f16c8d589981703",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -272,6 +272,38 @@
         "foreignKeys": []
       },
       {
+        "tableName": "NetworkNodeFailure",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`networkNodeFailureId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `failNetworkNodeId` INTEGER NOT NULL, `failTime` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "networkNodeFailureId",
+            "columnName": "networkNodeFailureId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failNetworkNodeId",
+            "columnName": "failNetworkNodeId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failTime",
+            "columnName": "failTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "networkNodeFailureId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
         "tableName": "SyncNode",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`nodeClientId` INTEGER NOT NULL, PRIMARY KEY(`nodeClientId`))",
         "fields": [
@@ -497,7 +529,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '90d1a24beb2d6e5d0091e73b555929ad')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '89de3120a1484c232f16c8d589981703')"
     ]
   }
 }

@@ -14,7 +14,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 abstract class RetrieverCommon(
-    protected val db: RetrieverDatabase,
+    internal val db: RetrieverDatabase,
     protected val nsdServiceName: String,
     private val availabilityChecker: AvailabilityChecker,
     private val originServerFetcher: OriginServerFetcher,
@@ -23,31 +23,29 @@ abstract class RetrieverCommon(
 
     protected val availabilityManager = AvailabilityManager(db, availabilityChecker)
 
-    fun addNewNode(networkNode: NetworkNode){
+    suspend fun addNewNode(networkNode: NetworkNode){
 
         println("Retriever: Adding a new node ..")
-        GlobalScope.launch {
-            //Check if doesn't already exist. Else update time discovered
-            if (db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl ?: "")
-                    .isEmpty()
-            ) {
-                networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
-                db.networkNodeDao.insert(networkNode)
-            } else {
-                val netWorkNodeToUpdate: NetworkNode? =
-                    db.networkNodeDao.findByEndpointUrl(
-                        networkNode.networkNodeEndpointUrl ?: ""
-                    )
-                if (netWorkNodeToUpdate != null) {
-                    netWorkNodeToUpdate.networkNodeDiscovered = DateTime.nowUnixLong()
-                    netWorkNodeToUpdate.networkNodeLost = 0
-                    db.networkNodeDao.update(netWorkNodeToUpdate)
-                }
+        //Check if doesn't already exist. Else update time discovered
+        if (db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl ?: "")
+                .isEmpty()
+        ) {
+            networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
+            db.networkNodeDao.insert(networkNode)
+        } else {
+            val netWorkNodeToUpdate: NetworkNode? =
+                db.networkNodeDao.findByEndpointUrl(
+                    networkNode.networkNodeEndpointUrl ?: ""
+                )
+            if (netWorkNodeToUpdate != null) {
+                netWorkNodeToUpdate.networkNodeDiscovered = DateTime.nowUnixLong()
+                netWorkNodeToUpdate.networkNodeLost = 0
+                db.networkNodeDao.update(netWorkNodeToUpdate)
             }
-
-            println("Retriever: Sending Signal ..")
-            availabilityManager.checkQueue()
         }
+
+        println("Retriever: Sending Signal ..")
+        availabilityManager.checkQueue()
     }
 
     fun updateNetworkNodeLost(endpointUrl: String){
@@ -86,5 +84,13 @@ abstract class RetrieverCommon(
         Downloader(batchId, availabilityManager, progressListener, originServerFetcher, localPeerFetcher, db).download()
 
         addFiles(retrieverRequests.map { LocalFileInfo(it.originUrl, it.destinationFilePath) })
+    }
+
+    override fun close() {
+        availabilityManager.close()
+    }
+
+    companion object {
+        internal const val DB_NAME = "retrieverdb"
     }
 }

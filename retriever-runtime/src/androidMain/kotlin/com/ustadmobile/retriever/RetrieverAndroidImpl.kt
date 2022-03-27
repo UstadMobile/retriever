@@ -26,8 +26,8 @@ class RetrieverAndroidImpl internal constructor(
     availabilityChecker: AvailabilityChecker,
     originServerFetcher: OriginServerFetcher,
     localPeerFetcher: LocalPeerFetcher,
-    private val json: Json,
-): RetrieverCommonJvm(db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher) {
+    json: Json,
+): RetrieverCommonJvm(db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, json) {
 
     val database = db
 
@@ -36,9 +36,6 @@ class RetrieverAndroidImpl internal constructor(
     private lateinit var nsdManager: NsdManager
 
     private var SERVICE_TYPE = "_${nsdServiceName.lowercase()}._tcp"
-
-    private val server = RouterNanoHTTPD(0)
-
 
     //Service registered listener
     private val registrationListener = object: NsdManager.RegistrationListener{
@@ -178,19 +175,6 @@ class RetrieverAndroidImpl internal constructor(
 
 
     fun startNSD() {
-        GlobalScope.launch {
-            db.networkNodeDao.clearAllNodes()
-            db.availabilityResponseDao.clearAllResponses()
-        }
-
-        //Start nanohttpd server
-        server.addRoute(
-            "/:${AvailabilityResponder.PARAM_FILE_REQUEST_URL}/",
-            AvailabilityResponder::class.java, db, json)
-
-        server.addRoute("/zipped", ZippedItemsResponder::class.java, db)
-        server.start()
-
         val serviceInfo = NsdServiceInfo().apply{
             serviceName = nsdServiceName
             serviceType = "_${nsdServiceName.lowercase()}._tcp"

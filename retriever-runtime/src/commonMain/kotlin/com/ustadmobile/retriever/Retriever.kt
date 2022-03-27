@@ -18,6 +18,11 @@ interface Retriever{
 
     fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver)
 
+    /**
+     * Stop any HTTP servers, stop availability management monitoring. Does not stop any downloads in progress.
+     */
+    fun close()
+
     companion object{
         const val DBNAME: String = "retreiverdb"
 

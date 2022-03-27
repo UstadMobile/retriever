@@ -121,6 +121,12 @@ abstract class DownloadJobItemDao {
     """)
     abstract suspend fun findByUrlFirstOrNull(url: String): DownloadJobItem?
 
+    @Query("""
+        SELECT DownloadJobItem.djiOriginUrl
+          FROM DownloadJobItem
+         WHERE djiBatchId = :batchId
+    """)
+    abstract suspend fun findAllUrlsByBatchId(batchId: Long): List<String?>
 
     companion object {
 

@@ -223,7 +223,7 @@ class AvailabilityManagerTest {
             }, any())
         }
 
-        verify(onAvailabilityChanged, timeout(5000 * 1000)).onAvailabilityChanged(argWhere {
+        verify(onAvailabilityChanged, timeout(5000)).onAvailabilityChanged(argWhere {
             !it.checksPending
         })
     }

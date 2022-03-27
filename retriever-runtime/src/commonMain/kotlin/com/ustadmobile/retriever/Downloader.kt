@@ -51,6 +51,7 @@ class Downloader(
     private val attemptRetryDelay: Int = 1000,
     private val maxPeerNodeFailuresAllowed: Int = 3,
     private val peerNodeFailureTimeThreshold: Long = (1000 * 60 * 3),
+    private val availabilityWaitForPeersTimeout: Long = 1000, //by default wait for up to one second to find local peer info
 ) {
 
     private val checkQueueChannel = Channel<Boolean>(capacity = Channel.UNLIMITED)
@@ -284,7 +285,20 @@ class Downloader(
 
     suspend fun download() {
         Napier.i("$logPrefix download started")
+        val downloadUrlList: List<String> = db.downloadJobItemDao.findAllUrlsByBatchId(downloadBatchId).filterNotNull()
+        val noChecksPendingCompleteable = CompletableDeferred<Boolean>()
+        val availabilityObserver = AvailabilityObserver(downloadUrlList, {
+            if(!it.checksPending)
+                noChecksPendingCompleteable.complete(true)
+        })
+
         withContext(Dispatchers.Default) {
+            availabilityManager.addAvailabilityObserver(availabilityObserver)
+
+            withTimeoutOrNull(availabilityWaitForPeersTimeout) {
+                noChecksPendingCompleteable.await()
+            }
+
             val producer = produceJobs()
             val jobList = mutableListOf<Job>()
             try {
@@ -310,6 +324,8 @@ class Downloader(
                 progressUpdateJob.cancel()
             }catch(e: Exception) {
                 throw e
+            }finally {
+                availabilityManager.removeAvailabilityObserver(availabilityObserver)
             }
         }
         Napier.i("$logPrefix download finished")
