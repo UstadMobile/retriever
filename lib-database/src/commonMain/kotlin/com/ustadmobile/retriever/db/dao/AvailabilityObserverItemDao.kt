@@ -13,10 +13,16 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
 
     //Return a list of AvailabilityObserverItem and NetworkNodeId for all Items without an availability resposne
     @Query(QUERY_FINDPENDINGITEMS)
-    abstract suspend fun findPendingItems(): List<AvailabilityObserverItemWithNetworkNode>
+    abstract suspend fun findPendingItems(
+        maxPeerNodeFailuresAllowed: Int,
+        countFailuresSince: Long,
+    ): List<AvailabilityObserverItemWithNetworkNode>
 
     @Query(QUERY_FINDPENDINGITEMS)
-    abstract fun findPendingItemsAsync(): List<AvailabilityObserverItemWithNetworkNode>
+    abstract fun findPendingItemsAsync(
+        maxPeerNodeFailuresAllowed: Int,
+        countFailuresSince: Long,
+    ): List<AvailabilityObserverItemWithNetworkNode>
 
     @Query(Companion.QUERY_GET_WATCHLIST_WITH_NUM_NODES)
     abstract fun getWatchListLive(): DoorDataSourceFactory<Int, AvailabilityFileWithNumNodes>
@@ -33,6 +39,11 @@ abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
          SELECT AvailabilityObserverItem.* , NetworkNode.*
           FROM AvailabilityObserverItem 
                JOIN NetworkNode ON NetworkNode.networkNodeId = NetworkNode.networkNodeId 
+                    AND :maxPeerNodeFailuresAllowed > 
+                        COALESCE((SELECT COUNT(*) 
+                                   FROM NetworkNodeFailure
+                                  WHERE NetworkNodeFailure.failNetworkNodeId = NetworkNode.networkNodeId
+                                    AND NetworkNodeFailure.failTime > :countFailuresSince), 0)
          WHERE NOT EXISTS (
                 SELECT AvailabilityResponse.availabilityOriginUrl 
                   FROM AvailabilityResponse 

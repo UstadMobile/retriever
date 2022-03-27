@@ -5,6 +5,7 @@ import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.lib.db.entities.NetworkNodeFailure
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
@@ -117,6 +118,7 @@ class DownloaderTest {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     @Test
     fun givenRequestAvailableLocally_whenDownloadCalled_thenShouldDownloadFromPeer() {
         val networkNode = NetworkNode().apply {
@@ -309,6 +311,95 @@ class DownloaderTest {
         }
 
 
+    }
+
+    @Test
+    fun givenNetworkNodeHasFailedTooManyTimes_whenDownloadCalled_thenWillDownloadFromOriginInstead() {
+        mockOriginServerFetcher.stub {
+            onOriginDownloadThenAnswerAndFireUpdate { STATUS_SUCCESSFUL }
+        }
+
+        val networkNode = NetworkNode().apply {
+            networkNodeEndpointUrl = "http://192.168.0.4:12131/retriever/"
+            networkNodeId = db.networkNodeDao.insert(this).toInt()
+        }
+
+        db.availabilityResponseDao.insertList(downloadJobItems.map {
+            AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
+        })
+
+        runBlocking {
+            db.networkNodeFailureDao.insertListAsync((0..3).map { index ->
+                NetworkNodeFailure().apply {
+                    failNetworkNodeId = networkNode.networkNodeId
+                    failTime = systemTimeInMillis() - (index * 100)
+                }
+            })
+        }
+
+        val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
+            mockOriginServerFetcher, mockLocalPeerFetcher, db)
+
+        runBlocking {
+            withTimeout(10000) {
+                downloader.download()
+            }
+        }
+
+        verifyNoInteractions(mockLocalPeerFetcher)
+
+        downloadJobItems.forEach { downloadItem ->
+            verifyBlocking(mockOriginServerFetcher) {
+                download(argWhere {
+                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                }, any())
+            }
+        }
+
+    }
+
+
+    @Test
+    fun whenDownloadNotStarted_whenLocalPeerFailsTooManyTimes_thenWillDownloadFromOriginInstead() {
+        mockOriginServerFetcher.stub {
+            onOriginDownloadThenAnswerAndFireUpdate { STATUS_SUCCESSFUL }
+        }
+
+        mockLocalPeerFetcher.stub {
+            onBlocking { download(any(), any(), any()) }.thenAnswer {
+                throw IOException("Not around anymore")
+            }
+        }
+
+        val networkNode = NetworkNode().apply {
+            networkNodeEndpointUrl = "http://192.168.0.4:12131/retriever/"
+            networkNodeId = db.networkNodeDao.insert(this).toInt()
+        }
+
+        db.availabilityResponseDao.insertList(downloadJobItems.map {
+            AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
+        })
+
+        val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
+            mockOriginServerFetcher, mockLocalPeerFetcher, db, maxPeerNodeFailuresAllowed = 3, attemptRetryDelay = 100)
+
+        runBlocking {
+            withTimeout(10000) {
+                downloader.download()
+            }
+        }
+
+        verifyBlocking(mockLocalPeerFetcher, times(3)) { //3 times - for 3 failures allowed
+            download(eq(networkNode.networkNodeEndpointUrl!!), any(), any())
+        }
+
+        downloadJobItems.forEach { downloadItem ->
+            verifyBlocking(mockOriginServerFetcher) {
+                download(argWhere {
+                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                }, any())
+            }
+        }
     }
 
 }

@@ -17,6 +17,8 @@ import kotlinx.coroutines.channels.produce
 class AvailabilityManager(
     val database: RetrieverDatabase,
     private val availabilityChecker: AvailabilityChecker,
+    private val maxPeerNodeFailuresAllowed: Int = 3,
+    private val peerNodeFailureTimeThreshold: Long = (1000 * 60 * 3),
     coroutineScope: CoroutineScope = GlobalScope,
 ) {
 
@@ -97,7 +99,9 @@ class AvailabilityManager(
             val inProgressEndpoints = checkJobsInProgress.mapNotNull { it.networkNode.networkNodeEndpointUrl }
             //Get all available items(files) that are pending (no response of)
             val pendingItems : List<AvailabilityObserverItemWithNetworkNode> =
-                database.availabilityObserverItemDao.findPendingItems().filter {
+                database.availabilityObserverItemDao.findPendingItems(
+                    maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimeThreshold
+                ).filter {
                     it.networkNode.networkNodeEndpointUrl !in inProgressEndpoints
                 }
 
@@ -150,6 +154,12 @@ class AvailabilityManager(
                 }
 
                 fireAvailabilityEvent(affectedResult, item.networkNode.networkNodeId)
+            }catch(e: Exception) {
+                //record a failure for this node
+                database.networkNodeFailureDao.insert(NetworkNodeFailure().apply {
+                    failNetworkNodeId = item.networkNode.networkNodeId
+                    failTime = systemTimeInMillis()
+                })
             }finally {
                 checkJobsInProgress -= item
                 checkQueueSignalChannel.send(true)
@@ -192,7 +202,8 @@ class AvailabilityManager(
                 val affectedListeners = txDb.availabilityResponseDao.findListenersAffectedByNodeLost(nodeLostId)
 
                 txDb.availabilityResponseDao.deleteByNetworkNode(nodeLostId.toLong())
-                txDb.networkNodeDao.deleteByEndpointUrl(endpointUrl)
+                txDb.networkNodeDao.deleteByNetworkNodeId(nodeLostId)
+                txDb.networkNodeFailureDao.deleteByNetworkNodeId(nodeLostId)
 
                 affectedListeners.forEach {
                     val updatedResponses = txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(0, it)

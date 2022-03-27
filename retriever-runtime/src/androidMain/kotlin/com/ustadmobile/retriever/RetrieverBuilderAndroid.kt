@@ -3,6 +3,7 @@ package com.ustadmobile.retriever
 import android.content.Context
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.db.callback.DELETE_NODE_INFO_CALLBACK
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import io.ktor.client.*
@@ -24,13 +25,8 @@ class RetrieverBuilderAndroid private constructor(
 
     fun build() : RetrieverCommon {
         val db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class, DB_NAME)
+            .addCallback(DELETE_NODE_INFO_CALLBACK)
             .build()
-
-        //This would be better as a callback
-        GlobalScope.launch {
-            db.networkNodeDao.clearAllNodes()
-            db.availabilityResponseDao.clearAllResponses()
-        }
 
         return RetrieverAndroidImpl(db, nsdServiceName, context, AvailabilityCheckerHttp(ktorClient),
             OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json)

@@ -1,6 +1,7 @@
 package com.ustadmobile.core.db.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Update
 import com.ustadmobile.door.DoorDataSourceFactory
@@ -21,10 +22,11 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     abstract suspend fun findByEndpointUrl(endpointUrl: String): NetworkNode?
 
     @Query("""
-        DELETE FROM NetworkNode
-              WHERE networkNodeEndpointUrl = :endpointUrl
+        DELETE 
+          FROM NetworkNode
+         WHERE networkNodeId = :networkNodeId 
     """)
-    abstract suspend fun deleteByEndpointUrl(endpointUrl: String)
+    abstract suspend fun deleteByNetworkNodeId(networkNodeId: Int)
 
     @Query("""
         SELECT * FROM NetworkNode WHERE networkNodeLost = 0
@@ -41,7 +43,7 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     @Query("""
         DELETE FROM NetworkNode WHERE networkNodeId = :uid
     """)
-    abstract suspend fun deleteNetworkNode(uid: Long)
+    abstract suspend fun deleteByNetworkNodeId(uid: Long)
 
 
     @Update

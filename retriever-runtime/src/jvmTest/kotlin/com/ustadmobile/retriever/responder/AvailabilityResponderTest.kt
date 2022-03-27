@@ -63,9 +63,9 @@ class AvailabilityResponderTest {
         val responder = AvailabilityResponder()
 
         val mockUriResource: RouterNanoHTTPD.UriResource = mock {
-            on { initParameter(RetrieverDatabase::class.java) }
+            on { initParameter(AvailabilityResponder.PARAM_DB_INDEX, RetrieverDatabase::class.java) }
                 .thenReturn(db)
-            on { initParameter(Json::class.java)}.thenReturn(json)
+            on { initParameter(AvailabilityResponder.PARAM_JSON_INDEX, Json::class.java)}.thenReturn(json)
         }
 
         //0-7 are available, remainder are not

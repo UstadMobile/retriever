@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- *
+ * Generated whenever another NetworkNode fails.
  */
 @Entity
 class NetworkNodeFailure {

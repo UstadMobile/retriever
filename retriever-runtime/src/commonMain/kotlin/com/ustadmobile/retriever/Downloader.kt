@@ -3,6 +3,7 @@
 import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
+import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
@@ -33,6 +34,10 @@ import kotlinx.coroutines.sync.withLock
  *
  * fun produceItems
  *   batch requests together, put them on a channel, continue until all items are finished
+ *
+ * @param maxPeerNodeFailuresAllowed the maximum number of failures to allow for a peer node. If this is exceeded, we
+ *        won't download from this peer
+ * @param peerNodeFailureTimeThreshold the duration during which failures will be counted.
  */
 class Downloader(
     private val downloadBatchId: Long,
@@ -44,6 +49,8 @@ class Downloader(
     private val maxConcurrent: Int = 8,
     private val maxAttempts: Int = 8,
     private val attemptRetryDelay: Int = 1000,
+    private val maxPeerNodeFailuresAllowed: Int = 3,
+    private val peerNodeFailureTimeThreshold: Long = (1000 * 60 * 3),
 ) {
 
     private val checkQueueChannel = Channel<Boolean>(capacity = Channel.UNLIMITED)
@@ -56,7 +63,17 @@ class Downloader(
 
     private val progressUpdateMutex = Mutex()
 
+    private val statusUpdateMutex = Mutex()
+
     private val pendingUpdates = concurrentSafeMapOf<Int, RetrieverProgressEvent>()
+
+    private suspend fun <R> updateStatusTransaction(block: suspend (RetrieverDatabase) -> R): R {
+        return statusUpdateMutex.withLock {
+            db.withDoorTransactionAsync(RetrieverDatabase::class) {txDb ->
+                block(txDb)
+            }
+        }
+    }
 
     /**
      * Produce items -
@@ -71,8 +88,9 @@ class Downloader(
                 checkQueueChannel.receive()
                 Napier.d("$logPrefix: checking queue", tag = Retriever.LOGTAG)
                 val numProcessorsAvailable = maxConcurrent - activeBatches.size
-                val batchesToSend = db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                    val queueItems = txDb.downloadJobItemDao.findNextItemsToDownload(downloadBatchId)
+                val batchesToSend = updateStatusTransaction { txDb ->
+                    val queueItems = txDb.downloadJobItemDao.findNextItemsToDownload(downloadBatchId,
+                        maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimeThreshold)
                     //turn these into batches
                     val groupedByNode = queueItems.groupBy { it.networkNodeId }.toMutableMap()
                     val locallyAvailableBatches = groupedByNode.entries.filter { it.key != 0 }
@@ -146,6 +164,7 @@ class Downloader(
                     item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
 
             var hasFailedAttempts = false
+            val host = item.host
 
             val jobItemIdsStarted = mutableSetOf<Int>()
 
@@ -184,7 +203,6 @@ class Downloader(
             }
 
             try {
-                val host = item.host
                 if(host == null) {
                     //Download from origin url
                     val itemToDownload = item.itemsToDownload.firstOrNull()
@@ -207,13 +225,19 @@ class Downloader(
                     }
                 }
             }catch(e: Exception) {
+                hasFailedAttempts = true
                 Napier.e("Exception running downloader", e)
             }finally {
                 withContext(NonCancellable) {
-                    if(hasFailedAttempts)
-                        delay(attemptRetryDelay.toLong())
+                    if(hasFailedAttempts) {
+                        if(host != null)
+                            db.networkNodeFailureDao.insertFailureUsingEndpoint(host, systemTimeInMillis())
 
-                    db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                        delay(attemptRetryDelay.toLong())
+                    }
+
+
+                    updateStatusTransaction { txDb ->
                         statusCommits.forEach {
                             txDb.downloadJobItemDao.updateStatusAndAttemptCountByUid(it.key, it.value.status,
                                 it.value.attempts)

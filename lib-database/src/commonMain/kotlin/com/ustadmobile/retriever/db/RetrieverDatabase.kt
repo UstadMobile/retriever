@@ -6,10 +6,7 @@ import com.ustadmobile.door.*
 import com.ustadmobile.door.entities.*
 import com.ustadmobile.door.ext.DoorTag
 import com.ustadmobile.lib.db.entities.*
-import com.ustadmobile.retriever.db.dao.AvailabilityObserverItemDao
-import com.ustadmobile.retriever.db.dao.AvailabilityResponseDao
-import com.ustadmobile.retriever.db.dao.DownloadJobItemDao
-import com.ustadmobile.retriever.db.dao.LocallyStoredFileDao
+import com.ustadmobile.retriever.db.dao.*
 
 @Database(entities = [
 
@@ -18,6 +15,7 @@ import com.ustadmobile.retriever.db.dao.LocallyStoredFileDao
     NetworkNode::class,
     LocallyStoredFile::class,
     DownloadJobItem::class,
+    NetworkNodeFailure::class,
 
     SyncNode::class,
     //Door Helper entities
@@ -42,6 +40,8 @@ abstract class RetrieverDatabase : DoorDatabase() {
     abstract val locallyStoredFileDao: LocallyStoredFileDao
 
     abstract val downloadJobItemDao: DownloadJobItemDao
+
+    abstract val networkNodeFailureDao: NetworkNodeFailureDao
 
     //TODO: DO NOT REMOVE THIS COMMENT!
     //#DOORDB_SYNCDAO

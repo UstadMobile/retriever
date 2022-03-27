@@ -5,11 +5,13 @@ import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.*
+import java.io.IOException
 
 /**
  * JVM Test
@@ -45,6 +47,11 @@ class AvailabilityManagerTest {
     )
 
     /**
+     * the default mock will throw an exception if the endpoint is in this list
+     */
+    private var failingEndpoints = mutableListOf<String>()
+
+    /**
      * List of maps of what is available on each node. One file is on each node
      */
     private val nodeAvailabilityResponses: List<List<FileAvailableResponse>> = (0..4).map { nodeIndex ->
@@ -68,8 +75,13 @@ class AvailabilityManagerTest {
                     checkAvailability(
                         argThat{ networkNodeId == defaultNetworkNodeList[networkNodeIndex].networkNodeId } ,
                         any())
-                }.thenReturn(AvailabilityCheckerResult(
-                    nodeAvailabilityResponses[networkNodeIndex], defaultNetworkNodeList[networkNodeIndex].networkNodeId))
+                }.thenAnswer {
+                    if(defaultNetworkNodeList[networkNodeIndex].networkNodeEndpointUrl in failingEndpoints)
+                        throw IOException("Node $networkNodeIndex fails!")
+
+                    AvailabilityCheckerResult(
+                        nodeAvailabilityResponses[networkNodeIndex], defaultNetworkNodeList[networkNodeIndex].networkNodeId)
+                }
             }
         }
 
@@ -184,5 +196,29 @@ class AvailabilityManagerTest {
         }
 
     }
+
+    @Test
+    fun givenActiveAvailabilityListener_whenAvailabilityCheckerFailsRepeatedlyOnOneNode_thenShouldRetryRecordFailuresAndGiveUp() {
+        availabilityObserver = AvailabilityObserver(testOriginUrls, onAvailabilityChanged,
+            AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES)
+
+        val endpointToFail = defaultNetworkNodeList[0].networkNodeEndpointUrl!!
+        failingEndpoints += endpointToFail
+
+        runBlocking {
+            availabilityManager.addAvailabilityObserver(availabilityObserver)
+        }
+
+        runBlocking {
+            delay(2000) //Wait to be sure that we don't have repeated attempts to check what has failed going on
+        }
+
+        verifyBlocking(availabilityChecker, times(3)) { //3 attempts where 3 failures are allowed
+            checkAvailability(argWhere {
+                it.networkNodeEndpointUrl == endpointToFail
+            }, any())
+        }
+    }
+
 
 }
