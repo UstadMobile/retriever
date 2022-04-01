@@ -10,6 +10,7 @@ import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
+import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -30,7 +31,7 @@ abstract class RetrieverCommon(
         if (db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl ?: "")
                 .isEmpty()
         ) {
-            networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
+            networkNode.networkNodeDiscovered = systemTimeInMillis()
             db.networkNodeDao.insert(networkNode)
         } else {
             val netWorkNodeToUpdate: NetworkNode? =
@@ -70,6 +71,24 @@ abstract class RetrieverCommon(
     ) {
         val batchId = systemTimeInMillis()
 
+        //Map of url to destination file
+        val completedFileMap = mutableMapOf<String, String>()
+
+        val listenerWrapper = object: RetrieverListener {
+            override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
+                progressListener.onRetrieverProgress(retrieverProgressEvent)
+            }
+
+            override suspend fun onRetrieverStatusUpdate(retrieverStatusEvent: RetrieverStatusUpdateEvent) {
+                if(retrieverStatusEvent.status == Retriever.STATUS_SUCCESSFUL){
+                    completedFileMap[retrieverStatusEvent.url] = retrieverRequests
+                        .first { it.originUrl == retrieverStatusEvent.url }.destinationFilePath
+                }
+
+                progressListener.onRetrieverStatusUpdate(retrieverStatusEvent)
+            }
+        }
+
         db.downloadJobItemDao.insertList(retrieverRequests.mapIndexed { index, request ->
             DownloadJobItem().apply {
                 djiBatchId = batchId
@@ -81,9 +100,9 @@ abstract class RetrieverCommon(
             }
         })
 
-        Downloader(batchId, availabilityManager, progressListener, originServerFetcher, localPeerFetcher, db).download()
+        Downloader(batchId, availabilityManager, listenerWrapper, originServerFetcher, localPeerFetcher, db).download()
 
-        addFiles(retrieverRequests.map { LocalFileInfo(it.originUrl, it.destinationFilePath) })
+        addFiles(completedFileMap.map { LocalFileInfo(it.key, it.value) })
     }
 
     override fun close() {
