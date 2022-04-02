@@ -170,6 +170,7 @@ class Downloader(
                     jobItemIdsStarted += retrieverProgressEvent.downloadJobItemUid
 
                     downloadJobItemUpdateMutex.withLock {
+                        Napier.d("DownloadJobItem update: bytes so far: ${retrieverProgressEvent.bytesSoFar}")
                         pendingUpdates[retrieverProgressEvent.downloadJobItemUid] = retrieverProgressEvent
                     }
 

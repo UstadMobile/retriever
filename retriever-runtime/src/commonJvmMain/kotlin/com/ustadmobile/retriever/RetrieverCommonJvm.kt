@@ -64,6 +64,10 @@ abstract class RetrieverCommonJvm(
         }
     }
 
+    override fun listeningPort(): Int {
+        return server.listeningPort
+    }
+
     override fun close() {
         super.close()
         server.stop()

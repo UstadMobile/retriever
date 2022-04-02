@@ -23,4 +23,5 @@
     <string name="no_app_found">No app found to open file</string>
     <string name="files">Files</string>
     <string name="delete">Delete</string>
+    <string name="this_node_info">This node is %1$s. Nodes discovered on the local network will appear below:</string>
 </resources>

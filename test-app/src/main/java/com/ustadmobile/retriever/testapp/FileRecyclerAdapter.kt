@@ -56,6 +56,8 @@ class FilesRecyclerAdapter(
                 newItem: LocallyStoredFileAndDownloadJobItem
             ) : Boolean {
                 return oldItem.locallyStoredFile?.lsfFileSize == newItem.locallyStoredFile?.lsfFileSize
+                        && oldItem.downloadJobItem?.djiBytesSoFar == newItem.downloadJobItem?.djiBytesSoFar
+                        && oldItem.downloadJobItem?.djiTotalSize == newItem.downloadJobItem?.djiTotalSize
             }
 
         }

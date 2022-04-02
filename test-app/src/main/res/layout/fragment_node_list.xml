@@ -9,6 +9,8 @@
             name="listener"
             type="com.ustadmobile.retriever.testapp.ClickAddNode" />
 
+        <variable name="localNodeAddr" type="String"/>
+
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -27,16 +29,24 @@
             app:srcCompat="@drawable/ic_baseline_info_24" />
 
         <TextView
+            android:id="@+id/fragment_node_list_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
 
             android:layout_marginTop="18dp"
-            tools:text="All local nodes discovered on this network."
-            android:text="All local nodes discovered on this network."
+            tools:text="@{@string/this_node_info(localNodeAddr)}"
+            android:text="This node is http://192.168.1.101:42322/ . Nodes discovered on the local network will appear below:"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/fragment_node_list_info_iv"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/fragment_node_list_barrier"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:barrierDirection="bottom"
+                app:constraint_referenced_ids="fragment_node_list_info_iv,fragment_node_list_text"/>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/fragment_node_list_rv"
@@ -48,7 +58,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/fragment_node_list_info_iv"
+            app:layout_constraintTop_toBottomOf="@+id/fragment_node_list_barrier"
             tools:itemCount="5"
             tools:listitem="@layout/item_networknode" />
 

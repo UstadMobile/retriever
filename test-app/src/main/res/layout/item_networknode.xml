@@ -50,17 +50,7 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="192.168.1.142:42424" />
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:padding="4dp"
-            android:text="@{node.networkNodeEndpointUrl}"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="@+id/item_node_endpoint"
-            app:layout_constraintStart_toEndOf="@+id/item_file_icon"
-            app:layout_constraintTop_toBottomOf="@+id/item_node_endpoint"
-            tools:text="192.168.1.142:42424" />
+
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/item_networknode_delete"
@@ -70,7 +60,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_baseline_delete_24"
-            android:contentDescription="delete"
+            android:contentDescription="@string/delete"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:onClick="@{() -> listener.onDeleteNode(node)}" />
 

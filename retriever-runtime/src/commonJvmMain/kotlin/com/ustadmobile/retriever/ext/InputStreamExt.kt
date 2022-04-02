@@ -31,7 +31,7 @@ suspend fun InputStream.copyToAndUpdateProgress(
         val timeNow = systemTimeInMillis()
         if(timeNow - lastProgressTime >= progressInterval){
             progressListener.onRetrieverProgress(
-                RetrieverProgressEvent(downloadJobItemUid, url, totalBytesRead, totalBytesRead, 0L,
+                RetrieverProgressEvent(downloadJobItemUid, url, totalBytesRead, 0L, totalBytesRead,
                     totalBytes))
             lastProgressTime = timeNow
         }

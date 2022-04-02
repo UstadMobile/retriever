@@ -9,8 +9,11 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.ustadmobile.retriever.Retriever
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
+import org.kodein.di.direct
+import org.kodein.di.instance
 
 
 class BottomNavActivity : AppCompatActivity(), DIAware{
@@ -37,5 +40,11 @@ class BottomNavActivity : AppCompatActivity(), DIAware{
 
     override fun onSupportNavigateUp(): Boolean {
         return findNavController(R.id.activity_navhost_fragment).navigateUp()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val retriever: Retriever = di.direct.instance()
+        retriever.close()
     }
 }

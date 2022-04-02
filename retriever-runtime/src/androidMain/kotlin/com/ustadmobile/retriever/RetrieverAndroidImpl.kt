@@ -3,15 +3,12 @@ package com.ustadmobile.retriever
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
-import com.soywiz.klock.DateTime
+import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
-import com.ustadmobile.retriever.responder.AvailabilityResponder
-import com.ustadmobile.retriever.responder.ZippedItemsResponder
 import java.net.InetAddress
-import fi.iki.elonen.router.RouterNanoHTTPD
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -41,58 +38,62 @@ class RetrieverAndroidImpl internal constructor(
     private val registrationListener = object: NsdManager.RegistrationListener{
         override fun onRegistrationFailed(p0: NsdServiceInfo?, p1: Int) {
             //Failed.
-            Napier.w("P2PManager: onRegistration Failed! ")
+            Napier.w("RetrieverAndroidImpl onRegistration Failed! ")
         }
 
         override fun onUnregistrationFailed(p0: NsdServiceInfo?, p1: Int) {
             //Unreg failed.
-            Napier.w("P2PManager: onUnregistration Failed! ")
+            Napier.w("RetrieverAndroidImpl onUnregistration Failed! ")
         }
 
         override fun onServiceRegistered(nsdServiceInfo: NsdServiceInfo) {
             mServiceName = nsdServiceInfo.serviceName
-            Napier.d("P2PManagerAndroid: Registered ok: " + mServiceName)
+            Napier.d("RetrieverAndroidImpl: Registered ok: $mServiceName")
         }
 
         override fun onServiceUnregistered(p0: NsdServiceInfo?) {
             //Un registered ok
-            Napier.d("P2PManagerAndroid: Unregistered ok.")
+            Napier.d("RetrieverAndroidImpl: Unregistered ok.")
         }
     }
 
     private val discoveryListener = object: NsdManager.DiscoveryListener{
         override fun onStartDiscoveryFailed(p0: String?, p1: Int) {
             //failed to start discovery
-            Napier.w("P2PManagerAndroid: onStartDiscoveryFailed !")
+            Napier.w("RetrieverAndroidImpl: onStartDiscoveryFailed !")
             nsdManager.stopServiceDiscovery(this)
         }
 
         override fun onStopDiscoveryFailed(p0: String?, p1: Int) {
             //failed on stop discovery
-            Napier.w("P2PManagerAndroid: onStopDiscoveryFailed!")
+            Napier.w("RetrieverAndroidImpl: onStopDiscoveryFailed!")
             nsdManager.stopServiceDiscovery(this)
         }
 
         override fun onDiscoveryStarted(p0: String?) {
             //Discovery started
-            Napier.d("P2PManagerAndroid: Discovery Started..")
+            Napier.d("RetrieverAndroidImpl: Discovery Started..")
         }
 
         override fun onDiscoveryStopped(p0: String?) {
-            Napier.d("P2PManagerAndroid: Discovery Stopped.")
+            Napier.d("RetrieverAndroidImpl: Discovery Stopped.")
         }
 
         override fun onServiceFound(service: NsdServiceInfo) {
-            if(!service.serviceName.equals(mServiceName) && service.serviceName.startsWith(nsdServiceName)) {
+            //as per https://developer.android.com/training/connect-devices-wirelessly/nsd
+            // if the service name is exactly equal, then this is the local device itself.
+            Napier.d("RetrieverAndroidImpl: service found: ${service.serviceName}")
+            if(!service.serviceName.equals(mServiceName) && service.serviceName.contains(nsdServiceName)) {
+                Napier.d("RetrieverAndroidImpl: resolving service: ${service.serviceName}")
                 nsdManager.resolveService(
                     service,
-                    ServiceFoundResolveListener(mServiceName, this@RetrieverAndroidImpl)
+                    ServiceFoundResolveListener(this@RetrieverAndroidImpl)
                 )
             }
         }
 
         override fun onServiceLost(service: NsdServiceInfo?) {
-            Napier.d("P2PManagerAndroid: Lost peer.")
+            Napier.d("RetrieverAndroidImpl: Lost peer.")
             nsdManager.resolveService(service, LostListener(this@RetrieverAndroidImpl))
         }
     }
@@ -102,63 +103,46 @@ class RetrieverAndroidImpl internal constructor(
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
-            Napier.d( "P2PManagerAndroid: Lost Resolve failed: $errorCode")
+            Napier.d( "RetrieverAndroidImpl: Lost Resolve failed: $errorCode")
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-
-            val port: Int = serviceInfo.port
-            val host: InetAddress = serviceInfo.host
-
-            Napier.d("P2PManagerAndroid: Lost Peer: $host:$port")
+            Napier.d("RetrieverAndroidImpl: Lost Peer: $serviceInfo.")
 
             GlobalScope.launch {
-                retriever.updateNetworkNodeLost("$host:$port")
+                retriever.updateNetworkNodeLost(serviceInfo.httpEndpointUrl())
             }
         }
     }
 
     //Node found listener
     class ServiceFoundResolveListener(
-        val mServiceName: String,
         val retriever: RetrieverCommon
     ) : NsdManager.ResolveListener {
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
-            Napier.d( "P2PManagerAndroid: Resolve failed: $errorCode")
+            Napier.d( "RetrieverAndroidImpl: Resolve failed: $errorCode")
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-            Napier.d( "P2PManagerAndroid: Resolve Succeeded. $serviceInfo")
-
-
+            Napier.d( "RetrieverAndroidImpl: Resolve Succeeded. $serviceInfo")
             val allDeviceAddresses = Collections.list(NetworkInterface.getNetworkInterfaces()).flatMap {
                 Collections.list(it.inetAddresses)
             }
 
+            //Avoid "discovering" our own local device
             if(serviceInfo.host in allDeviceAddresses){
                 return
             }
 
-            val port: Int = serviceInfo.port
-            val host: InetAddress = serviceInfo.host
+            Napier.d("RetrieverAndroidImpl: Found Peer: ${serviceInfo.httpEndpointUrl()}")
 
-            Napier.d("P2PManagerAndroid: Found Peer: $host:$port")
+            val networkNode = NetworkNode().apply {
+                networkNodeEndpointUrl = serviceInfo.httpEndpointUrl()
+                networkNodeDiscovered = systemTimeInMillis()
+            }
 
-            val resolvedEndpoint =
-                if(!host.toString().contains("http:/")) {
-                    if (host.toString().startsWith("/")) {
-                        "http:/$host:$port/"
-                    } else {
-                        "http://$host:$port/"
-                    }
-                }else{
-                    "$host:$port/"
-                }
-            val networkNode = NetworkNode()
-            networkNode.networkNodeEndpointUrl = resolvedEndpoint
-            networkNode.networkNodeDiscovered = DateTime.nowUnixLong()
 
             GlobalScope.launch {
                 retriever.addNewNode(networkNode)
@@ -171,10 +155,8 @@ class RetrieverAndroidImpl internal constructor(
     }
 
 
+    private fun startNSD() {
 
-
-
-    fun startNSD() {
         val serviceInfo = NsdServiceInfo().apply{
             serviceName = nsdServiceName
             serviceType = "_${nsdServiceName.lowercase()}._tcp"
@@ -188,6 +170,12 @@ class RetrieverAndroidImpl internal constructor(
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
     }
 
-    companion object {
+    override fun close() {
+        Napier.d("RetrieverAndroidImpl: close!")
+        super.close()
+
+        nsdManager.unregisterService(registrationListener)
+        nsdManager.stopServiceDiscovery(discoveryListener)
     }
+
 }

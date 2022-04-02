@@ -25,6 +25,7 @@ import com.ustadmobile.retriever.testapp.databinding.FragmentNodeListBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.ext.asRepositoryLiveData
+import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
@@ -35,6 +36,10 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.util.*
 
 interface ClickAddNode{
     fun clickAddNote()
@@ -68,13 +73,20 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         val rootView: View
+
+        val deviceStartTime = systemTimeInMillis()
+        val allDeviceAddrs = Collections.list(NetworkInterface.getNetworkInterfaces()).filter { !it.isLoopback }.flatMap {
+            Collections.list(it.inetAddresses)
+        }.filterIsInstance<Inet4Address>()
+        Napier.d("Retriever: Got device list in ${systemTimeInMillis() - deviceStartTime}ms")
 
         binding = FragmentNodeListBinding.inflate(inflater, container, false).also {
             rootView = it.root
             it.listener = this
+            it.localNodeAddr = allDeviceAddrs.joinToString { addr -> "http://${addr.hostAddress}:${retriever.listeningPort()}/" }
         }
 
 
