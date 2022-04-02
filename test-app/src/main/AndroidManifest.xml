@@ -3,8 +3,6 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ustadmobile.retriever.testapp">
 
-    <!-- To save files from the Local bottom nav screen -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!-- To scan for devices locally using bluetooth -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -35,6 +33,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Used to allow users to open a downloaded file -->
+        <provider
+                android:name="androidx.core.content.FileProvider"
+                android:authorities="${applicationId}.provider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+            <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/file_provider_path" />
+        </provider>
     </application>
 
 </manifest>

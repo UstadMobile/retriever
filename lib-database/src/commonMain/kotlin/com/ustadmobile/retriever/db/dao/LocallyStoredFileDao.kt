@@ -12,47 +12,29 @@ import com.ustadmobile.lib.db.entities.LocallyStoredFileAndDownloadJobItem
 @Dao
 abstract class LocallyStoredFileDao: BaseDao<LocallyStoredFile> {
 
-    @Query("""
-        SELECT * FROM LocallyStoredFile 
-         WHERE lsfOriginUrl = :fileUrl
-    """)
-    abstract fun isFileAvailable(fileUrl: String): List<LocallyStoredFile>
-
-
-    @Query("""
-        SELECT * FROM LocallyStoredFile 
-         WHERE lsfOriginUrl = :fileUrl
-    """)
-    abstract suspend fun isFileAvailableAsync(fileUrl: String): List<LocallyStoredFile>
-
 
     @Query("""
         SELECT * FROM LocallyStoredFile 
          WHERE lsfOriginUrl = :originUrl
     """)
-    abstract fun findAvailableFile(originUrl: String): LocallyStoredFile?
+    abstract fun findStoredFile(originUrl: String): LocallyStoredFile?
 
     @Query("""
         SELECT LocallyStoredFile.*
           FROM LocallyStoredFile
          WHERE LocallyStoredFile.lsfOriginUrl IN (:originUrls)  
     """)
-    abstract fun findAvailableFilesByUrlList(originUrls: List<String>): List<LocallyStoredFile>
+    abstract fun findLocallyStoredFilesByUrlList(originUrls: List<String>): List<LocallyStoredFile>
 
     @Query("""
         SELECT * FROM LocallyStoredFile
     """)
-    abstract fun findAllAvailableFiles(): List<LocallyStoredFile>
-
-    @Query("""
-        DELETE FROM LocallyStoredFile
-    """)
-    abstract fun removeAllAvailableFiles()
+    abstract suspend fun findAllLocallyStoredFiles(): List<LocallyStoredFile>
 
     @Query("""
         DELETE FROM LocallyStoredFile WHERE locallyStoredFileUid = :uid
     """)
-    abstract suspend fun removeFile(uid: Long )
+    abstract suspend fun removeFile(uid: Int)
 
 
     @Query("""

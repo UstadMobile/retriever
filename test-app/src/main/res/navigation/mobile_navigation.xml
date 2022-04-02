@@ -2,17 +2,12 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:app="http://schemas.android.com/apk/res-auto"
             android:id="@+id/mobile_navigation"
-            app:startDestination="@id/local_dest">
+            app:startDestination="@id/filelist_dest">
 
     <fragment
-        android:id="@+id/local_dest"
+        android:id="@+id/filelist_dest"
         android:name="com.ustadmobile.retriever.testapp.FileListFragment"
-        android:label="@string/local"/>
-
-    <fragment
-        android:id="@+id/scan_dest"
-        android:name="com.ustadmobile.retriever.testapp.ScanFileListFragment"
-        android:label="@string/scan"/>
+        android:label="@string/files"/>
 
     <fragment
         android:id="@+id/nodes_dest"

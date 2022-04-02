@@ -4,9 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <variable
-            name="listener"
-            type="com.ustadmobile.retriever.testapp.ClickAddLocalFile" />
+
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -54,6 +52,7 @@
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fragment_local_file_list_fab_add"
+            android:contentDescription="@string/download"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
@@ -64,59 +63,6 @@
             app:layout_constraintEnd_toEndOf="parent">
 
         </com.google.android.material.floatingactionbutton.FloatingActionButton>
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fragment_local_file_list_fab_random"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:visibility="gone"
-            android:layout_marginStart="8dp"
-            android:onClick="@{() -> listener.onClickAddRandom()}"
-            android:padding="16dp"
-            android:src="@drawable/ic_baseline_shuffle_24"
-            app:fabSize="mini"
-            app:layout_constraintBottom_toTopOf="@id/fragment_local_file_list_fab_add"
-            app:layout_constraintEnd_toEndOf="@+id/fragment_local_file_list_fab_add"
-            app:layout_constraintStart_toStartOf="@+id/fragment_local_file_list_fab_add" />
-
-        <TextView
-            android:id="@+id/fragment_local_file_list_random_tv"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="Add a random test file"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/fragment_local_file_list_fab_random"
-            app:layout_constraintEnd_toStartOf="@id/fragment_local_file_list_fab_random"
-            app:layout_constraintTop_toTopOf="@+id/fragment_local_file_list_fab_random" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fragment_local_file_list_fab_url"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:layout_marginStart="8dp"
-            android:onClick="@{() -> listener.onClickAddFromUrl()}"
-            android:padding="16dp"
-            android:src="@drawable/ic_baseline_link_24"
-            android:visibility="gone"
-            app:fabSize="mini"
-            app:layout_constraintBottom_toTopOf="@id/fragment_local_file_list_fab_random"
-            app:layout_constraintEnd_toEndOf="@+id/fragment_local_file_list_fab_add"
-            app:layout_constraintStart_toStartOf="@+id/fragment_local_file_list_fab_add" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:id="@+id/fragment_local_file_list_url_tv"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_marginEnd="8dp"
-            android:text="Add a file via URL"
-            app:layout_constraintBottom_toBottomOf="@+id/fragment_local_file_list_fab_url"
-            app:layout_constraintEnd_toStartOf="@id/fragment_local_file_list_fab_random"
-            app:layout_constraintTop_toTopOf="@+id/fragment_local_file_list_fab_url" />
-
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

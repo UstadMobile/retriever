@@ -1,5 +1,6 @@
 package com.ustadmobile.retriever
 
+import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 
 interface Retriever{
@@ -14,9 +15,16 @@ interface Retriever{
 
     suspend fun addFiles(files: List<LocalFileInfo>)
 
+    suspend fun getAllLocallyStoredFiles(): List<LocallyStoredFile>
+
+    suspend fun getLocallyStoredFilesByUrls(urls: List<String>): List<LocallyStoredFile>
+
+    suspend fun deleteFilesByUrl(urls: List<String>)
+
     fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver)
 
     fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver)
+
 
     /**
      * Stop any HTTP servers, stop availability management monitoring. Does not stop any downloads in progress.

@@ -34,7 +34,7 @@ class FilesRecyclerAdapter(
 
     override fun onBindViewHolder(holder: FilesRecyclerViewHolder, position: Int) {
         val item = getItem(position)
-        holder.itemBinding.availableFile = item?.locallyStoredFile
+        holder.itemBinding.storedFile = item?.locallyStoredFile
         holder.itemBinding.downloadJobItem = item?.downloadJobItem
     }
 

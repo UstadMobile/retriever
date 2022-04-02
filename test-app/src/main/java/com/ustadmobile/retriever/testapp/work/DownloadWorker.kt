@@ -90,7 +90,7 @@ class DownloadWorker(
     override suspend fun doWork(): Result {
         val downloadUrl = inputData.getString(KEY_URL) ?: throw IllegalArgumentException("No url!")
         notificationBuilder = createNotificationBuilder(downloadUrl)
-        val downloadDir = File(applicationContext.dataDir, "downloads")
+        val downloadDir = File(applicationContext.filesDir, "downloads")
         downloadDir.takeIf { !it.exists() }?.mkdirs()
         val fileName = downloadUrl.substringAfterLast("/")
         val downloadDestFile = File(downloadDir, fileName)

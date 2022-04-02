@@ -21,7 +21,7 @@ class SingleItemResponder : RouterNanoHTTPD.UriResponder{
             return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST,
                 "text/plain", "Bad Request: no origin url specified")
 
-        val availableFilePath: LocallyStoredFile = db.locallyStoredFileDao.findAvailableFile(originUrl) ?:
+        val availableFilePath: LocallyStoredFile = db.locallyStoredFileDao.findStoredFile(originUrl) ?:
             return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.NOT_FOUND,
                 "text/plain", "Not found: file with origin url = $originUrl")
 

@@ -128,6 +128,14 @@ abstract class DownloadJobItemDao {
     """)
     abstract suspend fun findAllUrlsByBatchId(batchId: Long): List<String?>
 
+    @Query("""
+        DELETE 
+          FROM DownloadJobItem
+         WHERE djiOriginUrl IN (:urls)  
+    """)
+    abstract suspend fun deleteByUrlList(urls: List<String>)
+
+
     companion object {
 
         //Copies of values found on Retriever interface so they can be used here:

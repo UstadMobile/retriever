@@ -41,7 +41,7 @@ class ZippedItemsResponder : AbstractUriResponder(){
 
         val locallyStoredFiles = db.withDoorTransaction(RetrieverDatabase::class) { txDb ->
             originUrlList.chunked(100).flatMap {
-                txDb.locallyStoredFileDao.findAvailableFilesByUrlList(it)
+                txDb.locallyStoredFileDao.findLocallyStoredFilesByUrlList(it)
             }
         }
 

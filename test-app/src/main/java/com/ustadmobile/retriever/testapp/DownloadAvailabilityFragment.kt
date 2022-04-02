@@ -71,7 +71,7 @@ class DownloadAvailabilityFragment: Fragment(), DIAware, OnAvailabilityChanged {
                 WorkManager.getInstance(requireContext()).enqueueUniqueWork(urls.first(), ExistingWorkPolicy.KEEP,
                     workRequest)
 
-                findNavController().popBackStack(R.id.local_dest, false)
+                findNavController().popBackStack(R.id.filelist_dest, false)
             }
         }.root
     }

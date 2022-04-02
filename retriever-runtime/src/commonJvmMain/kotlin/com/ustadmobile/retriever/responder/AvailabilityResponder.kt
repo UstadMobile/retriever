@@ -1,9 +1,6 @@
 package com.ustadmobile.retriever.responder
 
-import com.google.gson.Gson
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.FileAvailableResponse
-import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.receiveRequestBody
 import fi.iki.elonen.NanoHTTPD
@@ -49,7 +46,7 @@ class AvailabilityResponder:RouterNanoHTTPD.UriResponder{
         val json: Json = uriResource.initParameter(PARAM_JSON_INDEX, Json::class.java)
         val locallyStoredFiles = db.withDoorTransaction(RetrieverDatabase::class) { txDb ->
             fileUrlList.chunked(100).flatMap {
-                db.locallyStoredFileDao.findAvailableFilesByUrlList(it)
+                db.locallyStoredFileDao.findLocallyStoredFilesByUrlList(it)
             }
         }
 

@@ -10,6 +10,7 @@ import com.ustadmobile.retriever.responder.ZippedItemsResponder
 import fi.iki.elonen.router.RouterNanoHTTPD
 import java.io.File
 import kotlinx.serialization.json.Json
+import com.ustadmobile.door.ext.withDoorTransactionAsync
 
 
 abstract class RetrieverCommonJvm(
@@ -40,6 +41,27 @@ abstract class RetrieverCommonJvm(
         }
 
         db.locallyStoredFileDao.insertList(locallyStoredFiles)
+    }
+
+    override suspend fun getAllLocallyStoredFiles(): List<LocallyStoredFile>{
+        return db.locallyStoredFileDao.findAllLocallyStoredFiles()
+    }
+
+
+    override suspend fun getLocallyStoredFilesByUrls(urls: List<String>): List<LocallyStoredFile> {
+        return db.locallyStoredFileDao.findLocallyStoredFilesByUrlList(urls)
+    }
+
+    override suspend fun deleteFilesByUrl(urls: List<String>) {
+        //TODO: Chunk this into batches of 100
+        db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+            val locallyStoredFiles = txDb.locallyStoredFileDao.findLocallyStoredFilesByUrlList(urls)
+            locallyStoredFiles.forEach { storedFile ->
+                storedFile.lsfFilePath?.let { File(it) }?.delete()
+                txDb.locallyStoredFileDao.removeFile(storedFile.locallyStoredFileUid)
+            }
+            txDb.downloadJobItemDao.deleteByUrlList(urls)
+        }
     }
 
     override fun close() {

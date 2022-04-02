@@ -10,7 +10,7 @@
         <import type="android.view.View"/>
         <import type="com.ustadmobile.retriever.testapp.util.FormatFileSizeTextKt"/>
 
-        <variable name="availableFile" type="LocallyStoredFile" />
+        <variable name="storedFile" type="LocallyStoredFile" />
 
         <variable name="downloadJobItem" type="DownloadJobItem"/>
 
@@ -23,7 +23,8 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/selectableItemBackground">
+        android:background="?attr/selectableItemBackground"
+        android:onClick="@{() -> listener.handleClickFile(storedFile)}">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/item_file_icon"
@@ -42,7 +43,6 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:onClick="@{() -> listener.handleClickFile(availableFile)}"
             android:paddingTop="8dp"
             android:paddingStart="0dp"
             android:paddingEnd="8dp"
@@ -93,9 +93,9 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_baseline_delete_24"
-            android:contentDescription="delete"
+            android:contentDescription="@string/delete"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:onClick="@{() -> listener.deleteFile(availableFile)}" />
+            android:onClick="@{() -> listener.deleteFile(storedFile)}" />
 
 
 
