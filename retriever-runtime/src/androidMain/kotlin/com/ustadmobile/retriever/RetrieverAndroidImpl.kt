@@ -8,9 +8,9 @@ import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
-import java.net.InetAddress
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.NetworkInterface
@@ -28,11 +28,12 @@ class RetrieverAndroidImpl internal constructor(
 
     val database = db
 
+    //The remembered service name as per onServiceRegistered
     private var mServiceName = ""
 
     private lateinit var nsdManager: NsdManager
 
-    private var SERVICE_TYPE = "_${nsdServiceName.lowercase()}._tcp"
+    private val serviceType = "_${nsdServiceName.lowercase()}._tcp"
 
     //Service registered listener
     private val registrationListener = object: NsdManager.RegistrationListener{
@@ -47,6 +48,10 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         override fun onServiceRegistered(nsdServiceInfo: NsdServiceInfo) {
+            // Save the service name. Android may have changed it in order to
+            // resolve a conflict, so update the name you initially requested
+            // with the name Android actually used.
+            // As per https://developer.android.com/training/connect-devices-wirelessly/nsd
             mServiceName = nsdServiceInfo.serviceName
             Napier.d("RetrieverAndroidImpl: Registered ok: $mServiceName")
         }
@@ -99,7 +104,7 @@ class RetrieverAndroidImpl internal constructor(
     }
 
     //Node lost listener
-    private class LostListener(val retriever: RetrieverCommon) : NsdManager.ResolveListener {
+    private inner class LostListener(val retriever: RetrieverCommon) : NsdManager.ResolveListener {
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
@@ -109,14 +114,14 @@ class RetrieverAndroidImpl internal constructor(
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
             Napier.d("RetrieverAndroidImpl: Lost Peer: $serviceInfo.")
 
-            GlobalScope.launch {
+            retrieverCoroutineScope.launch {
                 retriever.updateNetworkNodeLost(serviceInfo.httpEndpointUrl())
             }
         }
     }
 
     //Node found listener
-    class ServiceFoundResolveListener(
+    inner class ServiceFoundResolveListener(
         val retriever: RetrieverCommon
     ) : NsdManager.ResolveListener {
 
@@ -126,16 +131,6 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-            Napier.d( "RetrieverAndroidImpl: Resolve Succeeded. $serviceInfo")
-            val allDeviceAddresses = Collections.list(NetworkInterface.getNetworkInterfaces()).flatMap {
-                Collections.list(it.inetAddresses)
-            }
-
-            //Avoid "discovering" our own local device
-            if(serviceInfo.host in allDeviceAddresses){
-                return
-            }
-
             Napier.d("RetrieverAndroidImpl: Found Peer: ${serviceInfo.httpEndpointUrl()}")
 
             val networkNode = NetworkNode().apply {
@@ -144,7 +139,7 @@ class RetrieverAndroidImpl internal constructor(
             }
 
 
-            GlobalScope.launch {
+            retrieverCoroutineScope.launch {
                 retriever.addNewNode(networkNode)
             }
         }
@@ -167,7 +162,7 @@ class RetrieverAndroidImpl internal constructor(
             registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
         }
 
-        nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+        nsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
     }
 
     override fun close() {

@@ -11,6 +11,7 @@ import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -20,12 +21,12 @@ abstract class RetrieverCommon(
     private val availabilityChecker: AvailabilityChecker,
     private val originServerFetcher: OriginServerFetcher,
     private val localPeerFetcher: LocalPeerFetcher,
+    protected val retrieverCoroutineScope: CoroutineScope = GlobalScope,
 ) : Retriever {
 
     protected val availabilityManager = AvailabilityManager(db, availabilityChecker)
 
     suspend fun addNewNode(networkNode: NetworkNode){
-
         println("Retriever: Adding a new node ..")
         //Check if doesn't already exist. Else update time discovered
         if (db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl ?: "")
@@ -54,13 +55,13 @@ abstract class RetrieverCommon(
     }
 
     override fun addAvailabilityObserver(availabilityObserver: AvailabilityObserver) {
-        GlobalScope.launch {
+        retrieverCoroutineScope.launch {
             availabilityManager.addAvailabilityObserver(availabilityObserver)
         }
     }
 
     override fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver) {
-        GlobalScope.launch {
+        retrieverCoroutineScope.launch {
             availabilityManager.removeAvailabilityObserver(availabilityObserver)
         }
     }
