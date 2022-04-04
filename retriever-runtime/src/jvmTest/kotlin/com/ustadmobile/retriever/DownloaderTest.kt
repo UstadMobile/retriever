@@ -82,15 +82,16 @@ class DownloaderTest {
     ) = onBlocking {
         download(any(), any())
     }.thenAnswer {
-        val downloadJobItem = it.arguments[0] as DownloadJobItem
+        val downloadJobItems = it.arguments[0] as List<DownloadJobItem>
         val retrieverListener = it.arguments[1] as RetrieverListener
         GlobalScope.launch {
-            retrieverListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid,
-                downloadJobItem.djiOriginUrl!!, 1000, 0, 1000, 1000))
-            retrieverListener.onRetrieverStatusUpdate(
-                RetrieverStatusUpdateEvent(downloadJobItem.djiUid,
-                downloadJobItem.djiOriginUrl!!, statusBlock(it))
-            )
+            downloadJobItems.forEach { downloadJobItem ->
+                retrieverListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid,
+                    downloadJobItem.djiOriginUrl!!, 1000, 0, 1000, 1000))
+                retrieverListener.onRetrieverStatusUpdate(
+                    RetrieverStatusUpdateEvent(downloadJobItem.djiUid,
+                        downloadJobItem.djiOriginUrl!!, statusBlock(it)))
+            }
         }
     }
 
@@ -111,8 +112,10 @@ class DownloaderTest {
 
         downloadJobItems.forEach { downloadItem ->
             verifyBlocking(mockOriginServerFetcher) {
-                download(argWhere {
-                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                download(argWhere { downloadList ->
+                    downloadList.any {
+                        it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                    }
                 }, any())
             }
         }
@@ -185,8 +188,10 @@ class DownloaderTest {
 
         downloadJobItems.forEach { downloadItem ->
             verifyBlocking(mockOriginServerFetcher, times(maxNumAttempts)) {
-                download(argWhere {
-                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                download(argWhere { downloadList ->
+                    downloadList.any {
+                        it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                    }
                 }, any())
             }
         }
@@ -210,8 +215,9 @@ class DownloaderTest {
         //Make the first item fail twice, then succeed
         mockOriginServerFetcher.stub {
             onOriginDownloadThenAnswerAndFireUpdate {
-                val jobItem = it.arguments.first() as DownloadJobItem
-                if(jobItem.djiOriginUrl == downloadJobItems.first().djiOriginUrl) {
+                val jobItems = it.arguments.first() as List<DownloadJobItem>
+
+                if(jobItems.firstOrNull()?.djiOriginUrl == downloadJobItems.first().djiOriginUrl) {
                     failCount--
                     if(failCount >= 0)
                         STATUS_ATTEMPT_FAILED
@@ -233,13 +239,17 @@ class DownloaderTest {
         }
 
         verifyBlocking(mockOriginServerFetcher, times(timesToFail + 1)) {
-            download(argWhere { it.djiOriginUrl == downloadJobItems.first().djiOriginUrl }, any())
+            download(argWhere { downloadList ->
+                downloadList.any { it.djiOriginUrl == downloadJobItems.first().djiOriginUrl }
+            }, any())
         }
 
         downloadJobItems.forEach { downloadItem ->
             verifyBlocking(mockOriginServerFetcher, atLeastOnce()) {
-                download(argWhere {
-                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                download(argWhere { downloadList ->
+                    downloadList.any {
+                        it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                    }
                 }, any())
             }
 
@@ -263,25 +273,29 @@ class DownloaderTest {
         //Make the first item fail twice, then succeed
         mockOriginServerFetcher.stub {
             onBlocking { download(any(), any()) }.thenAnswer {
-                val downloadJobItem = it.arguments[0] as DownloadJobItem
+                val downloadJobItems = it.arguments[0] as List<DownloadJobItem>
                 val retrieverListener = it.arguments[1] as RetrieverListener
 
                 if(failCount-- >= 0) {
                     runBlocking {
-                        retrieverListener.onRetrieverProgress(RetrieverProgressEvent(
-                            downloadJobItem.djiUid, downloadJobItem.djiOriginUrl!!, 0, 0,
-                            0, 1000))
+                        downloadJobItems.forEach { downloadJobItem ->
+                            retrieverListener.onRetrieverProgress(RetrieverProgressEvent(
+                                downloadJobItem.djiUid, downloadJobItem.djiOriginUrl!!, 0, 0,
+                                0, 1000))
+                        }
+
                     }
 
                     throw IOException("Fail!")
                 }else {
                     runBlocking {
-                        retrieverListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid,
-                            downloadJobItem.djiOriginUrl!!, 1000, 0, 1000, 1000))
-                        retrieverListener.onRetrieverStatusUpdate(
-                            RetrieverStatusUpdateEvent(downloadJobItem.djiUid,
-                                downloadJobItem.djiOriginUrl!!, STATUS_SUCCESSFUL)
-                        )
+                        downloadJobItems.forEach { downloadJobItem ->
+                            retrieverListener.onRetrieverProgress(RetrieverProgressEvent(downloadJobItem.djiUid,
+                                downloadJobItem.djiOriginUrl!!, 1000, 0, 1000, 1000))
+                            retrieverListener.onRetrieverStatusUpdate(
+                                RetrieverStatusUpdateEvent(downloadJobItem.djiUid,
+                                    downloadJobItem.djiOriginUrl!!, STATUS_SUCCESSFUL))
+                        }
                     }
                 }
             }
@@ -298,8 +312,10 @@ class DownloaderTest {
 
         downloadJobItems.forEach { downloadItem ->
             verifyBlocking(mockOriginServerFetcher, atLeastOnce()) {
-                download(argWhere {
-                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                download(argWhere { downloadList ->
+                    downloadList.any {
+                        it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                    }
                 }, any())
             }
 
@@ -350,8 +366,10 @@ class DownloaderTest {
 
         downloadJobItems.forEach { downloadItem ->
             verifyBlocking(mockOriginServerFetcher) {
-                download(argWhere {
-                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                download(argWhere { downloadList ->
+                    downloadList.any {
+                        it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                    }
                 }, any())
             }
         }
@@ -395,8 +413,10 @@ class DownloaderTest {
 
         downloadJobItems.forEach { downloadItem ->
             verifyBlocking(mockOriginServerFetcher) {
-                download(argWhere {
-                    it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                download(argWhere { downloadList ->
+                    downloadList.any {
+                        it.djiOriginUrl == downloadItem.djiOriginUrl && it.djiDestPath == downloadItem.djiDestPath
+                    }
                 }, any())
             }
         }

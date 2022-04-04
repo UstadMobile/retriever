@@ -61,11 +61,11 @@ class OriginServerFetcherTest {
             messageDigest.update(resourceBytes)
 
             OriginServerFetcher(okHttpClient).download(
-                DownloadJobItem().apply {
+                listOf(DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
                     djiDestPath = destFile.absolutePath
                     djiIntegrity = "sha384-" + Base64.getEncoder().encodeToString(messageDigest.digest())
-                } , mockProgressListener)
+                }) , mockProgressListener)
         }
 
         Assert.assertArrayEquals("Downloaded bytes match original bytes",
@@ -94,10 +94,10 @@ class OriginServerFetcherTest {
         val destFile = File(downloadDestDir, "cat-pic0")
         val mockProgressListener = mock<RetrieverListener>{ }
         runBlocking {
-            OriginServerFetcher(okHttpClient).download(DownloadJobItem().apply {
+            OriginServerFetcher(okHttpClient).download(listOf(DownloadJobItem().apply {
                 djiOriginUrl = originHttpServer.url("/doesnotexist.jpg")
                 djiDestPath = destFile.absolutePath
-            }, mockProgressListener)
+            }), mockProgressListener)
         }
 
         verifyBlocking(mockProgressListener) {
@@ -117,10 +117,10 @@ class OriginServerFetcherTest {
 
         runBlocking {
             OriginServerFetcher(okHttpClient).download(
-                DownloadJobItem().apply {
+                listOf(DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
                     djiDestPath = destFile.absolutePath
-                } , mockProgressListener)
+                }), mockProgressListener)
         }
 
         Assert.assertArrayEquals("Downloaded bytes match original bytes",
@@ -139,11 +139,11 @@ class OriginServerFetcherTest {
             messageDigest.update(resourceBytes)
 
             OriginServerFetcher(okHttpClient).download(
-                DownloadJobItem().apply {
+                listOf(DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/animated-overlay.gif")
                     djiDestPath = destFile.absolutePath
                     djiIntegrity = "sha384-" + Base64.getEncoder().encodeToString(messageDigest.digest())
-                } , mockProgressListener)
+                }), mockProgressListener)
         }
 
         verifyBlocking(mockProgressListener) {

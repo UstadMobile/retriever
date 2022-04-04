@@ -5,6 +5,7 @@ import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.lib.db.entities.DownloadJobItemAndNodeInfo
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
@@ -99,10 +100,19 @@ class Downloader(
                     val locallyAvailableBatchesToSend = locallyAvailableBatches.subList(0,
                         min(numProcessorsAvailable, locallyAvailableBatches.size))
 
-                    val numFromOriginToSend = min(groupedByNode[0]?.size ?: 0,
+                    val numFromOriginBatches = min(groupedByNode[0]?.size ?: 0,
                         numProcessorsAvailable - locallyAvailableBatchesToSend.size)
-                    val originDownloadBatchesToSend = groupedByNode[0]?.subList(0, numFromOriginToSend)
-                        ?.map { DownloadBatch(null, listOf(it)) } ?: listOf()
+
+                    val originBatches = (0 until numFromOriginBatches).map { mutableListOf<DownloadJobItemAndNodeInfo>() }
+                        .toMutableList()
+
+                    groupedByNode[0]?.forEachIndexed { index, downloadJobItemAndNodeInfo ->
+                        originBatches[index % numFromOriginBatches].add(downloadJobItemAndNodeInfo)
+                    }
+
+                    val originDownloadBatchesToSend = originBatches.map {
+                        DownloadBatch(null, it.toList())
+                    }
 
                     val jobIdsSent = locallyAvailableBatchesToSend.flatMap { batch ->
                         batch.itemsToDownload.map { it.djiUid }
@@ -201,12 +211,9 @@ class Downloader(
             try {
                 if(host == null) {
                     //Download from origin url
-                    val itemToDownload = item.itemsToDownload.firstOrNull()
-                        ?: throw IllegalArgumentException("Batch to download from origin has no item!")
-
                     Napier.d("$logPrefix - processor $id - fetch from origin server " +
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
-                    originServerFetcher.download(itemToDownload, progressListenerWrapper)
+                    originServerFetcher.download(item.itemsToDownload, progressListenerWrapper)
                     Napier.d("$logPrefix - processor $id - fetch from origin server done" +
                             item.itemsToDownload.joinToString { it.djiOriginUrl ?: "" }, tag = Retriever.LOGTAG)
                 }else {

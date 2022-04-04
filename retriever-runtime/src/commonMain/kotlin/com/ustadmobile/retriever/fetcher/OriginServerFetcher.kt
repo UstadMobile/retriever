@@ -11,7 +11,7 @@ import com.ustadmobile.lib.db.entities.DownloadJobItem
 expect class OriginServerFetcher {
 
     suspend fun download(
-        downloadJobItem: DownloadJobItem,
+        downloadJobItems: List<DownloadJobItem>,
         retrieverListener: RetrieverListener,
     )
 
