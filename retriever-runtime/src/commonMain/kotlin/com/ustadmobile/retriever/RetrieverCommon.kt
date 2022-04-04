@@ -11,6 +11,7 @@ import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
+import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -26,27 +27,26 @@ abstract class RetrieverCommon(
 
     protected val availabilityManager = AvailabilityManager(db, availabilityChecker)
 
-    suspend fun addNewNode(networkNode: NetworkNode){
-        println("Retriever: Adding a new node ..")
-        //Check if doesn't already exist. Else update time discovered
-        if (db.networkNodeDao.findAllByEndpointUrl(networkNode.networkNodeEndpointUrl ?: "")
-                .isEmpty()
-        ) {
-            networkNode.networkNodeDiscovered = systemTimeInMillis()
-            db.networkNodeDao.insert(networkNode)
-        } else {
-            val netWorkNodeToUpdate: NetworkNode? =
-                db.networkNodeDao.findByEndpointUrl(
-                    networkNode.networkNodeEndpointUrl ?: ""
-                )
-            if (netWorkNodeToUpdate != null) {
-                netWorkNodeToUpdate.networkNodeDiscovered = DateTime.nowUnixLong()
-                netWorkNodeToUpdate.networkNodeLost = 0
-                db.networkNodeDao.update(netWorkNodeToUpdate)
+    suspend fun handleNodeDiscovered(networkNode: NetworkNode){
+        Napier.d("Handle new node discovered")
+        networkNode.networkNodeDiscovered = systemTimeInMillis()
+        val endpointUrl = networkNode.networkNodeEndpointUrl
+            ?: throw IllegalArgumentException("handleNodeDiscovered: NetworkNode endpoint is null")
+
+        db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+            val existingUid = txDb.networkNodeDao.findUidByEndpointUrl(endpointUrl)
+
+            //Not using upsert because we want to be sure that NetworkNode id is preserved in case a node is rediscovered
+            // SQLite might delete the conflicting row and issue a new id.
+            if(existingUid == 0) {
+                networkNode.networkNodeDiscovered = systemTimeInMillis()
+                txDb.networkNodeDao.insertNodeAsync(networkNode)
+            }else {
+                networkNode.networkNodeId = existingUid
+                txDb.networkNodeDao.updateAsync(networkNode)
             }
         }
 
-        println("Retriever: Sending Signal ..")
         availabilityManager.checkQueue()
     }
 

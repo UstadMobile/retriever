@@ -1,6 +1,7 @@
 package com.ustadmobile.lib.db.entities
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.ustadmobile.door.annotation.*
 import kotlinx.serialization.Serializable
@@ -12,7 +13,8 @@ import kotlinx.serialization.Serializable
  * The network nodes are removed when they are lost.
  * All network nodes are likely to be purged when the application closes/restarts. TODO: verify
 */
-@Entity
+@Entity(indices =
+    arrayOf(Index(value = arrayOf("networkNodeEndpointUrl"), name = "networknode_endpoint_index", unique = true)))
 @Serializable
 open class NetworkNode {
 

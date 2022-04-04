@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "89de3120a1484c232f16c8d589981703",
+    "identityHash": "c45b3e61b6a42422e27652493587d76c",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -138,7 +138,17 @@
           ],
           "autoGenerate": true
         },
-        "indices": [],
+        "indices": [
+          {
+            "name": "networknode_endpoint_index",
+            "unique": true,
+            "columnNames": [
+              "networkNodeEndpointUrl"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `networknode_endpoint_index` ON `${TABLE_NAME}` (`networkNodeEndpointUrl`)"
+          }
+        ],
         "foreignKeys": []
       },
       {
@@ -529,7 +539,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '89de3120a1484c232f16c8d589981703')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c45b3e61b6a42422e27652493587d76c')"
     ]
   }
 }

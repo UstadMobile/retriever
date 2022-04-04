@@ -1,15 +1,22 @@
 package com.ustadmobile.core.db.dao
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Query
-import androidx.room.Update
+import androidx.room.*
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.lib.db.entities.NetworkNode
 
 @Dao
 abstract class NetworkNodeDao: BaseDao<NetworkNode> {
 
+    @Query("""
+        SELECT COALESCE(
+               (SELECT networkNodeId
+                  FROM NetworkNode
+                 WHERE networkNodeEndpointUrl = :endpointUrl), 0) 
+    """)
+    abstract suspend fun findUidByEndpointUrl(endpointUrl: String): Int
+
+    @Insert
+    abstract suspend fun insertNodeAsync(networkNode: NetworkNode): Long
 
     @Query("""
         SELECT * FROM NetworkNode where networkNodeEndpointUrl = :endpointUrl

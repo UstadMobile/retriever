@@ -9,11 +9,8 @@ import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import java.net.NetworkInterface
 import java.util.*
 
 class RetrieverAndroidImpl internal constructor(
@@ -140,7 +137,7 @@ class RetrieverAndroidImpl internal constructor(
 
 
             retrieverCoroutineScope.launch {
-                retriever.addNewNode(networkNode)
+                retriever.handleNodeDiscovered(networkNode)
             }
         }
     }

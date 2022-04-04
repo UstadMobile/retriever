@@ -22,7 +22,6 @@ import org.junit.*
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyBlocking
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
@@ -88,7 +87,7 @@ class RetrieverIntegrationTest {
             retrieverPeers.forEachIndexed { index, peer ->
                 retrieverPeers.forEachIndexed { otherIndex, otherPeer ->
                     if(index != otherIndex) {
-                        peer.addNewNode(NetworkNode().apply {
+                        peer.handleNodeDiscovered(NetworkNode().apply {
                             networkNodeEndpointUrl = "http://127.0.0.1:${otherPeer.server.listeningPort}/"
                             networkNodeDiscovered = systemTimeInMillis()
                         })
@@ -262,7 +261,7 @@ class RetrieverIntegrationTest {
         }
 
         runBlocking {
-            retrieverPeers[1].addNewNode(NetworkNode().apply {
+            retrieverPeers[1].handleNodeDiscovered(NetworkNode().apply {
                 networkNodeEndpointUrl = mockLostPeerServer.url("/").toString()
                 networkNodeDiscovered = systemTimeInMillis()
             })
