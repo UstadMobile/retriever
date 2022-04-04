@@ -6,6 +6,8 @@ import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.util.ReverseProxyDispatcher
 import fi.iki.elonen.router.RouterNanoHTTPD
+import io.github.aakira.napier.DebugAntilog
+import io.github.aakira.napier.Napier
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.*
@@ -46,6 +48,8 @@ class RetrieverIntegrationTest {
 
     @Before
     fun setup() {
+        Napier.takeLogarithm()
+        Napier.base(DebugAntilog())
         json = Json {
             encodeDefaults = true
         }
@@ -77,6 +81,10 @@ class RetrieverIntegrationTest {
             }.build() as RetrieverJvm
         }
 
+        retrieverPeers.forEach {
+            runBlocking { it.awaitServer() }
+        }
+
         peerTmpFolders = retrieverPeers.map { temporaryFolder.newFolder() }
 
     }
@@ -86,9 +94,10 @@ class RetrieverIntegrationTest {
             //Make peers discover each other
             retrieverPeers.forEachIndexed { index, peer ->
                 retrieverPeers.forEachIndexed { otherIndex, otherPeer ->
+                    val otherPeerServer: RouterNanoHTTPD = runBlocking { otherPeer.awaitServer() }
                     if(index != otherIndex) {
                         peer.handleNodeDiscovered(NetworkNode().apply {
-                            networkNodeEndpointUrl = "http://127.0.0.1:${otherPeer.server.listeningPort}/"
+                            networkNodeEndpointUrl = "http://127.0.0.1:${otherPeerServer.listeningPort}/"
                             networkNodeDiscovered = systemTimeInMillis()
                         })
                     }
@@ -219,13 +228,14 @@ class RetrieverIntegrationTest {
     fun givenDownloadStarted_whenPeerLostMidDownload_thenShouldDownloadFromOrigin() {
         val mockLostPeerServer = MockWebServer()
         val successRequestsRemaining = AtomicInteger(1)
+        val peer0Server = runBlocking { retrieverPeers[0].awaitServer() }
 
-        val proxyDispatcher = ReverseProxyDispatcher(retrieverPeers[0].server.url("/").toHttpUrl())
+        val proxyDispatcher = ReverseProxyDispatcher(peer0Server.url("/").toHttpUrl())
         mockLostPeerServer.dispatcher = object: Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 if(request.path?.endsWith("/availability") == true) {
                     val availability: String = runBlocking {
-                        httpClient.post(retrieverPeers[0].server.url("/availability")) {
+                        httpClient.post(peer0Server.url("/availability")) {
                             body = ByteArrayContent(request.body.readByteArray(),
                                 contentType = ContentType.Application.Json)
                         }

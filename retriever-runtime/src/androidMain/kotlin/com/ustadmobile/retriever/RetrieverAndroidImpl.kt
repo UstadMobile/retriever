@@ -12,6 +12,18 @@ import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.util.*
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.ustadmobile.retriever.util.findAvailableRandomPort
+import fi.iki.elonen.router.RouterNanoHTTPD
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 class RetrieverAndroidImpl internal constructor(
     db: RetrieverDatabase,
@@ -21,7 +33,16 @@ class RetrieverAndroidImpl internal constructor(
     originServerFetcher: OriginServerFetcher,
     localPeerFetcher: LocalPeerFetcher,
     json: Json,
-): RetrieverCommonJvm(db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, json) {
+    port: Int,
+    retrieverCoroutineScope: CoroutineScope,
+): RetrieverCommonJvm(
+    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, json, retrieverCoroutineScope,
+) {
+
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
+    private val dataStore: DataStore<Preferences>
+        get() = applicationContext.dataStore
 
     val database = db
 
@@ -31,6 +52,13 @@ class RetrieverAndroidImpl internal constructor(
     private lateinit var nsdManager: NsdManager
 
     private val serviceType = "_${nsdServiceName.lowercase()}._tcp"
+
+    //as per https://developer.android.com/training/connect-devices-wirelessly/nsd
+    // If the service name is exactly equal to the value provided onServiceRegistered (mServiceName), then this is the
+    // local device itself.
+    private fun NsdServiceInfo.isMatchingServiceOnOtherDevice(): Boolean {
+        return !serviceName.equals(mServiceName) && serviceName.contains(nsdServiceName)
+    }
 
     //Service registered listener
     private val registrationListener = object: NsdManager.RegistrationListener{
@@ -82,10 +110,8 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         override fun onServiceFound(service: NsdServiceInfo) {
-            //as per https://developer.android.com/training/connect-devices-wirelessly/nsd
-            // if the service name is exactly equal, then this is the local device itself.
             Napier.d("RetrieverAndroidImpl: service found: ${service.serviceName}")
-            if(!service.serviceName.equals(mServiceName) && service.serviceName.contains(nsdServiceName)) {
+            if(service.isMatchingServiceOnOtherDevice()) {
                 Napier.d("RetrieverAndroidImpl: resolving service: ${service.serviceName}")
                 nsdManager.resolveService(
                     service,
@@ -96,7 +122,9 @@ class RetrieverAndroidImpl internal constructor(
 
         override fun onServiceLost(service: NsdServiceInfo?) {
             Napier.d("RetrieverAndroidImpl: Lost peer.")
-            nsdManager.resolveService(service, LostListener(this@RetrieverAndroidImpl))
+            if(service?.isMatchingServiceOnOtherDevice() == true) {
+                nsdManager.resolveService(service, LostListener(this@RetrieverAndroidImpl))
+            }
         }
     }
 
@@ -109,7 +137,7 @@ class RetrieverAndroidImpl internal constructor(
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
-            Napier.d("RetrieverAndroidImpl: Lost Peer: $serviceInfo.")
+            Napier.d("RetrieverAndroidImpl: Lost Peer resolved: $serviceInfo.")
 
             retrieverCoroutineScope.launch {
                 retriever.updateNetworkNodeLost(serviceInfo.httpEndpointUrl())
@@ -124,7 +152,7 @@ class RetrieverAndroidImpl internal constructor(
 
         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
             // Called when the resolve fails. Use the error code to debug.
-            Napier.d( "RetrieverAndroidImpl: Resolve failed: $errorCode")
+            Napier.d( "RetrieverAndroidImpl ServiceFoundResolveListener: Resolve failed for $serviceInfo: $errorCode")
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
@@ -142,13 +170,38 @@ class RetrieverAndroidImpl internal constructor(
         }
     }
 
-    init {
-        startNSD()
+
+    internal override fun start() {
+        super.start()
+
+        retrieverCoroutineScope.launch {
+            val serverReady: RouterNanoHTTPD = awaitServer()
+
+            withContext(Dispatchers.Main){
+                startNSD(serverReady)
+            }
+        }
     }
 
 
-    private fun startNSD() {
+    override suspend fun choosePort(): Int {
+        val lastPortKey = stringPreferencesKey(PREFERENCES_KEY_PORT)
+        val lastPort: Int = dataStore.data.map { preferences ->
+            preferences[lastPortKey]?.toInt() ?: 0
+        }.first()
 
+        val portToUse = findAvailableRandomPort(preferred = lastPort)
+        if(portToUse != lastPort) {
+            //Save it to the preferences
+            dataStore.edit { prefs ->
+                prefs[lastPortKey] = portToUse.toString()
+            }
+        }
+
+        return portToUse
+    }
+
+    private fun startNSD(server: RouterNanoHTTPD) {
         val serviceInfo = NsdServiceInfo().apply{
             serviceName = nsdServiceName
             serviceType = "_${nsdServiceName.lowercase()}._tcp"
@@ -168,6 +221,16 @@ class RetrieverAndroidImpl internal constructor(
 
         nsdManager.unregisterService(registrationListener)
         nsdManager.stopServiceDiscovery(discoveryListener)
+    }
+
+    companion object {
+
+        /**
+         * The key that is used for the DataStore. This will be used to save the port, so we can use the same port next
+         * time.
+         */
+        const val DEFAULT_SETTINGS_FILENAME = "retriever_settings"
+
     }
 
 }

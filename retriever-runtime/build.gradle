@@ -93,6 +93,8 @@ kotlin {
                 implementation "io.ktor:ktor-client-gson:$version_ktor"
                 implementation "io.ktor:ktor-client-okhttp:$version_ktor"
                 implementation "io.ktor:ktor-client-cio:$version_ktor"
+
+                implementation "androidx.datastore:datastore-preferences:$version_androidx_datastore"
             }
         }
 

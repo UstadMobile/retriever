@@ -18,9 +18,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.ustadmobile.retriever.testapp.databinding.FragmentNodeListBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.ustadmobile.door.DoorDataSourceFactory
@@ -32,6 +32,9 @@ import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.testapp.controller.NodeListController
 import com.ustadmobile.retriever.testapp.view.NodeListView
 import io.github.aakira.napier.Napier
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
@@ -50,9 +53,7 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
 
     private val retriever: Retriever by instance()
 
-    private lateinit var controller: NodeListController
-
-    private lateinit var nodeListRecyclerView: RecyclerView
+    private var controller: NodeListController? = null
 
     private var nodeListLiveData: LiveData<PagedList<NetworkNode>>? = null
 
@@ -66,7 +67,8 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
 
     private val BT_ON_REQUEST_CODE = 87
 
-    private lateinit var binding: FragmentNodeListBinding
+    private var binding: FragmentNodeListBinding? = null
+
     private var fabClicked: Boolean = false
 
     override fun onCreateView(
@@ -78,28 +80,20 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
         val rootView: View
 
         val deviceStartTime = systemTimeInMillis()
-        val allDeviceAddrs = Collections.list(NetworkInterface.getNetworkInterfaces()).filter { !it.isLoopback }.flatMap {
-            Collections.list(it.inetAddresses)
-        }.filterIsInstance<Inet4Address>()
+
         Napier.d("Retriever: Got device list in ${systemTimeInMillis() - deviceStartTime}ms")
 
         binding = FragmentNodeListBinding.inflate(inflater, container, false).also {
             rootView = it.root
             it.listener = this
-            it.localNodeAddr = allDeviceAddrs.joinToString { addr -> "http://${addr.hostAddress}:${retriever.listeningPort()}/" }
+            it.fragmentNodeListRv.layoutManager = LinearLayoutManager(context)
+            nodeListRecyclerAdapter = NodePagedListRecyclerAdapter(this)
+            it.fragmentNodeListRv.adapter = nodeListRecyclerAdapter
         }
-
-
-        nodeListRecyclerView = rootView.findViewById(R.id.fragment_node_list_rv)
-        nodeListRecyclerView.layoutManager = LinearLayoutManager(context)
-
-        nodeListRecyclerAdapter = NodePagedListRecyclerAdapter(this)
-
-        nodeListRecyclerView.adapter = nodeListRecyclerAdapter
 
         controller = NodeListController(
             requireContext(), (retriever as RetrieverAndroidImpl).database, this)
-        controller.onCreate()
+        controller?.onCreate()
 
         val fab : FloatingActionButton = rootView.findViewById(R.id.fragment_node_list_fab_add)
 
@@ -117,6 +111,23 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
         }
 
         return rootView
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            val allDeviceAddrs = withContext(Dispatchers.IO) {
+                Collections.list(NetworkInterface.getNetworkInterfaces()).filter { !it.isLoopback }.flatMap {
+                    Collections.list(it.inetAddresses)
+                }.filterIsInstance<Inet4Address>()
+            }
+
+            val listeningPort = retriever.listeningPort()
+
+            binding?.localNodeAddr = allDeviceAddrs.joinToString { addr -> "http://${addr.hostAddress}:$listeningPort/" }
+        }
     }
 
     private fun showFabItems(view: View, visibility: Int){
@@ -231,6 +242,13 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
         clipboard?.setPrimaryClip(clip)
 
         Toast.makeText(context, "Endpoint copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding?.fragmentNodeListRv?.adapter = null
+        nodeListRecyclerAdapter = null
+        binding = null
     }
 
     override fun onDeleteNode(node: NetworkNode) {

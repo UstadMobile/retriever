@@ -25,7 +25,7 @@ interface Retriever{
 
     fun removeAvailabilityObserver(availabilityObserver: AvailabilityObserver)
 
-    fun listeningPort(): Int
+    suspend fun listeningPort(): Int
 
     /**
      * Stop any HTTP servers, stop availability management monitoring. Does not stop any downloads in progress.

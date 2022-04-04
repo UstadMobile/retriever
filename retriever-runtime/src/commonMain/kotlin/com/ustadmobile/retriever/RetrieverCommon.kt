@@ -1,6 +1,5 @@
 package com.ustadmobile.retriever
 
-import com.soywiz.klock.DateTime
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.DownloadJobItem
@@ -22,6 +21,7 @@ abstract class RetrieverCommon(
     private val availabilityChecker: AvailabilityChecker,
     private val originServerFetcher: OriginServerFetcher,
     private val localPeerFetcher: LocalPeerFetcher,
+    protected val port: Int,
     protected val retrieverCoroutineScope: CoroutineScope = GlobalScope,
 ) : Retriever {
 
@@ -112,5 +112,8 @@ abstract class RetrieverCommon(
 
     companion object {
         internal const val DB_NAME = "retrieverdb"
+
+        internal const val PREFERENCES_KEY_PORT = "port"
+
     }
 }

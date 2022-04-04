@@ -11,7 +11,10 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import java.io.File
 import kotlinx.serialization.json.Json
 import com.ustadmobile.door.ext.withDoorTransactionAsync
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 
 abstract class RetrieverCommonJvm(
     db: RetrieverDatabase,
@@ -19,17 +22,36 @@ abstract class RetrieverCommonJvm(
     availabilityChecker: AvailabilityChecker,
     originServerFetcher: OriginServerFetcher,
     localPeerFetcher: LocalPeerFetcher,
+    port: Int,
     protected val json: Json,
-): RetrieverCommon(db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher) {
+    retrieverCoroutineScope: CoroutineScope,
+): RetrieverCommon(
+    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, retrieverCoroutineScope
+) {
 
-    internal val server = RouterNanoHTTPD(0)
+    private val serverCompletable = CompletableDeferred<RouterNanoHTTPD>()
 
-    init {
-        server.addRoute("/:${AvailabilityResponder.PARAM_FILE_REQUEST_URL}/", AvailabilityResponder::class.java,
-            db, json)
-        server.addRoute("/zipped", ZippedItemsResponder::class.java, db)
-        server.start()
+    @Volatile
+    private var runningServer: RouterNanoHTTPD? = null
+
+    internal open fun start() {
+        retrieverCoroutineScope.launch(Dispatchers.IO) {
+            val chosenPort = choosePort()
+            val nanoHttpdServer = RouterNanoHTTPD(chosenPort)
+            nanoHttpdServer.addRoute("/:${AvailabilityResponder.PARAM_FILE_REQUEST_URL}/", AvailabilityResponder::class.java,
+                db, json)
+            nanoHttpdServer.addRoute("/zipped", ZippedItemsResponder::class.java, db)
+            nanoHttpdServer.start()
+            runningServer = nanoHttpdServer
+            serverCompletable.complete(nanoHttpdServer)
+        }
     }
+
+
+    /**
+     * Use logic on the underlying platform (e.g. settings storage on Android) to determine the port to start on
+     */
+    protected abstract suspend fun choosePort(): Int
 
     override suspend fun addFiles(files: List<LocalFileInfo>) {
         val locallyStoredFiles = files.map {
@@ -64,12 +86,16 @@ abstract class RetrieverCommonJvm(
         }
     }
 
-    override fun listeningPort(): Int {
-        return server.listeningPort
+    override suspend fun listeningPort(): Int {
+        return serverCompletable.await().listeningPort
+    }
+
+    internal suspend fun awaitServer(): RouterNanoHTTPD {
+        return serverCompletable.await()
     }
 
     override fun close() {
         super.close()
-        server.stop()
+        runningServer?.stop()
     }
 }

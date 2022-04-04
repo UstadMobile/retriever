@@ -10,12 +10,16 @@ import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 
 /**
  * Usage : RetrieverBuilder.builder(context, "serviceName").build()
  */
+@Suppress("MemberVisibilityCanBePrivate") // These are part of the API surface
 class RetrieverBuilderAndroid private constructor(
     private val context: Context,
     private val nsdServiceName: String,
@@ -26,6 +30,10 @@ class RetrieverBuilderAndroid private constructor(
 
     var dbName: String = DB_NAME
 
+    var port: Int = 0
+
+    var retrieverCoroutineScope : CoroutineScope= GlobalScope
+
     fun build() : RetrieverCommon {
         val startTime = systemTimeInMillis()
         val db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class, dbName)
@@ -33,8 +41,10 @@ class RetrieverBuilderAndroid private constructor(
             .build()
 
         val retriever = RetrieverAndroidImpl(db, nsdServiceName, context, AvailabilityCheckerHttp(ktorClient),
-            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json)
+            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json, port,
+            retrieverCoroutineScope)
         Napier.d("Retriever: Built retriever in ${systemTimeInMillis() - startTime}ms")
+        retriever.start()
         return retriever
     }
 
