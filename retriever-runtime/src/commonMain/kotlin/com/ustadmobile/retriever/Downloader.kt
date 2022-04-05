@@ -100,6 +100,8 @@ class Downloader(
                     val locallyAvailableBatchesToSend = locallyAvailableBatches.subList(0,
                         min(numProcessorsAvailable, locallyAvailableBatches.size))
 
+                    //For items that cannot be downloaded locally, split them into equally sized batches according to
+                    // the number of processors available.
                     val numFromOriginBatches = min(groupedByNode[0]?.size ?: 0,
                         numProcessorsAvailable - locallyAvailableBatchesToSend.size)
 
