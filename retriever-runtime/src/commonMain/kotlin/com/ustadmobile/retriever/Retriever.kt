@@ -49,6 +49,13 @@ interface Retriever{
 
         const val STATUS_FAILED = 26
 
+        /**
+         * By default nodes will be struck off if they fail a certain
+         * number of times within a given period. This is the default
+         * period (3 minutes)
+         */
+        const val DEFAULT_NODE_FAILURE_STRIKEOFF_PERIOD = (3 * 60 * 1000).toLong()
+
     }
 
 }

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "c45b3e61b6a42422e27652493587d76c",
+    "identityHash": "fcccd35d00fde74d55a81fe753176c30",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -105,7 +105,7 @@
       },
       {
         "tableName": "NetworkNode",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`networkNodeId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `networkNodeEndpointUrl` TEXT, `networkNodeDiscovered` INTEGER NOT NULL, `networkNodeLost` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`networkNodeId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `networkNodeEndpointUrl` TEXT, `networkNodeDiscovered` INTEGER NOT NULL, `networkNodeLost` INTEGER NOT NULL, `lastSuccessTime` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "networkNodeId",
@@ -128,6 +128,12 @@
           {
             "fieldPath": "networkNodeLost",
             "columnName": "networkNodeLost",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSuccessTime",
+            "columnName": "lastSuccessTime",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -539,7 +545,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c45b3e61b6a42422e27652493587d76c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fcccd35d00fde74d55a81fe753176c30')"
     ]
   }
 }

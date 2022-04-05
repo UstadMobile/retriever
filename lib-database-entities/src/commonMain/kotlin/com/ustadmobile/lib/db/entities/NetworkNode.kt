@@ -30,6 +30,12 @@ open class NetworkNode {
 
     var networkNodeLost: Long = 0
 
+    /**
+     * The most recent time that we had a successful response or request of any kind from this node e.g. availability
+     * response, download, or ping (incoming or outgoing)
+     */
+    var lastSuccessTime: Long = 0
+
     constructor(ipAddress: String, endpointUrl: String, discovered: Long){
         networkNodeEndpointUrl = endpointUrl
         networkNodeDiscovered = discovered
