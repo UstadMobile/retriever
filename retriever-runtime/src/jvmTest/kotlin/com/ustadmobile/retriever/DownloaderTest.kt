@@ -399,7 +399,7 @@ class DownloaderTest {
         })
 
         val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
-            mockOriginServerFetcher, mockLocalPeerFetcher, db, maxPeerNodeFailuresAllowed = 3, attemptRetryDelay = 100)
+            mockOriginServerFetcher, mockLocalPeerFetcher, db, strikeOffMaxFailures = 3, attemptRetryDelay = 100)
 
         runBlocking {
             withTimeout(10000) {

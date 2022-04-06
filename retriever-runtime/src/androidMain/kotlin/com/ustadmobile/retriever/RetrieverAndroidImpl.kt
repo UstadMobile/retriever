@@ -143,7 +143,7 @@ class RetrieverAndroidImpl internal constructor(
             Napier.d("RetrieverAndroidImpl: Lost Peer resolved: $serviceInfo.")
 
             retrieverCoroutineScope.launch {
-                retriever.updateNetworkNodeLost(serviceInfo.httpEndpointUrl())
+                retriever.handleNetworkNodeLost(serviceInfo.httpEndpointUrl())
             }
         }
     }

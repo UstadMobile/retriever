@@ -100,4 +100,25 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     """)
     abstract suspend fun updateLastSuccessTime(networkNodeId: Int, lastSuccessTime: Long)
 
+    @Query("""
+        UPDATE NetworkNode
+           SET networkNodeLost = :lostTime
+         WHERE networkNodeId = :networkNodeId  
+    """)
+    abstract suspend fun updateNetworkNodeLostTime(networkNodeId: Int, lostTime: Long)
+
+    @Query("""
+        SELECT NetworkNode.networkNodeId
+          FROM NetworkNode
+         WHERE networkNodeLost > lastSuccessTime
+           AND (SELECT COUNT(*)
+                  FROM NetworkNodeFailure
+                 WHERE NetworkNodeFailure.failNetworkNodeId = NetworkNode.networkNodeId
+                   AND NetworkNodeFailure.failTime >= :countFailuresSince) >= :maxFailuresAllowed   
+    """)
+    abstract suspend fun findNetworkNodesToDelete(
+        countFailuresSince: Long,
+        maxFailuresAllowed: Int,
+    ): List<Int>
+
 }

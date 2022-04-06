@@ -2,8 +2,10 @@ package com.ustadmobile.retriever
 
 import com.soywiz.klock.DateTime
 import com.ustadmobile.door.DatabaseBuilder
+import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.lib.db.entities.NetworkNodeFailure
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -190,9 +192,24 @@ class AvailabilityManagerTest {
         verify(onAvailabilityChanged, timeout(2000).times(defaultNetworkNodeList.size + 1))
             .onAvailabilityChanged(any())
 
-        availabilityManager.handleNodeLost("http://100.1.1.1:8081/")
+        //Record failures so the node is considered struck off
+        runBlocking {
+            db.networkNodeFailureDao.insertListAsync((0..3).map {
+                NetworkNodeFailure().apply {
+                    failTime = systemTimeInMillis()
+                    failNetworkNodeId = defaultNetworkNodeList.first().networkNodeId
+                }
+            })
+        }
+
+
+        runBlocking {
+            availabilityManager.handleNodeStruckOff(db, defaultNetworkNodeList.first().networkNodeId)
+        }
 
         argumentCaptor<AvailabilityEvent> {
+            //Will be called once immediately when the osbserver is added, once for each network node as the availability
+            // check comes in, and then once more when the a node is recored as struck off.
             verify(onAvailabilityChanged, timeout(5000).times(defaultNetworkNodeList.size + 2))
                 .onAvailabilityChanged(capture())
             Assert.assertFalse("First file is not available after first node is lost",

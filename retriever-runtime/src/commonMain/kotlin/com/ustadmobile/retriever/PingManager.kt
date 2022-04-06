@@ -31,8 +31,8 @@ import kotlin.math.min
  *    hit maxPeerNodeFailuresAllowed, then another ping attempt will be made after pingRetryInterval (default 5 seconds)
  *    to check if the node is really gone.
  *
- *  - If a node has hit maxPeerNodeFailuresAllowed AND has been recorded as lost by network service discovery, then it
- *    will be deleted.
+ *  - If a node has hit maxPeerNodeFailuresAllowed AND has been recorded as lost by network service discovery more
+ *    recently than any success has been recorded, then it will be deleted.
  *
  * @param database the RetrieverDatabase singleton
  * @param pingInterval the default interval for pinging other nodes (every 30 seconds by default)
@@ -47,16 +47,11 @@ class PingManager(
     private val maxPeerNodeFailuresAllowed: Int,
     private val peerNodeFailureTimePeriod: Long,
     private val pinger: Pinger,
+    private val localListeningPort: Int,
     private val retrieverCoroutineScope: CoroutineScope,
     private val numProcessors: Int = DEFAULT_NUM_PROCESSORS,
     private val updateCommitInterval: Long = 500,
 ) {
-
-    fun interface Pinger {
-
-        suspend fun ping(endpoint: String)
-
-    }
 
     private val pingProducer: ReceiveChannel<NetworkNodeAndLastFailInfo>
 
@@ -169,7 +164,9 @@ class PingManager(
     ) = launch {
         for(item in channel) {
             try {
-                pinger.ping(item.networkNodeEndpointUrl ?: throw IllegalArgumentException("Network node endpoint is null!"))
+                val remoteEndpoint =  item.networkNodeEndpointUrl
+                    ?: throw IllegalArgumentException("Network node endpoint for node #${item.networkNodeId} is null!")
+                pinger.ping(remoteEndpoint, localListeningPort)
                 nodeUpdateMutex.withLock {
                     item.lastSuccessTime = systemTimeInMillis()
                     networkNodeUpdates[item.networkNodeId] = item

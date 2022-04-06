@@ -33,8 +33,8 @@ class RetrieverBuilder(
     var strikeOffTimeWindow: Long = (3 * 60 * 1000)
 
     /**
-     * Nodes will be struck off if they fail more than a given number of times within a given time window. The default
-     * number of failures is 3.
+     * Nodes will be struck off if they fail a given number of times within a given time window. By default a node that
+     * has failed 3 times within the strikeOffTimeWindow will be struck off.
      */
     var strikeOffMaxFailures: Int = 3
 

@@ -27,6 +27,10 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
                    FROM AvailabilityResponse
                   WHERE AvailabilityResponse.availabilityOriginUrl = AvailabilityObserverItem.aoiOriginalUrl
                     AND CAST(AvailabilityResponse.availabilityAvailable AS INTEGER) = 1 
+                    AND :maxPeerNodeFailuresAllowed > 
+                         COALESCE((SELECT COUNT(*)
+                                     FROM NetworkNodeFailure
+                                    WHERE NetworkNodeFailure.failNetworkNodeId = AvailabilityResponse.availabilityNetworkNode), 0)
                   LIMIT 1
                 ) AS available,
                 EXISTS
@@ -76,7 +80,7 @@ abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
          WHERE AvailabilityResponse.availabilityNetworkNode = :networkNodeId
            AND CAST(AvailabilityResponse.availabilityAvailable AS INTEGER) = 1
     """)
-    abstract suspend fun findListenersAffectedByNodeLost(networkNodeId: Int): List<Int>
+    abstract suspend fun findListenersAffectedByNodeStruckOff(networkNodeId: Int): List<Int>
 
 
     @Query("""

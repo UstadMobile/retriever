@@ -227,23 +227,16 @@ class AvailabilityManager(
         checkQueueSignalChannel.trySend(false)
     }
 
-    internal fun handleNodeLost(endpointUrl: String) {
-        GlobalScope.launch {
-            database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                val nodeLostId = txDb.networkNodeDao.findNetworkNodeIdByEndpointUrl(endpointUrl)
-                val affectedListeners = txDb.availabilityResponseDao.findListenersAffectedByNodeLost(nodeLostId)
-
-                txDb.availabilityResponseDao.deleteByNetworkNode(nodeLostId.toLong())
-                txDb.networkNodeDao.deleteByNetworkNodeId(nodeLostId)
-                txDb.networkNodeFailureDao.deleteByNetworkNodeId(nodeLostId)
-
-                affectedListeners.forEach {
-                    val updatedResponses = txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(
-                        0, it, strikeOffMaxFailures,
-                        systemTimeInMillis() - strikeOffTimeWindow)
-                    fireAvailabilityEvent(updatedResponses, it)
-                }
-            }
+    /**
+     * Handle when a NetworkNode is struck off for having too many recent failures.
+     */
+    internal suspend fun handleNodeStruckOff(transactionDb: RetrieverDatabase, nodeLostId: Int) {
+        val affectedListeners = transactionDb.availabilityResponseDao.findListenersAffectedByNodeStruckOff(nodeLostId)
+        affectedListeners.forEach { listenerId ->
+            val updatedResponses = transactionDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(
+                0, listenerId, strikeOffMaxFailures,
+                systemTimeInMillis() - strikeOffTimeWindow)
+            fireAvailabilityEvent(updatedResponses, listenerId)
         }
     }
 

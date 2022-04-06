@@ -11,6 +11,7 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import java.io.File
 import kotlinx.serialization.json.Json
 import com.ustadmobile.door.ext.withDoorTransactionAsync
+import com.ustadmobile.retriever.responder.PingResponder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CompletableDeferred
@@ -45,6 +46,7 @@ abstract class RetrieverCommonJvm(
                 db, json)
             nanoHttpdServer.addRoute("/zipped", ZippedItemsResponder::class.java, db)
             nanoHttpdServer.start()
+            nanoHttpdServer.addRoute("/ping", PingResponder::class.java, this@RetrieverCommonJvm)
             runningServer = nanoHttpdServer
             serverCompletable.complete(nanoHttpdServer)
         }
