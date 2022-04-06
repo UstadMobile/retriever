@@ -23,10 +23,13 @@ abstract class RetrieverCommonJvm(
     originServerFetcher: OriginServerFetcher,
     localPeerFetcher: LocalPeerFetcher,
     port: Int,
+    strikeOffTimeWindow: Long,
+    strikeOffMaxFailures: Int,
     protected val json: Json,
     retrieverCoroutineScope: CoroutineScope,
 ): RetrieverCommon(
-    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, retrieverCoroutineScope
+    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, strikeOffTimeWindow,
+    strikeOffMaxFailures, retrieverCoroutineScope
 ) {
 
     private val serverCompletable = CompletableDeferred<RouterNanoHTTPD>()

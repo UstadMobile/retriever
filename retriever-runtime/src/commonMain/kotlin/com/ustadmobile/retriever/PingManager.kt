@@ -7,6 +7,7 @@ import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.NetworkNodeAndLastFailInfo
 import com.ustadmobile.lib.db.entities.NetworkNodeFailure
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import io.github.aakira.napier.Napier
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -32,12 +33,13 @@ import kotlin.math.min
  *
  *  - If a node has hit maxPeerNodeFailuresAllowed AND has been recorded as lost by network service discovery, then it
  *    will be deleted.
+ *
  * @param database the RetrieverDatabase singleton
  * @param pingInterval the default interval for pinging other nodes (every 30 seconds by default)
  * @param pingRetryInterval the interval to ping nodes after it has failed once, but before it has been "struck off"
  *
- *
  */
+@Suppress("SpellCheckingInspection")
 class PingManager(
     private val database: RetrieverDatabase,
     private val pingInterval: Long,
@@ -50,9 +52,25 @@ class PingManager(
     private val updateCommitInterval: Long = 500,
 ) {
 
+    fun interface Pinger {
+
+        suspend fun ping(endpoint: String)
+
+    }
+
     private val pingProducer: ReceiveChannel<NetworkNodeAndLastFailInfo>
 
     private val commitUpdatesJob: Job
+
+    private val nodeUpdateMutex = Mutex()
+
+    private val networkNodeUpdates = concurrentSafeMapOf<Int, NetworkNodeAndLastFailInfo>()
+
+    private val networkNodeFailures = concurrentSafeListOf<NetworkNodeFailure>()
+
+    private val checkQueueSignal = Channel<Boolean>(Channel.UNLIMITED)
+
+    private val nodesBeingPinged = concurrentSafeListOf<NetworkNodeAndLastFailInfo>()
 
     private suspend fun RetrieverDatabase.commitUpdates() {
         networkNodeUpdates.forEach {
@@ -89,22 +107,6 @@ class PingManager(
         }
     }
 
-    private val networkNodeUpdates = concurrentSafeMapOf<Int, NetworkNodeAndLastFailInfo>()
-
-    private val networkNodeFailures = concurrentSafeListOf<NetworkNodeFailure>()
-
-    fun interface Pinger {
-
-        suspend fun ping(endpoint: String)
-
-    }
-
-    private val checkQueueSignal = Channel<Boolean>(Channel.UNLIMITED)
-
-    private val nodesBeingPinged = concurrentSafeListOf<NetworkNodeAndLastFailInfo>()
-
-    private val nodeUpdateMutex = Mutex()
-
     private fun NetworkNodeAndLastFailInfo.lastHeardFromTime() : Long {
         return max(lastFailTime, lastSuccessTime)
     }
@@ -116,9 +118,6 @@ class PingManager(
             lastHeardFromTime() + pingInterval
         }
     }
-
-
-
 
     private fun CoroutineScope.producePingJobs() = produce<NetworkNodeAndLastFailInfo> {
         var timeToWait = pingInterval
@@ -137,6 +136,8 @@ class PingManager(
                 }
             }
 
+            Napier.d("Found ${nodesAndFailInfo.size} nodes")
+
             val nodesToPing = nodesAndFailInfo.filter {
                 //Retry pings
                 (it.lastFailTime > it.lastSuccessTime && it.failCount < maxPeerNodeFailuresAllowed
@@ -144,6 +145,9 @@ class PingManager(
                 //normal pings
                 (it.lastHeardFromTime() < (timeNow - pingInterval))
             }
+
+            Napier.d("Found ${nodesToPing.size} nodes to ping", tag = Retriever.LOGTAG)
+
             val numProcessorsAvailable = numProcessors - inProcessNodeIds.size
             val nodePingsToSend = nodesToPing.subList(0, min(nodesToPing.size, numProcessorsAvailable))
 
@@ -153,8 +157,9 @@ class PingManager(
             }
 
             val nextPingDue: Long = nodesAndFailInfo.minByOrNull { it.nextPingDueTime() }?.nextPingDueTime()
-                ?: pingInterval
-            timeToWait = max(0L, timeNow - nextPingDue)
+                ?: (timeNow + pingInterval)
+            timeToWait = max(0L, nextPingDue - timeNow)
+            Napier.d("Time to wait for next pings: $timeToWait ms")
         }while(isActive)
     }
 
@@ -171,6 +176,7 @@ class PingManager(
                 }
             }catch(e: Exception) {
                 nodeUpdateMutex.withLock {
+                    Napier.w("Pinger: Failed for node ${item.networkNodeEndpointUrl} ")
                     networkNodeFailures += NetworkNodeFailure().apply {
                         failTime = systemTimeInMillis()
                         failNetworkNodeId = item.networkNodeId
@@ -179,6 +185,7 @@ class PingManager(
 
             }finally {
                 nodesBeingPinged -= item
+                checkQueueSignal.send(true)
             }
         }
     }

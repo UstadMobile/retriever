@@ -26,13 +26,26 @@ class RetrieverBuilder(
 
     var retrieverCoroutineScope: CoroutineScope = GlobalScope
 
+    /**
+     * Nodes will be struck off if they fail more than a given number of times within a given time window. The default
+     * time window is 3 minutes
+     */
+    var strikeOffTimeWindow: Long = (3 * 60 * 1000)
+
+    /**
+     * Nodes will be struck off if they fail more than a given number of times within a given time window. The default
+     * number of failures is 3.
+     */
+    var strikeOffMaxFailures: Int = 3
+
     fun build(): Retriever{
         val db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, dbName)
             .addCallback(DELETE_NODE_INFO_CALLBACK)
             .build()
 
         val retriever = RetrieverJvm(db, nsdServiceName, AvailabilityCheckerHttp(ktorClient),
-            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json, port, retrieverCoroutineScope)
+            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json, port, strikeOffTimeWindow,
+            strikeOffMaxFailures, retrieverCoroutineScope)
         retriever.start()
         return retriever
     }

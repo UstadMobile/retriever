@@ -93,7 +93,6 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
         countFailuresSince: Long,
     ): List<NetworkNodeAndLastFailInfo>
 
-
     @Query("""
         UPDATE NetworkNode
            SET lastSuccessTime = :lastSuccessTime

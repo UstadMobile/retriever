@@ -18,9 +18,12 @@ class RetrieverJvm(
     localPeerFetcher: LocalPeerFetcher,
     json: Json,
     port: Int,
+    strikeOffTimeWindow: Long,
+    strikeOffMaxFailures: Int,
     retrieverCoroutineScope: CoroutineScope,
 ) : RetrieverCommonJvm(
-    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, json, retrieverCoroutineScope
+    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, strikeOffTimeWindow,
+    strikeOffMaxFailures, json, retrieverCoroutineScope
 ) {
 
     override suspend fun choosePort(): Int {

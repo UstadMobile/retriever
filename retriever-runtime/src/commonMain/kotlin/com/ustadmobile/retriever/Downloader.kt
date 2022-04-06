@@ -36,9 +36,9 @@ import kotlinx.coroutines.sync.withLock
  * fun produceItems
  *   batch requests together, put them on a channel, continue until all items are finished
  *
- * @param maxPeerNodeFailuresAllowed the maximum number of failures to allow for a peer node. If this is exceeded, we
+ * @param strikeOffMaxFailures the maximum number of failures to allow for a peer node. If this is exceeded, we
  *        won't download from this peer
- * @param peerNodeFailureTimeThreshold the duration during which failures will be counted.
+ * @param strikeOffTimeWindow the duration during which failures will be counted.
  */
 class Downloader(
     private val downloadBatchId: Long,
@@ -50,8 +50,8 @@ class Downloader(
     private val maxConcurrent: Int = 8,
     private val maxAttempts: Int = 8,
     private val attemptRetryDelay: Int = 1000,
-    private val maxPeerNodeFailuresAllowed: Int = 3,
-    private val peerNodeFailureTimeThreshold: Long = (1000 * 60 * 3),
+    private val strikeOffMaxFailures: Int = 3,
+    private val strikeOffTimeWindow: Long = (1000 * 60 * 3),
     private val availabilityWaitForPeersTimeout: Long = 1000, //by default wait for up to one second to find local peer info
 ) {
 
@@ -90,7 +90,7 @@ class Downloader(
                 val numProcessorsAvailable = maxConcurrent - activeBatches.size
                 val batchesToSend = updateDownloadJobItemTransaction { txDb ->
                     val queueItems = txDb.downloadJobItemDao.findNextItemsToDownload(downloadBatchId,
-                        maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimeThreshold)
+                        strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow)
                     //turn these into batches
                     val groupedByNode = queueItems.groupBy { it.networkNodeId }.toMutableMap()
                     val locallyAvailableBatches = groupedByNode.entries.filter { it.key != 0 }

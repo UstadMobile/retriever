@@ -17,8 +17,8 @@ import kotlinx.coroutines.channels.produce
 class AvailabilityManager(
     val database: RetrieverDatabase,
     private val availabilityChecker: AvailabilityChecker,
-    private val maxPeerNodeFailuresAllowed: Int = 3,
-    private val peerNodeFailureTimePeriod: Long = (1000 * 60 * 3),
+    private val strikeOffMaxFailures: Int = 3,
+    private val strikeOffTimeWindow: Long = (1000 * 60 * 3),
     private val retryDelay: Long = 1000,
     coroutineScope: CoroutineScope = GlobalScope,
 ) {
@@ -74,7 +74,7 @@ class AvailabilityManager(
                 )
 
                 txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(0, listenerUid,
-                    maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod)
+                    strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow)
             }
             checkQueueSignalChannel.trySend(false)
             fireAvailabilityEvent(initialInfo, 0)
@@ -114,16 +114,16 @@ class AvailabilityManager(
                  */
                 if(hadFailure) {
                     val listenerIdsAffectedByFailure = txDb.availabilityObserverItemDao
-                        .findObserverIdsAffectedByNodeFailure(maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod)
+                        .findObserverIdsAffectedByNodeFailure(strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow)
                     listenerIdsAffectedByFailure.forEach { listenerId ->
                         availabilityUpdatesToFire[listenerId] = txDb.availabilityResponseDao
                             .findAllListenersAndAvailabilityByTime(0, listenerId,
-                                maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod)
+                                strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow)
                     }
                 }
 
                 txDb.availabilityObserverItemDao.findPendingItems(
-                    maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod
+                    strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow
                 ).filter {
                     it.networkNode.networkNodeEndpointUrl !in inProgressEndpoints
                 }
@@ -180,7 +180,7 @@ class AvailabilityManager(
                 val affectedResult = database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                     txDb.availabilityResponseDao.insertList(allResponses)
                     txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime, 0,
-                        maxPeerNodeFailuresAllowed, systemTimeInMillis() - peerNodeFailureTimePeriod)
+                        strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow)
                 }
 
                 fireAvailabilityEvent(affectedResult, item.networkNode.networkNodeId)
@@ -239,8 +239,8 @@ class AvailabilityManager(
 
                 affectedListeners.forEach {
                     val updatedResponses = txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(
-                        0, it, maxPeerNodeFailuresAllowed,
-                        systemTimeInMillis() - peerNodeFailureTimePeriod)
+                        0, it, strikeOffMaxFailures,
+                        systemTimeInMillis() - strikeOffTimeWindow)
                     fireAvailabilityEvent(updatedResponses, it)
                 }
             }

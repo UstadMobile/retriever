@@ -34,9 +34,12 @@ class RetrieverAndroidImpl internal constructor(
     localPeerFetcher: LocalPeerFetcher,
     json: Json,
     port: Int,
+    strikeOffTimeWindow: Long,
+    strikeOffMaxFailures: Int,
     retrieverCoroutineScope: CoroutineScope,
 ): RetrieverCommonJvm(
-    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, json, retrieverCoroutineScope,
+    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, strikeOffTimeWindow,
+    strikeOffMaxFailures, json, retrieverCoroutineScope,
 ) {
 
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")

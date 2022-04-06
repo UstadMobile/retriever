@@ -34,6 +34,18 @@ class RetrieverBuilderAndroid private constructor(
 
     var retrieverCoroutineScope : CoroutineScope= GlobalScope
 
+    /**
+     * Nodes will be struck off if they fail more than a given number of times within a given time window. The default
+     * time window is 3 minutes
+     */
+    var strikeOffTimeWindow: Long = (3 * 60 * 1000)
+
+    /**
+     * Nodes will be struck off if they fail more than a given number of times within a given time window. The default
+     * number of failures is 3.
+     */
+    var strikeOffMaxFailures: Int = 3
+
     fun build() : RetrieverCommon {
         val startTime = systemTimeInMillis()
         val db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class, dbName)
@@ -42,7 +54,7 @@ class RetrieverBuilderAndroid private constructor(
 
         val retriever = RetrieverAndroidImpl(db, nsdServiceName, context, AvailabilityCheckerHttp(ktorClient),
             OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json, port,
-            retrieverCoroutineScope)
+            strikeOffTimeWindow, strikeOffMaxFailures, retrieverCoroutineScope)
         Napier.d("Retriever: Built retriever in ${systemTimeInMillis() - startTime}ms")
         retriever.start()
         return retriever

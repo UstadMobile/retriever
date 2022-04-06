@@ -30,4 +30,21 @@ abstract class NetworkNodeFailureDao {
     """)
     abstract suspend fun deleteByNetworkNodeId(networkNodeId: Int)
 
+    @Query("""
+        SELECT NetworkNodeFailure.*
+          FROM NetworkNodeFailure
+         WHERE NetworkNodeFailure.failNetworkNodeId = :networkNodeId 
+    """)
+    abstract suspend fun findByNetworkNodeId(networkNodeId: Int) : List<NetworkNodeFailure>
+
+    //Get the failure count and last fail time.
+    @Query("""
+        SELECT COUNT(*) 
+          FROM NetworkNodeFailure
+         WHERE failNetworkNodeId = :networkNodeId 
+           AND failTime > :countFailuresSince
+    """)
+    abstract suspend fun failureCountForNode(networkNodeId: Int, countFailuresSince: Long): Int
+
+
 }
