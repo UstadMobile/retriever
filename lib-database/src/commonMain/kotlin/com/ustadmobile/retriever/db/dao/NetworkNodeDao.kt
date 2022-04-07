@@ -121,4 +121,29 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
         maxFailuresAllowed: Int,
     ): List<Int>
 
+
+    @Query("""
+        UPDATE NetworkNode
+           SET networkNodeStatus = ${NetworkNode.STATUS_STRUCK_OFF}
+         WHERE networkNodeId IN 
+               (SELECT DISTINCT failNetworkNodeId
+                  FROM NetworkNodeFailure
+                 WHERE failTime >= :checkForNodesThatFailedSince)
+           AND networkNodeStatus != ${NetworkNode.STATUS_STRUCK_OFF}      
+           AND COALESCE(
+               (SELECT COUNT(*) 
+                  FROM NetworkNodeFailure
+                 WHERE failNetworkNodeId = NetworkNode.networkNodeId
+                   AND failTime >= :countFailuresSince), 0) >= :maxFailuresAllowed 
+    """)
+    /**
+     * Update the status on nodes that need to be struck off for having failed too many times recently.
+     */
+    abstract suspend fun strikeOffNodes(
+        countFailuresSince: Long,
+        maxFailuresAllowed: Int,
+        checkForNodesThatFailedSince: Long,
+    )
+
+
 }

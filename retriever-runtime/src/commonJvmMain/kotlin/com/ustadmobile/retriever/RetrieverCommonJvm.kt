@@ -38,7 +38,8 @@ abstract class RetrieverCommonJvm(
     @Volatile
     private var runningServer: RouterNanoHTTPD? = null
 
-    internal open fun start() {
+    override fun start() {
+        super.start()
         retrieverCoroutineScope.launch(Dispatchers.IO) {
             val chosenPort = choosePort()
             val nanoHttpdServer = RouterNanoHTTPD(chosenPort)

@@ -6,6 +6,7 @@ import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.*
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.ext.receiveThenTryReceiveAllAvailable
 import io.github.aakira.napier.Napier
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
@@ -20,7 +21,8 @@ class AvailabilityManager(
     private val strikeOffMaxFailures: Int = 3,
     private val strikeOffTimeWindow: Long = (1000 * 60 * 3),
     private val retryDelay: Long = 1000,
-    coroutineScope: CoroutineScope = GlobalScope,
+    private val nodeHandler: RetrieverNodeHandler,
+    private val retrieverCoroutineScope: CoroutineScope = GlobalScope,
 ) {
 
     private val numProcessors: Int = DEFAULT_NUM_PROCESSORS
@@ -29,11 +31,10 @@ class AvailabilityManager(
      * Sending anything on this channel will result in one queue check. If there is an available
      * processor, one new item will be started.
      *
-     * The channel receives a boolean. A value of true indicates that a previous check failed,
-     * and we need to run a check if there are any observers where there are no longer cheks
-     * pending due to the failure.
+     * The channel receives an integer. A non-value integer value indicates that the given networknodeid has been struck
+     * off, and we therefor need to check for any observers that have been affected
      */
-    private val checkQueueSignalChannel = Channel<Boolean>(Channel.UNLIMITED)
+    private val checkQueueSignalChannel = Channel<Int>(Channel.UNLIMITED)
 
     @ExperimentalCoroutinesApi
     private val jobItemProducer : ReceiveChannel<AvailabilityCheckJob>
@@ -47,13 +48,13 @@ class AvailabilityManager(
     private val checkJobsInProgress = concurrentSafeListOf<AvailabilityCheckJob>()
 
     init {
-        jobItemProducer = coroutineScope.produceJobs()
-        coroutineScope.launch {
+        jobItemProducer = retrieverCoroutineScope.produceJobs()
+        retrieverCoroutineScope.launch {
             repeat(numProcessors) {
                 launchProcessor(it, jobItemProducer)
             }
 
-            checkQueueSignalChannel.send(false)
+            checkQueueSignalChannel.send(0)
         }
     }
 
@@ -65,7 +66,7 @@ class AvailabilityManager(
         val listenerUid = availabilityObserverAtomicId.incrementAndGet()
         availabilityObservers[listenerUid] = availabilityObserver
 
-        GlobalScope.launch {
+        retrieverCoroutineScope.launch {
             val initialInfo = database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                 txDb.availabilityObserverItemDao.insertList(
                     availabilityObserver.originUrls.map {
@@ -76,7 +77,7 @@ class AvailabilityManager(
                 txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(0, listenerUid,
                     strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow)
             }
-            checkQueueSignalChannel.trySend(false)
+            checkQueueSignalChannel.trySend(0)
             fireAvailabilityEvent(initialInfo, 0)
         }
 
@@ -98,8 +99,10 @@ class AvailabilityManager(
     @ExperimentalCoroutinesApi
     private fun CoroutineScope.produceJobs() = produce<AvailabilityCheckJob> {
         do{
-            val hadFailure = checkQueueSignalChannel.receive()
-            println("hadFailure? : $hadFailure")
+            val struckOffNodeIds = checkQueueSignalChannel.receiveThenTryReceiveAllAvailable().filter { it != 0 }
+
+            Napier.d("AvailabilityManager: produceJobs: struck off ids = : $struckOffNodeIds",
+                tag = Retriever.LOGTAG)
             val availabilityUpdatesToFire = mutableMapOf<Int, List<FileAvailabilityWithListener>>()
 
             val inProgressEndpoints = checkJobsInProgress.mapNotNull { it.networkNode.networkNodeEndpointUrl }
@@ -112,9 +115,9 @@ class AvailabilityManager(
                  * can now be considered final. This is important to make sure that we deliver an AvailabilityEvent
                  * where checksPending = false (e.g. so a Downloader knows there is nothing left to wait for etc).
                  */
-                if(hadFailure) {
+                if(struckOffNodeIds.isNotEmpty()) {
                     val listenerIdsAffectedByFailure = txDb.availabilityObserverItemDao
-                        .findObserverIdsAffectedByNodeFailure(strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow)
+                        .findObserverIdsAffectedByNodeFailure(struckOffNodeIds)
                     listenerIdsAffectedByFailure.forEach { listenerId ->
                         availabilityUpdatesToFire[listenerId] = txDb.availabilityResponseDao
                             .findAllListenersAndAvailabilityByTime(0, listenerId,
@@ -122,9 +125,7 @@ class AvailabilityManager(
                     }
                 }
 
-                txDb.availabilityObserverItemDao.findPendingItems(
-                    strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow
-                ).filter {
+                txDb.availabilityObserverItemDao.findPendingItemsAsync().filter {
                     it.networkNode.networkNodeEndpointUrl !in inProgressEndpoints
                 }
             }
@@ -161,7 +162,6 @@ class AvailabilityManager(
         //Runs checkAvailability (that checks availability and populates AvailabilityResponse)
         // for every node id
         for(item in channel){
-            var itemFailed = false
             try {
                 Napier.d("AvailabilityManager $id: item networkid: " +  item.networkNode.networkNodeId)
 
@@ -185,16 +185,17 @@ class AvailabilityManager(
 
                 fireAvailabilityEvent(affectedResult, item.networkNode.networkNodeId)
             }catch(e: Exception) {
-                //record a failure for this node
-                database.networkNodeFailureDao.insert(NetworkNodeFailure().apply {
-                    failNetworkNodeId = item.networkNode.networkNodeId
-                    failTime = systemTimeInMillis()
-                })
-                itemFailed = true
+                database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                    nodeHandler.handleNetworkNodeFailures(txDb, listOf(NetworkNodeFailure().apply {
+                        failTime = systemTimeInMillis()
+                        failNetworkNodeId = item.networkNode.networkNodeId
+                    }))
+                }
+
                 delay(retryDelay)
             }finally {
                 checkJobsInProgress -= item
-                checkQueueSignalChannel.send(itemFailed)
+                checkQueueSignalChannel.send(0)
             }
         }
     }
@@ -224,19 +225,15 @@ class AvailabilityManager(
 
 
     internal fun checkQueue() {
-        checkQueueSignalChannel.trySend(false)
+        checkQueueSignalChannel.trySend(0)
     }
 
     /**
      * Handle when a NetworkNode is struck off for having too many recent failures.
      */
-    internal suspend fun handleNodeStruckOff(transactionDb: RetrieverDatabase, nodeLostId: Int) {
-        val affectedListeners = transactionDb.availabilityResponseDao.findListenersAffectedByNodeStruckOff(nodeLostId)
-        affectedListeners.forEach { listenerId ->
-            val updatedResponses = transactionDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(
-                0, listenerId, strikeOffMaxFailures,
-                systemTimeInMillis() - strikeOffTimeWindow)
-            fireAvailabilityEvent(updatedResponses, listenerId)
+    internal suspend fun handleNodesStruckOff(struckOffNodeIds: List<Int>) {
+        struckOffNodeIds.forEach {
+            checkQueueSignalChannel.send(it)
         }
     }
 

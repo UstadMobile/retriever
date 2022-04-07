@@ -36,18 +36,27 @@ open class NetworkNode {
      */
     var lastSuccessTime: Long = 0
 
-    constructor(ipAddress: String, endpointUrl: String, discovered: Long){
+    var networkNodeStatus: Int = STATUS_OK
+
+    constructor(endpointUrl: String, discovered: Long){
         networkNodeEndpointUrl = endpointUrl
         networkNodeDiscovered = discovered
     }
 
-    constructor(ipAddress: String, endpointUrl: String, discovered: Long, id: Int){
+    constructor(endpointUrl: String, discovered: Long, id: Int){
         networkNodeEndpointUrl = endpointUrl
         networkNodeDiscovered = discovered
         networkNodeId = id
     }
     constructor()
 
+    companion object {
+
+        const val STATUS_OK = 1
+
+        const val STATUS_STRUCK_OFF = 2
+
+    }
 
 
 

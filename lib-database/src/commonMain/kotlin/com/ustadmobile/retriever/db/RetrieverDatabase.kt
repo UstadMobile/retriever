@@ -16,6 +16,7 @@ import com.ustadmobile.retriever.db.dao.*
     LocallyStoredFile::class,
     DownloadJobItem::class,
     NetworkNodeFailure::class,
+    NetworkNodeStatusChange::class,
 
     SyncNode::class,
     //Door Helper entities
@@ -42,6 +43,8 @@ abstract class RetrieverDatabase : DoorDatabase() {
     abstract val downloadJobItemDao: DownloadJobItemDao
 
     abstract val networkNodeFailureDao: NetworkNodeFailureDao
+
+    abstract val networkNodeStatusChangeDao: NetworkNodeStatusChangeDao
 
     //TODO: DO NOT REMOVE THIS COMMENT!
     //#DOORDB_SYNCDAO

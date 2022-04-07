@@ -7,6 +7,8 @@ import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.lib.db.entities.NetworkNodeFailure
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
+import com.ustadmobile.retriever.util.mockRecordingFailuresAndNodeStrikeOff
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
@@ -41,11 +43,11 @@ class AvailabilityManagerTest {
     )
 
     private val defaultNetworkNodeList: List<NetworkNode> = listOf(
-        NetworkNode("100.1.1.1", "http://100.1.1.1:8081/", DateTime.nowUnixLong(), 1),
-        NetworkNode("100.1.1.2", "http://100.1.1.2:8081/", DateTime.nowUnixLong(), 2),
-        NetworkNode("100.1.1.3", "http://100.1.1.3:8081/", DateTime.nowUnixLong(), 3),
-        NetworkNode("100.1.1.4", "http://100.1.1.4:8081/", DateTime.nowUnixLong(), 4),
-        NetworkNode("100.1.1.5", "http://100.1.1.5:8081/", DateTime.nowUnixLong(), 5)
+        NetworkNode("http://100.1.1.1:8081/", DateTime.nowUnixLong(), 1),
+        NetworkNode("http://100.1.1.2:8081/", DateTime.nowUnixLong(), 2),
+        NetworkNode("http://100.1.1.3:8081/", DateTime.nowUnixLong(), 3),
+        NetworkNode("http://100.1.1.4:8081/", DateTime.nowUnixLong(), 4),
+        NetworkNode("http://100.1.1.5:8081/", DateTime.nowUnixLong(), 5)
     )
 
     /**
@@ -60,11 +62,14 @@ class AvailabilityManagerTest {
         listOf(FileAvailableResponse("http://path.to/file${nodeIndex + 1}", "ab", 42))
     }
 
+    private lateinit var mockNodeHandler: RetrieverNodeHandler
+
     @Before
     fun setup(){
         context = Any()
 
         db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb")
+            .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build()
         db.clearAllTables()
 
@@ -88,9 +93,11 @@ class AvailabilityManagerTest {
         }
 
         onAvailabilityChanged = mock { }
+        mockNodeHandler = mock { }
         availabilityObserver = AvailabilityObserver(testOriginUrls, onAvailabilityChanged)
 
-        availabilityManager = AvailabilityManager(db, availabilityChecker, retryDelay = 200)
+        availabilityManager = AvailabilityManager(db, availabilityChecker, retryDelay = 200,
+            nodeHandler = mockNodeHandler)
     }
 
     fun tearDown() {
@@ -176,12 +183,8 @@ class AvailabilityManagerTest {
     }
 
 
-    fun givenActiveAvailabilityListener_whenNewNodeDiscovered_thenShouldSendRequestAndUpdate(){
-
-    }
-
     @Test
-    fun givenActiveAvailabilityListener_whenNodeLost_thenShouldUpdateAvailability() {
+    fun givenActiveAvailabilityListener_whenNodeStruckOff_thenShouldUpdateAvailability() {
         availabilityObserver = AvailabilityObserver(testOriginUrls, onAvailabilityChanged,
             AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES)
 
@@ -193,18 +196,20 @@ class AvailabilityManagerTest {
             .onAvailabilityChanged(any())
 
         //Record failures so the node is considered struck off
+        val failStartTime = systemTimeInMillis()
         runBlocking {
+
             db.networkNodeFailureDao.insertListAsync((0..3).map {
                 NetworkNodeFailure().apply {
                     failTime = systemTimeInMillis()
                     failNetworkNodeId = defaultNetworkNodeList.first().networkNodeId
                 }
             })
+            db.networkNodeDao.strikeOffNodes(systemTimeInMillis() - 30000, 3, failStartTime)
         }
 
-
         runBlocking {
-            availabilityManager.handleNodeStruckOff(db, defaultNetworkNodeList.first().networkNodeId)
+            availabilityManager.handleNodesStruckOff(listOf(defaultNetworkNodeList.first().networkNodeId))
         }
 
         argumentCaptor<AvailabilityEvent> {
@@ -222,6 +227,10 @@ class AvailabilityManagerTest {
     fun givenActiveAvailabilityListener_whenAvailabilityCheckerFailsRepeatedlyOnOneNode_thenShouldRetryRecordFailuresAndGiveUp() {
         availabilityObserver = AvailabilityObserver(testOriginUrls, onAvailabilityChanged,
             AvailabilityObserverItem.MODE_INC_AVAILABLE_NODES)
+
+        mockNodeHandler.mockRecordingFailuresAndNodeStrikeOff {
+            runBlocking { availabilityManager.handleNodesStruckOff(it) }
+        }
 
         val endpointToFail = defaultNetworkNodeList[0].networkNodeEndpointUrl!!
         failingEndpoints += endpointToFail

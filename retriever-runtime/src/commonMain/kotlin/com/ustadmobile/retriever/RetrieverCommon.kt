@@ -5,6 +5,7 @@ import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.lib.db.entities.NetworkNodeFailure
+import com.ustadmobile.lib.db.entities.NetworkNodeStatusChange
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
@@ -26,10 +27,17 @@ abstract class RetrieverCommon(
     protected val strikeOffTimeWindow: Long,
     protected val strikeOffMaxFailures: Int,
     protected val retrieverCoroutineScope: CoroutineScope = GlobalScope,
-) : Retriever {
+) : Retriever , RetrieverNodeHandler {
 
-    protected val availabilityManager = AvailabilityManager(db, availabilityChecker,
-        strikeOffMaxFailures, strikeOffTimeWindow)
+    protected val availabilityManager : AvailabilityManager by lazy {
+        AvailabilityManager(db, availabilityChecker,
+            strikeOffMaxFailures, strikeOffTimeWindow, nodeHandler = this,
+            retrieverCoroutineScope = retrieverCoroutineScope)
+    }
+
+    internal open fun start() {
+        availabilityManager.checkQueue()
+    }
 
     suspend fun handleNodeDiscovered(networkNode: NetworkNode){
         Napier.d("Handle new node discovered")
@@ -40,7 +48,11 @@ abstract class RetrieverCommon(
         val timeNow = systemTimeInMillis()
         var checkQueue = true
         db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-            val existingUid = txDb.networkNodeDao.findUidByEndpointUrl(endpointUrl)
+            val existingUid = if(networkNode.networkNodeId != 0) {
+                networkNode.networkNodeId
+            }else {
+                txDb.networkNodeDao.findUidByEndpointUrl(endpointUrl)
+            }
 
 
             //Not using upsert because we want to be sure that NetworkNode id is preserved in case a node is rediscovered
@@ -90,16 +102,35 @@ abstract class RetrieverCommon(
      * Failure must be recorded in the database as they are reported by components. These components rely on the database
      * being updated to ensure that the next queue check etc. behaves as expected.
      */
-    suspend fun handleNetworkNodeFailures(transactionDb: RetrieverDatabase, failures: List<NetworkNodeFailure>){
+    override suspend fun handleNetworkNodeFailures(transactionDb: RetrieverDatabase, failures: List<NetworkNodeFailure>){
+        if(failures.isEmpty())
+            return
+
+        val firstFailTime = failures.minByOrNull { it.failTime }?.failTime ?: 0L
+        val timeNow = systemTimeInMillis()
         transactionDb.networkNodeFailureDao.insertListAsync(failures)
+        transactionDb.networkNodeDao.strikeOffNodes(timeNow - strikeOffTimeWindow, strikeOffMaxFailures,
+            firstFailTime)
         transactionDb.checkForNodesToDelete()
+        transactionDb.checkNetworkNodeStatusChanges()
+    }
+
+    /**
+     * Check the status changes that have been reported in
+     */
+    private suspend fun RetrieverDatabase.checkNetworkNodeStatusChanges() {
+        val statusChanges = networkNodeStatusChangeDao.findAll()
+        networkNodeStatusChangeDao.clear()
+
+        val (struckOffNodes, restoredNodes) = statusChanges.partition { it.scNewStatus == NetworkNode.STATUS_STRUCK_OFF }
+        availabilityManager.handleNodesStruckOff(struckOffNodes.map { it.scNetworkNodeId} )
     }
 
     /**
      * Log that the given network node has been interacted with successfully (e.g. ping, request fulfilled, etc). This
      * may result in the network node restored if it was previously struck off.
      */
-    suspend fun handleNetworkNodeSuccessful() {
+    override suspend fun handleNetworkNodeSuccessful() {
 
     }
 

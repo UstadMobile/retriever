@@ -4,6 +4,7 @@ import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.retriever.RetrieverCommon.Companion.DB_NAME
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.db.callback.DELETE_NODE_INFO_CALLBACK
+import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import io.ktor.client.*
@@ -41,6 +42,7 @@ class RetrieverBuilder(
     fun build(): Retriever{
         val db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, dbName)
             .addCallback(DELETE_NODE_INFO_CALLBACK)
+            .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build()
 
         val retriever = RetrieverJvm(db, nsdServiceName, AvailabilityCheckerHttp(ktorClient),
