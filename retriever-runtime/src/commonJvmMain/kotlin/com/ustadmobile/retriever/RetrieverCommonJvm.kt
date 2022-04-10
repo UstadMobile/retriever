@@ -42,7 +42,7 @@ abstract class RetrieverCommonJvm(
         retrieverCoroutineScope.launch(Dispatchers.IO) {
             val chosenPort = choosePort()
             val nanoHttpdServer = RouterNanoHTTPD(chosenPort)
-            nanoHttpdServer.addRoute("/:${AvailabilityResponder.PARAM_FILE_REQUEST_URL}/", AvailabilityResponder::class.java,
+            nanoHttpdServer.addRoute("/availability", AvailabilityResponder::class.java,
                 db, json)
             nanoHttpdServer.addRoute("/zipped", ZippedItemsResponder::class.java, db)
             nanoHttpdServer.start()

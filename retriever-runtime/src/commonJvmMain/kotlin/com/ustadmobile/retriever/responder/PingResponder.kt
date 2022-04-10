@@ -8,9 +8,10 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import kotlinx.coroutines.runBlocking
 
 /**
- * The ping responder will provide a simple 204 no content response to all incoming requests. It will also check and
- * make sure that this node has registered the discovery of the node that has just made the ping, and update the
- * lastSuccessTime for the remoteNode
+ * The ping responder will provide a simple 204 no content response to all incoming requests.
+ *
+ * It will also check and make sure that this node has registered the discovery of the node that has just made the ping,
+ * and update the lastSuccessTime for the remoteNode. This is a "belt and suspenders" approach to discovering nodes.
  */
 class PingResponder : AbstractUriResponder() {
 

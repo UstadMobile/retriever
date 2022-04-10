@@ -5,6 +5,8 @@ import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.util.ReverseProxyDispatcher
+import com.ustadmobile.retriever.util.waitUntilOrTimeout
+import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
@@ -78,6 +80,9 @@ class RetrieverIntegrationTest {
         retrieverPeers = (0..1).map { peerIndex ->
             RetrieverBuilder.builder("retriever", httpClient, okHttpClient, json) {
                 dbName = "RetrieverPeerDb$peerIndex"
+                pingInterval = 1000
+                pingRetryInterval = 500
+                strikeOffTimeWindow = 3000
             }.build() as RetrieverJvm
         }
 
@@ -137,6 +142,26 @@ class RetrieverIntegrationTest {
         Assert.assertEquals("$originUrl was downloaded entirely from peer",
             peerDownloadJobItem.djiTotalSize, peerDownloadJobItem.djiOriginBytesSoFar)
     }
+
+
+    private fun RetrieverJvm.waitForOtherNetworkNode(
+        timeout: Long,
+        otherEndpointUrl: String,
+        check: (NetworkNode?) -> Boolean
+    ) : NetworkNode? {
+        return runBlocking {
+            db.waitUntilOrTimeout(timeout, listOf("NetworkNode")) {
+                check(it.networkNodeDao.findByEndpointUrl(otherEndpointUrl))
+            }
+
+            db.networkNodeDao.findByEndpointUrl(otherEndpointUrl)
+        }
+    }
+
+    private fun RetrieverJvm.endpointUrl(): String {
+        return runBlocking { awaitServer() }.url("/")
+    }
+
 
     @Test
     fun givenPeerOnlineWithFileAvailable_whenOtherPeerDownloads_thenShouldFetchFromOtherPeer() {
@@ -289,8 +314,79 @@ class RetrieverIntegrationTest {
     }
 
     @Test
-    fun givenNetworkNodeDiscoveredByPeer_whenOtherNodeLost_willBeDetectedAsLostByPing() {
+    fun givenNetworkNodeDiscoveredByPeer_whenNetworkNodeIsLost_willBeDetectedAsLostByPingAndStruckOff() {
+        val peer1Url = runBlocking { "http://127.0.0.1:${retrieverPeers[1].listeningPort()}/" }
+        runBlocking {
+            retrieverPeers[0].handleNodeDiscovered(NetworkNode().apply {
+                networkNodeEndpointUrl = peer1Url
+                networkNodeDiscovered = systemTimeInMillis()
+            })
+        }
 
+        retrieverPeers[0].waitForOtherNetworkNode(2000, peer1Url) { it != null }
+
+        val peer1Server: NanoHTTPD = runBlocking { retrieverPeers[1].awaitServer() }
+        peer1Server.stop()
+
+        val peer1InPeer0Db = retrieverPeers[0].waitForOtherNetworkNode(5000, peer1Url) {
+            it?.networkNodeStatus == NetworkNode.STATUS_STRUCK_OFF
+        }
+
+        Assert.assertEquals("After being switched off, peer 1 is now struck off", NetworkNode.STATUS_STRUCK_OFF,
+            peer1InPeer0Db?.networkNodeStatus ?: -1)
     }
+
+    /**
+     * Test the "belt and suspenders" approach to discovery. If Node A has discovered B, but Node B has not discovered
+     * Node A, then Node B can learn of the existence of Node A via handling an incoming ping request
+     */
+    @Test
+    fun givenTwoNetworkNodes_whenOneDiscoversTheOther_otherWillMarkFirstAsDiscoveredWhenReceivingPing() {
+        val peer1Url = runBlocking { "http://127.0.0.1:${retrieverPeers[1].listeningPort()}/" }
+        val peer0Url = runBlocking {  "http://127.0.0.1:${retrieverPeers[0].listeningPort()}/" }
+        runBlocking {
+            retrieverPeers[0].handleNodeDiscovered(NetworkNode().apply {
+                networkNodeEndpointUrl = peer1Url
+                networkNodeDiscovered = systemTimeInMillis()
+            })
+        }
+
+        val peer0InPeer1Db = retrieverPeers[1].waitForOtherNetworkNode(2000, peer0Url) { it != null }
+
+        Assert.assertEquals("Peer 1 will discover peer 0 by receiving an incoming ping, even without service discovery",
+            peer0Url, peer0InPeer1Db?.networkNodeEndpointUrl)
+    }
+
+
+    @Test
+    fun givenTwoNodesDiscoveredEachOther_whenOneGoesOfflineAndComesBack_thenWillBeStruckOffAndRestored() {
+        mockDiscoverPeers()
+
+        val peer1Server: NanoHTTPD = runBlocking { retrieverPeers[1].awaitServer() }
+        val peer1Url = retrieverPeers[1].endpointUrl()
+
+        retrieverPeers[0].waitForOtherNetworkNode(3000, peer1Url) {
+            it != null
+        }
+
+        peer1Server.stop()
+
+        val struckOffInDb = retrieverPeers[0].waitForOtherNetworkNode(4000, peer1Url) {
+            it?.networkNodeStatus == NetworkNode.STATUS_STRUCK_OFF
+        }
+
+        peer1Server.start()
+
+        val restoredInDb = retrieverPeers[0].waitForOtherNetworkNode(4000, peer1Url) {
+            it?.networkNodeStatus == NetworkNode.STATUS_OK
+        }
+
+        Assert.assertEquals("Peer was struck off after it went offline", NetworkNode.STATUS_STRUCK_OFF,
+            struckOffInDb?.networkNodeStatus ?: -1)
+
+        Assert.assertEquals("Peer was restored after it came back online", NetworkNode.STATUS_OK,
+            restoredInDb?.networkNodeStatus ?: -1)
+    }
+
 
 }

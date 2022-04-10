@@ -166,13 +166,15 @@ class PingManager(
                 val remoteEndpoint =  item.networkNodeEndpointUrl
                     ?: throw IllegalArgumentException("Network node endpoint for node #${item.networkNodeId} is null!")
                 pinger.ping(remoteEndpoint, localListeningPort())
+                Napier.d("Ping $remoteEndpoint : OK", tag = Retriever.LOGTAG)
                 nodeUpdateMutex.withLock {
                     item.lastSuccessTime = systemTimeInMillis()
                     networkNodeUpdates[item.networkNodeId] = item
                 }
             }catch(e: Exception) {
                 nodeUpdateMutex.withLock {
-                    Napier.w("Pinger: Failed for node ${item.networkNodeEndpointUrl} ")
+                    Napier.w("Pinger: Failed for node ${item.networkNodeEndpointUrl} ", e,
+                        tag = Retriever.LOGTAG)
                     networkNodeFailures += NetworkNodeFailure().apply {
                         failTime = systemTimeInMillis()
                         failNetworkNodeId = item.networkNodeId
