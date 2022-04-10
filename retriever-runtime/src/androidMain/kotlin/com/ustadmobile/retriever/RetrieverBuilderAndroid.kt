@@ -57,6 +57,10 @@ class RetrieverBuilderAndroid private constructor(
      */
     var pingRetryInterval : Long = 10 * 1000
 
+    /**
+     * The timeout for a ping reply
+     */
+    var pingTimeout: Long = 5000
 
     fun build() : RetrieverCommon {
         val startTime = systemTimeInMillis()
@@ -66,11 +70,11 @@ class RetrieverBuilderAndroid private constructor(
             .build()
 
         val config = RetrieverConfig(nsdServiceName, strikeOffTimeWindow, strikeOffMaxFailures, pingInterval,
-            pingRetryInterval, port)
+            pingRetryInterval, pingTimeout, port)
 
         val retriever = RetrieverAndroidImpl(db, config, context, AvailabilityCheckerHttp(ktorClient),
             OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json,
-            DefaultAvailabilityManagerFactory(), retrieverCoroutineScope)
+            DefaultAvailabilityManagerFactory(), PingerHttp(ktorClient, pingTimeout), retrieverCoroutineScope)
         Napier.d("Retriever: Built retriever in ${systemTimeInMillis() - startTime}ms")
         retriever.start()
         return retriever

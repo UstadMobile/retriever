@@ -49,6 +49,11 @@ class RetrieverBuilder(
      */
     var pingRetryInterval : Long = 10 * 1000
 
+    /**
+     * The timeout for a ping reply
+     */
+    var pingTimeout: Long = 5000
+
     fun build(): Retriever{
         val db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, dbName)
             .addCallback(DELETE_NODE_INFO_CALLBACK)
@@ -56,11 +61,11 @@ class RetrieverBuilder(
             .build()
 
         val config = RetrieverConfig(nsdServiceName, strikeOffTimeWindow, strikeOffMaxFailures, pingInterval,
-            pingRetryInterval, port)
+            pingRetryInterval, pingTimeout, port)
 
         val retriever = RetrieverJvm(db, config, AvailabilityCheckerHttp(ktorClient),
             OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json,
-            DefaultAvailabilityManagerFactory(), retrieverCoroutineScope)
+            DefaultAvailabilityManagerFactory(), PingerHttp(ktorClient, pingTimeout), retrieverCoroutineScope)
         retriever.start()
         return retriever
     }

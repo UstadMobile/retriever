@@ -34,10 +34,11 @@ class RetrieverAndroidImpl internal constructor(
     localPeerFetcher: LocalPeerFetcher,
     json: Json,
     availabilityManagerFactory: AvailabilityManagerFactory,
+    pinger: Pinger,
     retrieverCoroutineScope: CoroutineScope,
 ): RetrieverCommonJvm(
     db, config, availabilityChecker, originServerFetcher, localPeerFetcher, json, availabilityManagerFactory,
-    retrieverCoroutineScope,
+    pinger, retrieverCoroutineScope,
 ) {
 
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "retriever_settings")

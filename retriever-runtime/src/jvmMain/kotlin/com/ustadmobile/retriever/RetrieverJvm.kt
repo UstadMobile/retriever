@@ -18,9 +18,10 @@ class RetrieverJvm(
     localPeerFetcher: LocalPeerFetcher,
     json: Json,
     availabilityManagerFactory: AvailabilityManagerFactory,
+    pinger: Pinger,
     retrieverCoroutineScope: CoroutineScope,
 ) : RetrieverCommonJvm(
-    db, config, availabilityChecker, originServerFetcher, localPeerFetcher, json, availabilityManagerFactory,
+    db, config, availabilityChecker, originServerFetcher, localPeerFetcher, json, availabilityManagerFactory, pinger,
     retrieverCoroutineScope
 ) {
 

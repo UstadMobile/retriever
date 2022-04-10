@@ -23,6 +23,7 @@ abstract class RetrieverCommon(
     private val originServerFetcher: OriginServerFetcher,
     private val localPeerFetcher: LocalPeerFetcher,
     private val availabilityManagerFactory: AvailabilityManagerFactory,
+    private val pinger: Pinger,
     protected val retrieverCoroutineScope: CoroutineScope = GlobalScope,
 ) : Retriever , RetrieverNodeHandler {
 
@@ -32,8 +33,15 @@ abstract class RetrieverCommon(
             nodeHandler = this, retrieverCoroutineScope = retrieverCoroutineScope)
     }
 
+    protected val pingManager : PingManager by lazy {
+        PingManager(db, config.pingInterval, config.pingInterval, config.strikeOffMaxFailures,
+            config.strikeOffTimeWindow, pinger, { listeningPort() },
+            this, retrieverCoroutineScope)
+    }
+
     internal open fun start() {
         availabilityManager.checkQueue()
+        pingManager.start()
     }
 
     private val restoreCheckJobs = concurrentSafeMapOf<Int, Job>()
@@ -229,6 +237,7 @@ abstract class RetrieverCommon(
     override fun close() {
         availabilityManager.close()
         nodeRestorerJob.cancel()
+        pingManager.close()
     }
 
     companion object {

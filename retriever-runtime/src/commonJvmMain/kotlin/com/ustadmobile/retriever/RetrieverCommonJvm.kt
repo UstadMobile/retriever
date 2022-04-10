@@ -25,9 +25,10 @@ abstract class RetrieverCommonJvm(
     localPeerFetcher: LocalPeerFetcher,
     protected val json: Json,
     availabilityManagerFactory: AvailabilityManagerFactory,
+    pinger: Pinger,
     retrieverCoroutineScope: CoroutineScope,
 ): RetrieverCommon(
-    db, config, availabilityChecker, originServerFetcher, localPeerFetcher, availabilityManagerFactory,
+    db, config, availabilityChecker, originServerFetcher, localPeerFetcher, availabilityManagerFactory, pinger,
     retrieverCoroutineScope
 ) {
 

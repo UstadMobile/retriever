@@ -48,7 +48,7 @@ class PingManager(
     private val strikeOffMaxFailures: Int,
     private val strikeOffTimeWindow: Long,
     private val pinger: Pinger,
-    private val localListeningPort: () -> Int,
+    private val localListeningPort: suspend () -> Int,
     private val nodeHandler: RetrieverNodeHandler,
     private val retrieverCoroutineScope: CoroutineScope,
     private val numProcessors: Int = DEFAULT_NUM_PROCESSORS,

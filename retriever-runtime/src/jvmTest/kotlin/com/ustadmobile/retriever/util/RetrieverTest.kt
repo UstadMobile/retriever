@@ -119,7 +119,7 @@ class RetrieverTest {
     fun givenNodeDiscovered_whenNodeFailsByMaxFailsAllowed_thenShouldStrikeOff() {
         val retrieverConfig = RetrieverConfig("ustad", 10000, 3)
         val retrieverJvm = RetrieverJvm(db, retrieverConfig,  mockAvailabilityChecker,  mock { }, mock {  },
-            json, mockAvailabilityManagerFactory, GlobalScope)
+            json, mockAvailabilityManagerFactory, mock {  }, GlobalScope)
         val nodeEndpoint = "http://192.1.68.1.123:34000/"
 
         val networkNodeId = retrieverJvm.discoverNode(nodeEndpoint)
@@ -140,7 +140,7 @@ class RetrieverTest {
         //Given - Setup and record failures
         val retrieverConfig = RetrieverConfig("ustad", 1000, 3)
         val retrieverJvm = RetrieverJvm(db, retrieverConfig,  mockAvailabilityChecker,  mock { }, mock {  },
-            json,  mockAvailabilityManagerFactory, GlobalScope)
+            json,  mockAvailabilityManagerFactory, mock {  }, GlobalScope)
         retrieverJvm.start()
         mockAvailabilityManager.stub {
             on { checkQueue()} .thenAnswer {
