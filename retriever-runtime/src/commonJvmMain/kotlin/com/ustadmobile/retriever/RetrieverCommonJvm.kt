@@ -19,19 +19,16 @@ import kotlinx.coroutines.launch
 
 abstract class RetrieverCommonJvm(
     db: RetrieverDatabase,
-    nsdServiceName: String,
+    config: RetrieverConfig,
     availabilityChecker: AvailabilityChecker,
     originServerFetcher: OriginServerFetcher,
     localPeerFetcher: LocalPeerFetcher,
-    port: Int,
-    strikeOffTimeWindow: Long,
-    strikeOffMaxFailures: Int,
     protected val json: Json,
     availabilityManagerFactory: AvailabilityManagerFactory,
     retrieverCoroutineScope: CoroutineScope,
 ): RetrieverCommon(
-    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, strikeOffTimeWindow,
-    strikeOffMaxFailures, availabilityManagerFactory, retrieverCoroutineScope
+    db, config, availabilityChecker, originServerFetcher, localPeerFetcher, availabilityManagerFactory,
+    retrieverCoroutineScope
 ) {
 
     private val serverCompletable = CompletableDeferred<RouterNanoHTTPD>()

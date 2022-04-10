@@ -12,19 +12,16 @@ import kotlinx.serialization.json.Json
  */
 class RetrieverJvm(
     db: RetrieverDatabase,
-    nsdServiceName: String,
+    config: RetrieverConfig,
     availabilityChecker: AvailabilityChecker,
     originServerFetcher: OriginServerFetcher,
     localPeerFetcher: LocalPeerFetcher,
     json: Json,
-    port: Int,
-    strikeOffTimeWindow: Long,
-    strikeOffMaxFailures: Int,
     availabilityManagerFactory: AvailabilityManagerFactory,
     retrieverCoroutineScope: CoroutineScope,
 ) : RetrieverCommonJvm(
-    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, strikeOffTimeWindow,
-    strikeOffMaxFailures, json, availabilityManagerFactory, retrieverCoroutineScope
+    db, config, availabilityChecker, originServerFetcher, localPeerFetcher, json, availabilityManagerFactory,
+    retrieverCoroutineScope
 ) {
 
     override suspend fun choosePort(): Int {

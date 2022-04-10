@@ -18,20 +18,17 @@ import kotlin.math.min
 
 abstract class RetrieverCommon(
     internal val db: RetrieverDatabase,
-    protected val nsdServiceName: String,
+    internal val config: RetrieverConfig,
     private val availabilityChecker: AvailabilityChecker,
     private val originServerFetcher: OriginServerFetcher,
     private val localPeerFetcher: LocalPeerFetcher,
-    protected val port: Int,
-    protected val strikeOffTimeWindow: Long,
-    protected val strikeOffMaxFailures: Int,
     private val availabilityManagerFactory: AvailabilityManagerFactory,
     protected val retrieverCoroutineScope: CoroutineScope = GlobalScope,
 ) : Retriever , RetrieverNodeHandler {
 
     protected val availabilityManager : AvailabilityManager by lazy {
         availabilityManagerFactory.makeAvailabilityManager(db, availabilityChecker,
-            strikeOffMaxFailures, strikeOffTimeWindow, retryDelay = 1000,
+            config.strikeOffMaxFailures, config.strikeOffTimeWindow, retryDelay = 1000,
             nodeHandler = this, retrieverCoroutineScope = retrieverCoroutineScope)
     }
 
@@ -44,27 +41,24 @@ abstract class RetrieverCommon(
     private val checkRestoreSignal = Channel<Boolean>(Channel.UNLIMITED)
 
     private val nodeRestorerJob = retrieverCoroutineScope.launch {
-        var lastRunTime = 0L
         while(isActive) {
             val timeNow = systemTimeInMillis()
             val nextRestorable = db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
-                txDb.networkNodeDao.restoreNodes(timeNow - strikeOffTimeWindow, strikeOffMaxFailures)
+                txDb.networkNodeDao.restoreNodes(timeNow - config.strikeOffTimeWindow,
+                    config.strikeOffMaxFailures)
                 txDb.checkNetworkNodeStatusChanges()
 
-                val countFailuresSince = (timeNow - strikeOffTimeWindow)
-                println("Restore lastRunTime =$lastRunTime, timenow = $timeNow, count fail since = $countFailuresSince")
-
+                val countFailuresSince = (timeNow - config.strikeOffTimeWindow)
                 val restorableTimes = txDb.networkNodeDao.findNetworkNodeRestorableTimes(
-                    countFailuresSince, strikeOffMaxFailures, timeNow)
+                    countFailuresSince, config.strikeOffMaxFailures, timeNow)
                 restorableTimes.filter { it.restorableTime > 0L }.minOfOrNull { it.restorableTime }
                     ?: Long.MAX_VALUE
             }
 
-            val waitTime = min(nextRestorable - timeNow, strikeOffTimeWindow)
+            val waitTime = min(nextRestorable - timeNow, config.strikeOffTimeWindow)
             withTimeoutOrNull(waitTime) {
                 checkRestoreSignal.receiveThenTryReceiveAllAvailable()
             }
-            lastRunTime = timeNow
         }
     }
 
@@ -128,8 +122,8 @@ abstract class RetrieverCommon(
         val firstFailTime = failures.minByOrNull { it.failTime }?.failTime ?: 0L
         val timeNow = systemTimeInMillis()
         transactionDb.networkNodeFailureDao.insertListAsync(failures)
-        transactionDb.networkNodeDao.strikeOffNodes(timeNow - strikeOffTimeWindow, strikeOffMaxFailures,
-            firstFailTime)
+        transactionDb.networkNodeDao.strikeOffNodes(timeNow - config.strikeOffTimeWindow,
+            config.strikeOffMaxFailures, firstFailTime)
         transactionDb.checkForNodesToDelete()
         transactionDb.checkNetworkNodeStatusChanges()
     }
@@ -143,6 +137,8 @@ abstract class RetrieverCommon(
 
         val (struckOffNodes, restoredNodes) = statusChanges.partition { it.scNewStatus == NetworkNode.STATUS_STRUCK_OFF }
         availabilityManager.handleNodesStruckOff(struckOffNodes.map { it.scNetworkNodeId} )
+        if(restoredNodes.isNotEmpty())
+            availabilityManager.checkQueue()
     }
 
     /**
@@ -158,7 +154,8 @@ abstract class RetrieverCommon(
             transactionDb.networkNodeDao.updateLastSuccessTime(it.key, it.value.maxOf { it.successTime })
         }
 
-        transactionDb.networkNodeDao.restoreNodes(timeNow - strikeOffTimeWindow, strikeOffMaxFailures)
+        transactionDb.networkNodeDao.restoreNodes(timeNow - config.strikeOffTimeWindow,
+            config.strikeOffMaxFailures)
         transactionDb.checkNetworkNodeStatusChanges()
     }
 
@@ -167,7 +164,7 @@ abstract class RetrieverCommon(
      */
     private suspend fun RetrieverDatabase.checkForNodesToDelete() {
         val nodesToDelete = networkNodeDao.findNetworkNodesToDelete(
-            systemTimeInMillis() - strikeOffTimeWindow, strikeOffMaxFailures)
+            systemTimeInMillis() - config.strikeOffTimeWindow, config.strikeOffMaxFailures)
         nodesToDelete.forEach { nodeLostId ->
             availabilityResponseDao.deleteByNetworkNode(nodeLostId.toLong())
             networkNodeDao.deleteByNetworkNodeId(nodeLostId)
@@ -224,7 +221,7 @@ abstract class RetrieverCommon(
         })
 
         Downloader(batchId, availabilityManager, listenerWrapper, originServerFetcher, localPeerFetcher, db,
-            strikeOffMaxFailures = strikeOffMaxFailures, strikeOffTimeWindow = strikeOffTimeWindow).download()
+            strikeOffMaxFailures = config.strikeOffMaxFailures, strikeOffTimeWindow = config.strikeOffTimeWindow).download()
 
         addFiles(completedFileMap.map { LocalFileInfo(it.key, it.value) })
     }

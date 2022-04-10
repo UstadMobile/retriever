@@ -78,7 +78,8 @@ class PingManagerTest {
         val networkNodes = insertNetworkNodes(4)
 
         val pingManager = PingManager(database, defaultInterval, retryInterval, 3,
-            DEFAULT_NODE_FAILURE_STRIKEOFF_PERIOD, mockPinger, localListeningPort, mockNodeHandler, GlobalScope, 2)
+            DEFAULT_NODE_FAILURE_STRIKEOFF_PERIOD, mockPinger, { localListeningPort }, mockNodeHandler, GlobalScope, 2)
+        pingManager.start()
 
         networkNodes.forEach {
             verifyBlocking(mockPinger, timeout(2000).atLeastOnce()) {
@@ -122,7 +123,8 @@ class PingManagerTest {
         val retryInterval = 20L
         val maxPeerFailsAllowed = 3
         val pingManager = PingManager(database, pingInterval, retryInterval, maxPeerFailsAllowed,
-            60000, mockPinger, localListeningPort, mockNodeHandler, GlobalScope)
+            60000, mockPinger, { localListeningPort }, mockNodeHandler, GlobalScope)
+        pingManager.start()
 
         //Should make maxPeerFailsAllowed attempts at contacting the peer within the schedule (+ 100ms buffer time)
         verifyBlocking(mockPinger, timeout((retryInterval * 3) + (100)).atLeast(maxPeerFailsAllowed)) {
@@ -148,7 +150,8 @@ class PingManagerTest {
         val pingInterval = 100L
         val retryInterval = 10L
         val pingManager = PingManager(database, pingInterval, retryInterval, 3,
-            60000, mockPinger, localListeningPort, mockNodeHandler, GlobalScope)
+            60000, mockPinger, { localListeningPort }, mockNodeHandler, GlobalScope)
+        pingManager.start()
 
         verifyBlocking(mockPinger, timeout((pingInterval * 2) + 100).times(2)) {
             ping(eq(node.networkNodeEndpointUrl!!), eq(localListeningPort))

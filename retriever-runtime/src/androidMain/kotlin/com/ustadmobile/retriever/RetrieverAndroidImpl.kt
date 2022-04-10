@@ -27,20 +27,17 @@ import kotlinx.coroutines.withContext
 
 class RetrieverAndroidImpl internal constructor(
     db: RetrieverDatabase,
-    nsdServiceName: String,
+    config: RetrieverConfig,
     private val applicationContext: Context,
     availabilityChecker: AvailabilityChecker,
     originServerFetcher: OriginServerFetcher,
     localPeerFetcher: LocalPeerFetcher,
     json: Json,
-    port: Int,
-    strikeOffTimeWindow: Long,
-    strikeOffMaxFailures: Int,
     availabilityManagerFactory: AvailabilityManagerFactory,
     retrieverCoroutineScope: CoroutineScope,
 ): RetrieverCommonJvm(
-    db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, strikeOffTimeWindow,
-    strikeOffMaxFailures, json, availabilityManagerFactory, retrieverCoroutineScope,
+    db, config, availabilityChecker, originServerFetcher, localPeerFetcher, json, availabilityManagerFactory,
+    retrieverCoroutineScope,
 ) {
 
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "retriever_settings")
@@ -55,13 +52,13 @@ class RetrieverAndroidImpl internal constructor(
 
     private lateinit var nsdManager: NsdManager
 
-    private val serviceType = "_${nsdServiceName.lowercase()}._tcp"
+    private val serviceType = "_${config.nsdServiceName.lowercase()}._tcp"
 
     //as per https://developer.android.com/training/connect-devices-wirelessly/nsd
     // If the service name is exactly equal to the value provided onServiceRegistered (mServiceName), then this is the
     // local device itself.
     private fun NsdServiceInfo.isMatchingServiceOnOtherDevice(): Boolean {
-        return !serviceName.equals(mServiceName) && serviceName.contains(nsdServiceName)
+        return !serviceName.equals(mServiceName) && serviceName.contains(config.nsdServiceName)
     }
 
     //Service registered listener
@@ -207,8 +204,8 @@ class RetrieverAndroidImpl internal constructor(
 
     private fun startNSD(server: RouterNanoHTTPD) {
         val serviceInfo = NsdServiceInfo().apply{
-            serviceName = nsdServiceName
-            serviceType = "_${nsdServiceName.lowercase()}._tcp"
+            serviceName = config.nsdServiceName
+            serviceType = "_${config.nsdServiceName.lowercase()}._tcp"
             port = server.listeningPort
         }
 

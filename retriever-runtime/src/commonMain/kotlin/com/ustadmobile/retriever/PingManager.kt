@@ -45,10 +45,10 @@ class PingManager(
     private val database: RetrieverDatabase,
     private val pingInterval: Long,
     private val pingRetryInterval: Long,
-    private val maxPeerNodeFailuresAllowed: Int,
-    private val peerNodeFailureTimePeriod: Long,
+    private val strikeOffMaxFailures: Int,
+    private val strikeOffTimeWindow: Long,
     private val pinger: Pinger,
-    private val localListeningPort: Int,
+    private val localListeningPort: () -> Int,
     private val nodeHandler: RetrieverNodeHandler,
     private val retrieverCoroutineScope: CoroutineScope,
     private val numProcessors: Int = DEFAULT_NUM_PROCESSORS,
@@ -98,10 +98,6 @@ class PingManager(
             repeat(numProcessors){
                 launchProcessor(it, pingProducer)
             }
-
-            checkQueueSignal.send(true)
-
-
         }
     }
 
@@ -110,7 +106,7 @@ class PingManager(
     }
 
     private fun NetworkNodeAndLastFailInfo.nextPingDueTime(): Long {
-        return if(lastFailTime > lastSuccessTime && failCount < maxPeerNodeFailuresAllowed) {
+        return if(lastFailTime > lastSuccessTime && failCount < strikeOffMaxFailures) {
             lastHeardFromTime() + pingRetryInterval
         }else {
             lastHeardFromTime() + pingInterval
@@ -129,7 +125,7 @@ class PingManager(
                 database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
                     txDb.commitUpdates()
                     txDb.networkNodeDao.findNodesWithLastFailInfo(
-                        timeNow - peerNodeFailureTimePeriod)
+                        timeNow - strikeOffTimeWindow)
                         .filter { it.networkNodeId !in inProcessNodeIds }
                 }
             }
@@ -138,7 +134,7 @@ class PingManager(
 
             val nodesToPing = nodesAndFailInfo.filter {
                 //Retry pings
-                (it.lastFailTime > it.lastSuccessTime && it.failCount < maxPeerNodeFailuresAllowed
+                (it.lastFailTime > it.lastSuccessTime && it.failCount < strikeOffMaxFailures
                         && it.lastHeardFromTime() < (timeNow - pingRetryInterval)) ||
                 //normal pings
                 (it.lastHeardFromTime() < (timeNow - pingInterval))
@@ -169,7 +165,7 @@ class PingManager(
             try {
                 val remoteEndpoint =  item.networkNodeEndpointUrl
                     ?: throw IllegalArgumentException("Network node endpoint for node #${item.networkNodeId} is null!")
-                pinger.ping(remoteEndpoint, localListeningPort)
+                pinger.ping(remoteEndpoint, localListeningPort())
                 nodeUpdateMutex.withLock {
                     item.lastSuccessTime = systemTimeInMillis()
                     networkNodeUpdates[item.networkNodeId] = item
@@ -188,6 +184,10 @@ class PingManager(
                 checkQueueSignal.send(true)
             }
         }
+    }
+
+    fun start() {
+        checkQueueSignal.trySend(true)
     }
 
     fun close(){

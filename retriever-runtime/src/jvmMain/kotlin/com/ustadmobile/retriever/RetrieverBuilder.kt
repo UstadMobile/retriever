@@ -39,15 +39,28 @@ class RetrieverBuilder(
      */
     var strikeOffMaxFailures: Int = 3
 
+    /**
+     * the default interval for pinging other nodes (every 30 seconds by default)
+     */
+    var pingInterval : Long= 30 * 1000
+
+    /**
+     * The interval to ping nodes after it has failed once, but before it has been "struck off"
+     */
+    var pingRetryInterval : Long = 10 * 1000
+
     fun build(): Retriever{
         val db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, dbName)
             .addCallback(DELETE_NODE_INFO_CALLBACK)
             .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build()
 
-        val retriever = RetrieverJvm(db, nsdServiceName, AvailabilityCheckerHttp(ktorClient),
-            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json, port, strikeOffTimeWindow,
-            strikeOffMaxFailures, DefaultAvailabilityManagerFactory(), retrieverCoroutineScope)
+        val config = RetrieverConfig(nsdServiceName, strikeOffTimeWindow, strikeOffMaxFailures, pingInterval,
+            pingRetryInterval, port)
+
+        val retriever = RetrieverJvm(db, config, AvailabilityCheckerHttp(ktorClient),
+            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json,
+            DefaultAvailabilityManagerFactory(), retrieverCoroutineScope)
         retriever.start()
         return retriever
     }

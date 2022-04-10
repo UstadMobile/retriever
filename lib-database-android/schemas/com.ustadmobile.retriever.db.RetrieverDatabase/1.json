@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "fcccd35d00fde74d55a81fe753176c30",
+    "identityHash": "a23fd1ba0a5bd59c1f91511e4fb7f647",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -105,7 +105,7 @@
       },
       {
         "tableName": "NetworkNode",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`networkNodeId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `networkNodeEndpointUrl` TEXT, `networkNodeDiscovered` INTEGER NOT NULL, `networkNodeLost` INTEGER NOT NULL, `lastSuccessTime` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`networkNodeId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `networkNodeEndpointUrl` TEXT, `networkNodeDiscovered` INTEGER NOT NULL, `networkNodeLost` INTEGER NOT NULL, `lastSuccessTime` INTEGER NOT NULL, `networkNodeStatus` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "networkNodeId",
@@ -134,6 +134,12 @@
           {
             "fieldPath": "lastSuccessTime",
             "columnName": "lastSuccessTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "networkNodeStatus",
+            "columnName": "networkNodeStatus",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -313,6 +319,38 @@
         "primaryKey": {
           "columnNames": [
             "networkNodeFailureId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "NetworkNodeStatusChange",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`scId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `scNetworkNodeId` INTEGER NOT NULL, `scNewStatus` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "scId",
+            "columnName": "scId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scNetworkNodeId",
+            "columnName": "scNetworkNodeId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scNewStatus",
+            "columnName": "scNewStatus",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "scId"
           ],
           "autoGenerate": true
         },
@@ -545,7 +583,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fcccd35d00fde74d55a81fe753176c30')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a23fd1ba0a5bd59c1f91511e4fb7f647')"
     ]
   }
 }

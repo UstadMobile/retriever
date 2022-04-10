@@ -117,9 +117,9 @@ class RetrieverTest {
 
     @Test
     fun givenNodeDiscovered_whenNodeFailsByMaxFailsAllowed_thenShouldStrikeOff() {
-        val retrieverJvm = RetrieverJvm(db, "ustad",  mockAvailabilityChecker,  mock { }, mock {  },
-            json, 1234, 10000, 3, mockAvailabilityManagerFactory,
-            GlobalScope)
+        val retrieverConfig = RetrieverConfig("ustad", 10000, 3)
+        val retrieverJvm = RetrieverJvm(db, retrieverConfig,  mockAvailabilityChecker,  mock { }, mock {  },
+            json, mockAvailabilityManagerFactory, GlobalScope)
         val nodeEndpoint = "http://192.1.68.1.123:34000/"
 
         val networkNodeId = retrieverJvm.discoverNode(nodeEndpoint)
@@ -138,9 +138,15 @@ class RetrieverTest {
     @Test
     fun givenNodeDiscoveredThenFails_whenNodeIsSuccessfulAgain_thenShouldBeRestored() {
         //Given - Setup and record failures
-        val retrieverJvm = RetrieverJvm(db, "ustad",  mockAvailabilityChecker,  mock { }, mock {  },
-            json, 1234, 1000, 3, mockAvailabilityManagerFactory,
-            GlobalScope)
+        val retrieverConfig = RetrieverConfig("ustad", 1000, 3)
+        val retrieverJvm = RetrieverJvm(db, retrieverConfig,  mockAvailabilityChecker,  mock { }, mock {  },
+            json,  mockAvailabilityManagerFactory, GlobalScope)
+        retrieverJvm.start()
+        mockAvailabilityManager.stub {
+            on { checkQueue()} .thenAnswer {
+                println("check available")
+            }
+        }
         val nodeEndpoint = "http://192.1.68.1.123:34000/"
 
         val networkNodeId = retrieverJvm.discoverNode(nodeEndpoint)
@@ -170,10 +176,8 @@ class RetrieverTest {
         Assert.assertEquals("NetworkNode status is OK", NetworkNode.STATUS_OK,
             nodeInDb?.networkNodeStatus)
 
-        verifyBlocking(mockAvailabilityManager, timeout(2000)) {
-            checkQueue()
-        }
-
+        //Should be called once when Retriever start() is called, once when discovered, and then again when restored
+        verify(mockAvailabilityManager, timeout(2000).times(3)).checkQueue()
     }
 
     @Test

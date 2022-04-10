@@ -47,6 +47,17 @@ class RetrieverBuilderAndroid private constructor(
      */
     var strikeOffMaxFailures: Int = 3
 
+    /**
+     * the default interval for pinging other nodes (every 30 seconds by default)
+     */
+    var pingInterval : Long= 30 * 1000
+
+    /**
+     * The interval to ping nodes after it has failed once, but before it has been "struck off"
+     */
+    var pingRetryInterval : Long = 10 * 1000
+
+
     fun build() : RetrieverCommon {
         val startTime = systemTimeInMillis()
         val db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class, dbName)
@@ -54,9 +65,12 @@ class RetrieverBuilderAndroid private constructor(
             .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build()
 
-        val retriever = RetrieverAndroidImpl(db, nsdServiceName, context, AvailabilityCheckerHttp(ktorClient),
-            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json, port,
-            strikeOffTimeWindow, strikeOffMaxFailures, retrieverCoroutineScope)
+        val config = RetrieverConfig(nsdServiceName, strikeOffTimeWindow, strikeOffMaxFailures, pingInterval,
+            pingRetryInterval, port)
+
+        val retriever = RetrieverAndroidImpl(db, config, context, AvailabilityCheckerHttp(ktorClient),
+            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json,
+            DefaultAvailabilityManagerFactory(), retrieverCoroutineScope)
         Napier.d("Retriever: Built retriever in ${systemTimeInMillis() - startTime}ms")
         retriever.start()
         return retriever
