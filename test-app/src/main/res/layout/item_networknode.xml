@@ -21,10 +21,12 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:alpha="@{node.networkNodeStatus == NetworkNode.STATUS_STRUCK_OFF ? 0.5f : 1.0f}"
         android:background="?attr/selectableItemBackground">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/item_file_icon"
+            android:alpha="@{node.networkNodeStatus == NetworkNode.STATUS_STRUCK_OFF ? 0.5f : 1.0f}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -36,6 +38,7 @@
 
         <TextView
             android:id="@+id/item_node_endpoint"
+            android:alpha="@{node.networkNodeStatus == NetworkNode.STATUS_STRUCK_OFF ? 0.5f : 1.0f}"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -45,24 +48,25 @@
             android:text="@{node.networkNodeEndpointUrl}"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             app:layout_constraintBottom_toBottomOf="@+id/item_file_icon"
-            app:layout_constraintEnd_toStartOf="@+id/item_networknode_delete"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/item_file_icon"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="192.168.1.142:42424" />
 
+        <TextView
+                android:id="@+id/item_node_last_heard_from_time"
+                android:alpha="@{node.networkNodeStatus == NetworkNode.STATUS_STRUCK_OFF ? 0.5f : 1.0f}"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="0dp"
+                android:padding="4dp"
+                app:lastSeenTime="@{node.lastSuccessTime}"
+                app:layout_constraintStart_toEndOf="@+id/item_file_icon"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/item_node_endpoint"
+                tools:text="Last seen: 23:23" />
 
-
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/item_networknode_delete"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_baseline_delete_24"
-            android:contentDescription="@string/delete"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:onClick="@{() -> listener.onDeleteNode(node)}" />
 
 
 

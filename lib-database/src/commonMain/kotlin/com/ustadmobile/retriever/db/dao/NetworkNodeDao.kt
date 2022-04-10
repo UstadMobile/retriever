@@ -45,13 +45,15 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
     abstract suspend fun deleteByNetworkNodeId(networkNodeId: Int)
 
     @Query("""
-        SELECT * FROM NetworkNode WHERE networkNodeLost = 0
+        SELECT * 
+          FROM NetworkNode
     """)
     abstract fun findAllActiveNodes(): List<NetworkNode>
 
 
     @Query("""
-        SELECT * FROM NetworkNode WHERE networkNodeLost = 0
+        SELECT * 
+          FROM NetworkNode
     """)
     abstract fun findAllActiveNodesLive(): DoorDataSourceFactory<Int, NetworkNode>
 

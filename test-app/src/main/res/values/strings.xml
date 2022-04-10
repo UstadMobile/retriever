@@ -24,4 +24,5 @@
     <string name="files">Files</string>
     <string name="delete">Delete</string>
     <string name="this_node_info">This node is %1$s. Nodes discovered on the local network will appear below:</string>
+    <string name="last_seen_time">Last seen: %1$s</string>
 </resources>

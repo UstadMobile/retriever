@@ -34,7 +34,7 @@ abstract class RetrieverCommon(
     }
 
     protected val pingManager : PingManager by lazy {
-        PingManager(db, config.pingInterval, config.pingInterval, config.strikeOffMaxFailures,
+        PingManager(db, config.pingInterval, config.pingRetryInterval, config.strikeOffMaxFailures,
             config.strikeOffTimeWindow, pinger, { listeningPort() },
             this, retrieverCoroutineScope)
     }

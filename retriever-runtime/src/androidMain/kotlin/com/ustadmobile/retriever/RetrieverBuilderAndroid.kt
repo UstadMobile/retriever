@@ -55,7 +55,7 @@ class RetrieverBuilderAndroid private constructor(
     /**
      * The interval to ping nodes after it has failed once, but before it has been "struck off"
      */
-    var pingRetryInterval : Long = 10 * 1000
+    var pingRetryInterval : Long = 5 * 1000
 
     /**
      * The timeout for a ping reply

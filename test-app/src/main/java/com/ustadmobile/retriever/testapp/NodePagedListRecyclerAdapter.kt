@@ -49,8 +49,9 @@ class NodePagedListRecyclerAdapter(val listener: NodeListener):
 
             override fun areContentsTheSame(oldItem: NetworkNode,
                                             newItem: NetworkNode): Boolean {
-                return oldItem.networkNodeId == newItem.networkNodeId &&
-                        oldItem.networkNodeId == newItem.networkNodeId
+                return oldItem.networkNodeEndpointUrl == newItem.networkNodeEndpointUrl
+                        && oldItem.lastSuccessTime == newItem.lastSuccessTime
+                        && oldItem.networkNodeStatus == newItem.networkNodeStatus
             }
 
         }
