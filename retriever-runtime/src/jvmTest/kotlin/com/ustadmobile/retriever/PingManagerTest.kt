@@ -5,6 +5,7 @@ import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.Retriever.Companion.DEFAULT_NODE_FAILURE_STRIKEOFF_PERIOD
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.util.mockRecordingFailuresAndNodeStrikeOff
 import com.ustadmobile.retriever.util.waitUntilOrTimeout
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
@@ -25,6 +26,8 @@ class PingManagerTest {
 
     private val localListeningPort = 1234
 
+    private lateinit var mockNodeHandler: RetrieverNodeHandler
+
     @Before
     fun setup() {
         Napier.takeLogarithm()
@@ -36,6 +39,11 @@ class PingManagerTest {
             }
 
         mockPinger = mock {
+
+        }
+
+        mockNodeHandler = mock {}
+        mockNodeHandler.mockRecordingFailuresAndNodeStrikeOff {
 
         }
     }
@@ -70,7 +78,7 @@ class PingManagerTest {
         val networkNodes = insertNetworkNodes(4)
 
         val pingManager = PingManager(database, defaultInterval, retryInterval, 3,
-            DEFAULT_NODE_FAILURE_STRIKEOFF_PERIOD, mockPinger, localListeningPort, GlobalScope, 2)
+            DEFAULT_NODE_FAILURE_STRIKEOFF_PERIOD, mockPinger, localListeningPort, mockNodeHandler, GlobalScope, 2)
 
         networkNodes.forEach {
             verifyBlocking(mockPinger, timeout(2000).atLeastOnce()) {
@@ -114,7 +122,7 @@ class PingManagerTest {
         val retryInterval = 20L
         val maxPeerFailsAllowed = 3
         val pingManager = PingManager(database, pingInterval, retryInterval, maxPeerFailsAllowed,
-            60000, mockPinger, localListeningPort, GlobalScope)
+            60000, mockPinger, localListeningPort, mockNodeHandler, GlobalScope)
 
         //Should make maxPeerFailsAllowed attempts at contacting the peer within the schedule (+ 100ms buffer time)
         verifyBlocking(mockPinger, timeout((retryInterval * 3) + (100)).atLeast(maxPeerFailsAllowed)) {
@@ -140,7 +148,7 @@ class PingManagerTest {
         val pingInterval = 100L
         val retryInterval = 10L
         val pingManager = PingManager(database, pingInterval, retryInterval, 3,
-            60000, mockPinger, localListeningPort, GlobalScope)
+            60000, mockPinger, localListeningPort, mockNodeHandler, GlobalScope)
 
         verifyBlocking(mockPinger, timeout((pingInterval * 2) + 100).times(2)) {
             ping(eq(node.networkNodeEndpointUrl!!), eq(localListeningPort))
@@ -148,11 +156,5 @@ class PingManagerTest {
 
         pingManager.close()
     }
-
-    @Test
-    fun givenNetworkNodeRegistered_whenRecordedLostAndStruckOff_thenShouldBeDeleted() {
-
-    }
-
 
 }

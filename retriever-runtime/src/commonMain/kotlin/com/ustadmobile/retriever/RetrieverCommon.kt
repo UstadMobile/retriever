@@ -1,21 +1,20 @@
 package com.ustadmobile.retriever
 
+import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.DownloadJobItem
-import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.lib.db.entities.NetworkNodeFailure
-import com.ustadmobile.lib.db.entities.NetworkNodeStatusChange
+import com.ustadmobile.lib.db.entities.*
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.ext.receiveThenTryReceiveAllAvailable
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
 import io.github.aakira.napier.Napier
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlin.math.min
 
 abstract class RetrieverCommon(
     internal val db: RetrieverDatabase,
@@ -26,17 +25,47 @@ abstract class RetrieverCommon(
     protected val port: Int,
     protected val strikeOffTimeWindow: Long,
     protected val strikeOffMaxFailures: Int,
+    private val availabilityManagerFactory: AvailabilityManagerFactory,
     protected val retrieverCoroutineScope: CoroutineScope = GlobalScope,
 ) : Retriever , RetrieverNodeHandler {
 
     protected val availabilityManager : AvailabilityManager by lazy {
-        AvailabilityManager(db, availabilityChecker,
-            strikeOffMaxFailures, strikeOffTimeWindow, nodeHandler = this,
-            retrieverCoroutineScope = retrieverCoroutineScope)
+        availabilityManagerFactory.makeAvailabilityManager(db, availabilityChecker,
+            strikeOffMaxFailures, strikeOffTimeWindow, retryDelay = 1000,
+            nodeHandler = this, retrieverCoroutineScope = retrieverCoroutineScope)
     }
 
     internal open fun start() {
         availabilityManager.checkQueue()
+    }
+
+    private val restoreCheckJobs = concurrentSafeMapOf<Int, Job>()
+
+    private val checkRestoreSignal = Channel<Boolean>(Channel.UNLIMITED)
+
+    private val nodeRestorerJob = retrieverCoroutineScope.launch {
+        var lastRunTime = 0L
+        while(isActive) {
+            val timeNow = systemTimeInMillis()
+            val nextRestorable = db.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                txDb.networkNodeDao.restoreNodes(timeNow - strikeOffTimeWindow, strikeOffMaxFailures)
+                txDb.checkNetworkNodeStatusChanges()
+
+                val countFailuresSince = (timeNow - strikeOffTimeWindow)
+                println("Restore lastRunTime =$lastRunTime, timenow = $timeNow, count fail since = $countFailuresSince")
+
+                val restorableTimes = txDb.networkNodeDao.findNetworkNodeRestorableTimes(
+                    countFailuresSince, strikeOffMaxFailures, timeNow)
+                restorableTimes.filter { it.restorableTime > 0L }.minOfOrNull { it.restorableTime }
+                    ?: Long.MAX_VALUE
+            }
+
+            val waitTime = min(nextRestorable - timeNow, strikeOffTimeWindow)
+            withTimeoutOrNull(waitTime) {
+                checkRestoreSignal.receiveThenTryReceiveAllAvailable()
+            }
+            lastRunTime = timeNow
+        }
     }
 
     suspend fun handleNodeDiscovered(networkNode: NetworkNode){
@@ -63,17 +92,7 @@ abstract class RetrieverCommon(
                 txDb.networkNodeDao.insertNodeAsync(networkNode)
                 checkQueue = true
             }else {
-                networkNode.networkNodeId = existingUid
-                networkNode.lastSuccessTime = timeNow
-
-                //We only need to check the queue again if this node was struck off, and is now back.
-                //TODO HERE: We should wait until the node will be "forgiven" for its failures and is no longer struck off
-                // failCountForNode could return the last fail time. That could then trigger events for availability
-                // checking and downloaders.
-                checkQueue = txDb.networkNodeFailureDao.failureCountForNode(existingUid,
-                    timeNow - strikeOffTimeWindow) >= strikeOffMaxFailures
-
-                txDb.networkNodeDao.updateAsync(networkNode)
+                handleNetworkNodeSuccessful(txDb, listOf(NetworkNodeSuccess(existingUid, timeNow)))
             }
         }
 
@@ -130,8 +149,17 @@ abstract class RetrieverCommon(
      * Log that the given network node has been interacted with successfully (e.g. ping, request fulfilled, etc). This
      * may result in the network node restored if it was previously struck off.
      */
-    override suspend fun handleNetworkNodeSuccessful() {
+    override suspend fun handleNetworkNodeSuccessful(
+        transactionDb: RetrieverDatabase,
+        successes: List<NetworkNodeSuccess>
+    ) {
+        val timeNow = systemTimeInMillis()
+        successes.groupBy { it.successNodeId }.forEach {
+            transactionDb.networkNodeDao.updateLastSuccessTime(it.key, it.value.maxOf { it.successTime })
+        }
 
+        transactionDb.networkNodeDao.restoreNodes(timeNow - strikeOffTimeWindow, strikeOffMaxFailures)
+        transactionDb.checkNetworkNodeStatusChanges()
     }
 
     /**
@@ -203,6 +231,7 @@ abstract class RetrieverCommon(
 
     override fun close() {
         availabilityManager.close()
+        nodeRestorerJob.cancel()
     }
 
     companion object {

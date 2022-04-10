@@ -4,6 +4,7 @@ import androidx.room.*
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.lib.db.entities.NetworkNodeAndLastFailInfo
+import com.ustadmobile.lib.db.entities.NetworkNodeRestoreInfo
 
 @Dao
 abstract class NetworkNodeDao: BaseDao<NetworkNode> {
@@ -145,5 +146,39 @@ abstract class NetworkNodeDao: BaseDao<NetworkNode> {
         checkForNodesThatFailedSince: Long,
     )
 
+    @Query("""
+        UPDATE NetworkNode
+           SET networkNodeStatus = ${NetworkNode.STATUS_OK}
+         WHERE networkNodeStatus != ${NetworkNode.STATUS_OK}      
+           AND (SELECT COUNT(*) 
+                  FROM NetworkNodeFailure
+                 WHERE failNetworkNodeId = NetworkNode.networkNodeId
+                   AND failTime >= :countFailuresSince) < :maxFailuresAllowed
+    """)
+    abstract suspend fun restoreNodes(
+        countFailuresSince: Long,
+        maxFailuresAllowed: Int,
+    )
+
+    @Query("""
+      SELECT NetworkNode.networkNodeId, 
+             NetworkNode.lastSuccessTime,
+             COALESCE(
+                (SELECT failTime
+                   FROM NetworkNodeFailure
+                  WHERE NetworkNodeFailure.failNetworkNodeId = NetworkNode.networkNodeId
+                    AND NetworkNodeFailure.failTime >= :countFailuresSince
+               ORDER BY NetworkNodeFailure.failTime DESC
+                  LIMIT 1
+                 OFFSET (:maxFailuresAllowed - 1)), :timeNow) AS restorableTime
+        FROM NetworkNode         
+       WHERE NetworkNode.networkNodeStatus != ${NetworkNode.STATUS_OK}
+         
+    """)
+    abstract suspend fun findNetworkNodeRestorableTimes(
+        countFailuresSince: Long,
+        maxFailuresAllowed: Int,
+        timeNow: Long
+    ): List<NetworkNodeRestoreInfo>
 
 }

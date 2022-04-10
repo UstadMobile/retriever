@@ -249,6 +249,13 @@ class AvailabilityManagerTest {
             }, any())
         }
 
+        //Should report the failures to the node handler
+        verifyBlocking(mockNodeHandler, times(3)) {
+            handleNetworkNodeFailures(any(), argWhere { failList ->
+                failList.any { it.failNetworkNodeId == defaultNetworkNodeList[0].networkNodeId }
+            })
+        }
+
         verify(onAvailabilityChanged, timeout(5000)).onAvailabilityChanged(argWhere {
             !it.checksPending
         })

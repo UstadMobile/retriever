@@ -20,10 +20,11 @@ class RetrieverJvm(
     port: Int,
     strikeOffTimeWindow: Long,
     strikeOffMaxFailures: Int,
+    availabilityManagerFactory: AvailabilityManagerFactory,
     retrieverCoroutineScope: CoroutineScope,
 ) : RetrieverCommonJvm(
     db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, strikeOffTimeWindow,
-    strikeOffMaxFailures, json, retrieverCoroutineScope
+    strikeOffMaxFailures, json, availabilityManagerFactory, retrieverCoroutineScope
 ) {
 
     override suspend fun choosePort(): Int {

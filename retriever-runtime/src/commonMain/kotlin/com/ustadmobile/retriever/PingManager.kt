@@ -6,6 +6,7 @@ import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.NetworkNodeAndLastFailInfo
 import com.ustadmobile.lib.db.entities.NetworkNodeFailure
+import com.ustadmobile.lib.db.entities.NetworkNodeSuccess
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.*
@@ -48,6 +49,7 @@ class PingManager(
     private val peerNodeFailureTimePeriod: Long,
     private val pinger: Pinger,
     private val localListeningPort: Int,
+    private val nodeHandler: RetrieverNodeHandler,
     private val retrieverCoroutineScope: CoroutineScope,
     private val numProcessors: Int = DEFAULT_NUM_PROCESSORS,
     private val updateCommitInterval: Long = 500,
@@ -68,10 +70,11 @@ class PingManager(
     private val nodesBeingPinged = concurrentSafeListOf<NetworkNodeAndLastFailInfo>()
 
     private suspend fun RetrieverDatabase.commitUpdates() {
-        networkNodeUpdates.forEach {
-            networkNodeDao.updateLastSuccessTime(it.value.networkNodeId, it.value.lastSuccessTime)
-        }
-        networkNodeFailureDao.insertListAsync(networkNodeFailures)
+        nodeHandler.handleNetworkNodeSuccessful(this, networkNodeUpdates.map {
+            NetworkNodeSuccess(it.value.networkNodeId, it.value.lastSuccessTime)
+        })
+
+        nodeHandler.handleNetworkNodeFailures(this, networkNodeFailures)
         networkNodeUpdates.clear()
         networkNodeFailures.clear()
     }

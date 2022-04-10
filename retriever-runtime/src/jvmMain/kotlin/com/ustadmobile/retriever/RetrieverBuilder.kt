@@ -47,7 +47,7 @@ class RetrieverBuilder(
 
         val retriever = RetrieverJvm(db, nsdServiceName, AvailabilityCheckerHttp(ktorClient),
             OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json, port, strikeOffTimeWindow,
-            strikeOffMaxFailures, retrieverCoroutineScope)
+            strikeOffMaxFailures, DefaultAvailabilityManagerFactory(), retrieverCoroutineScope)
         retriever.start()
         return retriever
     }

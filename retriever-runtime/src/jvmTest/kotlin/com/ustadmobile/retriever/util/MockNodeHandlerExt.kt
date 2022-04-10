@@ -3,6 +3,7 @@ package com.ustadmobile.retriever.util
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.lib.db.entities.NetworkNodeFailure
+import com.ustadmobile.lib.db.entities.NetworkNodeSuccess
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverNodeHandler
 import com.ustadmobile.retriever.db.RetrieverDatabase
@@ -10,6 +11,7 @@ import kotlinx.coroutines.runBlocking
 import org.mockito.kotlin.any
 import org.mockito.kotlin.stub
 
+@Suppress("UNCHECKED_CAST")
 fun RetrieverNodeHandler.mockRecordingFailuresAndNodeStrikeOff(
     strikeOffTimeWindow: Long = (3* 60 * 1000),
     strikeOffMaxFailures: Int = 3,
@@ -35,7 +37,19 @@ fun RetrieverNodeHandler.mockRecordingFailuresAndNodeStrikeOff(
                 block(struckOffNodes.map { it.scNetworkNodeId } )
             }
 
-            Unit
+        }
+
+        onBlocking {
+            handleNetworkNodeSuccessful(any(), any())
+        }.thenAnswer { invocation ->
+            val db = invocation.arguments.first() as RetrieverDatabase
+            val successes = invocation.arguments[1] as List<NetworkNodeSuccess>
+
+            runBlocking {
+                successes.groupBy { it.successNodeId }.forEach {
+                    db.networkNodeDao.updateLastSuccessTime(it.key, it.value.maxOf { it.successTime })
+                }
+            }
         }
     }
 }

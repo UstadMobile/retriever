@@ -36,13 +36,14 @@ class RetrieverAndroidImpl internal constructor(
     port: Int,
     strikeOffTimeWindow: Long,
     strikeOffMaxFailures: Int,
+    availabilityManagerFactory: AvailabilityManagerFactory,
     retrieverCoroutineScope: CoroutineScope,
 ): RetrieverCommonJvm(
     db, nsdServiceName, availabilityChecker, originServerFetcher, localPeerFetcher, port, strikeOffTimeWindow,
-    strikeOffMaxFailures, json, retrieverCoroutineScope,
+    strikeOffMaxFailures, json, availabilityManagerFactory, retrieverCoroutineScope,
 ) {
 
-    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "retriever_settings")
 
     private val dataStore: DataStore<Preferences>
         get() = applicationContext.dataStore
@@ -174,7 +175,7 @@ class RetrieverAndroidImpl internal constructor(
     }
 
 
-    internal override fun start() {
+    override fun start() {
         super.start()
 
         retrieverCoroutineScope.launch {

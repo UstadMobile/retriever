@@ -288,4 +288,9 @@ class RetrieverIntegrationTest {
         retrieverPeers[1].assertDownloadMatchesOriginal(originUrl)
     }
 
+    @Test
+    fun givenNetworkNodeDiscoveredByPeer_whenOtherNodeLost_willBeDetectedAsLostByPing() {
+
+    }
+
 }

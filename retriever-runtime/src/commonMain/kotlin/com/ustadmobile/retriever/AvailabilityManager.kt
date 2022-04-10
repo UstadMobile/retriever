@@ -178,6 +178,8 @@ class AvailabilityManager(
                 }
 
                 val affectedResult = database.withDoorTransactionAsync(RetrieverDatabase::class) { txDb ->
+                    nodeHandler.handleNetworkNodeSuccessful(txDb,
+                        listOf(NetworkNodeSuccess(item.networkNode.networkNodeId, currentTime)))
                     txDb.availabilityResponseDao.insertList(allResponses)
                     txDb.availabilityResponseDao.findAllListenersAndAvailabilityByTime(currentTime, 0,
                         strikeOffMaxFailures, systemTimeInMillis() - strikeOffTimeWindow)
