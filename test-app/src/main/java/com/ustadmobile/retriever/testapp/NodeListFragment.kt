@@ -95,20 +95,6 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
             requireContext(), (retriever as RetrieverAndroidImpl).database, this)
         controller?.onCreate()
 
-        val fab : FloatingActionButton = rootView.findViewById(R.id.fragment_node_list_fab_add)
-
-        fab.setOnClickListener{
-
-            fabClicked = if(fabClicked){
-                fab.animate().rotation(-90f)
-                showFabItems(rootView, View.GONE)
-                false
-            }else{
-                fab.animate().rotation(45f)
-                showFabItems(rootView, View.VISIBLE)
-                true
-            }
-        }
 
         return rootView
     }
@@ -130,14 +116,6 @@ class NodeListFragment(): Fragment(), NodeListView, NodeListener, ClickAddNode, 
         }
     }
 
-    private fun showFabItems(view: View, visibility: Int){
-        if(visibility == View.VISIBLE){
-            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_fab_bt).show()
-        }else{
-            view.findViewById<FloatingActionButton>(R.id.fragment_node_list_fab_bt).hide()
-        }
-        view.findViewById<TextView>(R.id.fragment_node_list_bt_tv).visibility = visibility
-    }
 
     private fun checkBluetooth(){
         val bluetoothManager: BluetoothManager =
