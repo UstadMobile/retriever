@@ -3,8 +3,10 @@ package com.ustadmobile.retriever
 import com.ustadmobile.lib.db.entities.NetworkNode
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.gson.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -28,7 +30,9 @@ class AvailabilityCheckerHttpTest {
     fun setup() {
         json = Json { encodeDefaults = true }
         httpClient = HttpClient(OkHttp) {
-            install(JsonFeature)
+            install(ContentNegotiation) {
+                json(json)
+            }
             install(HttpTimeout)
         }
 
@@ -38,7 +42,7 @@ class AvailabilityCheckerHttpTest {
 
     @Test
     fun givenServerRunning_whenCheckAvailabilityCalled_thenWillReturnExpectedResult() {
-        val checker = AvailabilityCheckerHttp(httpClient)
+        val checker = AvailabilityCheckerHttp(httpClient, json)
 
         val availableResponse = TEST_URLS.filter { AVAILABILITY.containsKey(it) }
             .map { FileAvailableResponse(it, "aa", 42) }

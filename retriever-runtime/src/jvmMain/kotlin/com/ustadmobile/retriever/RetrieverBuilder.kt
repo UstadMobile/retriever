@@ -63,7 +63,7 @@ class RetrieverBuilder(
         val config = RetrieverConfig(nsdServiceName, strikeOffTimeWindow, strikeOffMaxFailures, pingInterval,
             pingRetryInterval, pingTimeout, port)
 
-        val retriever = RetrieverJvm(db, config, AvailabilityCheckerHttp(ktorClient),
+        val retriever = RetrieverJvm(db, config, AvailabilityCheckerHttp(ktorClient, json),
             OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json,
             DefaultAvailabilityManagerFactory(), PingerHttp(ktorClient, pingTimeout), retrieverCoroutineScope)
         retriever.start()

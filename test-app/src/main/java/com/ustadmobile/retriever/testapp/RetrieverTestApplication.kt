@@ -7,8 +7,9 @@ import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
@@ -29,8 +30,8 @@ class RetrieverTestApplication: Application(), DIAware {
         bind<HttpClient>() with singleton {
             HttpClient(OkHttp) {
 
-                install(JsonFeature) {
-                    serializer = GsonSerializer()
+                install(ContentNegotiation) {
+                    json(instance())
                 }
                 install(HttpTimeout)
 

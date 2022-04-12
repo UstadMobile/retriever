@@ -2,7 +2,7 @@ package com.ustadmobile.retriever
 
 import com.ustadmobile.retriever.ext.requirePostfix
 import io.ktor.client.*
-import io.ktor.client.features.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 
 /**
@@ -14,7 +14,7 @@ class PingerHttp(
 ): Pinger {
 
     override suspend fun ping(endpoint: String, localListeningPort: Int) {
-        httpClient.get<Unit>(endpoint.requirePostfix("/") + "ping") {
+        httpClient.get(endpoint.requirePostfix("/") + "ping") {
             header(RetrieverCommon.RETRIEVER_PORT_HEADER, localListeningPort.toString())
             timeout {
                 requestTimeoutMillis = pingTimeout

@@ -11,12 +11,14 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.content.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -65,7 +67,9 @@ class RetrieverIntegrationTest {
 
 
         httpClient = HttpClient(OkHttp) {
-            install(JsonFeature)
+            install(ContentNegotiation){
+                json(json)
+            }
             install(HttpTimeout)
             engine {
                 preconfigured = okHttpClient
@@ -261,9 +265,9 @@ class RetrieverIntegrationTest {
                 if(request.path?.endsWith("/availability") == true) {
                     val availability: String = runBlocking {
                         httpClient.post(peer0Server.url("/availability")) {
-                            body = ByteArrayContent(request.body.readByteArray(),
-                                contentType = ContentType.Application.Json)
-                        }
+                            setBody(ByteArrayContent(request.body.readByteArray(),
+                                contentType = ContentType.Application.Json))
+                        }.body()
                     }
 
                     return MockResponse()

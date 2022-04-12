@@ -72,7 +72,7 @@ class RetrieverBuilderAndroid private constructor(
         val config = RetrieverConfig(nsdServiceName, strikeOffTimeWindow, strikeOffMaxFailures, pingInterval,
             pingRetryInterval, pingTimeout, port)
 
-        val retriever = RetrieverAndroidImpl(db, config, context, AvailabilityCheckerHttp(ktorClient),
+        val retriever = RetrieverAndroidImpl(db, config, context, AvailabilityCheckerHttp(ktorClient, json),
             OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json,
             DefaultAvailabilityManagerFactory(), PingerHttp(ktorClient, pingTimeout), retrieverCoroutineScope)
         Napier.d("Retriever: Built retriever in ${systemTimeInMillis() - startTime}ms")

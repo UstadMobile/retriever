@@ -5,8 +5,8 @@ import com.ustadmobile.retriever.responder.PingResponder
 import fi.iki.elonen.router.RouterNanoHTTPD
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -25,7 +25,7 @@ class PingerHttpPingResponderIntegrationTest {
     fun setup() {
         httpClient = HttpClient(OkHttp) {
             install(HttpTimeout)
-            install(JsonFeature)
+            install(ContentNegotiation)
         }
 
         pingReceiverHttpd = RouterNanoHTTPD(0)
