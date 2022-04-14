@@ -24,8 +24,8 @@ class AvailabilityCheckerHttp(
 
         val originUrlsJsonStr = json.encodeToString(ListSerializer(String.serializer()), originUrls)
         val result: List<FileAvailableResponse> = httpClient.post(url) {
-            setBody(TextContent(originUrlsJsonStr, contentType = ContentType.Application.Json))
-        }.body()
+            body = TextContent(originUrlsJsonStr, contentType = ContentType.Application.Json)
+        }
 
         return AvailabilityCheckerResult(result, networkNode.networkNodeId)
     }

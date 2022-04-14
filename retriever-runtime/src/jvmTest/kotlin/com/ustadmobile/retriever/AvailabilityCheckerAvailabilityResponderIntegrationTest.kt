@@ -10,9 +10,8 @@ import com.ustadmobile.retriever.responder.AvailabilityResponder
 import fi.iki.elonen.router.RouterNanoHTTPD
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.features.*
+import io.ktor.client.features.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.junit.Assert
@@ -48,9 +47,7 @@ class AvailabilityCheckerAvailabilityResponderIntegrationTest {
         routerNanoHTTPD.start()
 
         httpClient = HttpClient(OkHttp) {
-            install(ContentNegotiation) {
-                json(json)
-            }
+            install(JsonFeature)
             install(HttpTimeout)
         }
 

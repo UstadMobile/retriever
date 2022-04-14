@@ -14,8 +14,8 @@ import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.features.*
+import io.ktor.client.features.json.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -61,7 +61,7 @@ class RetrieverTest {
 
 
         httpClient = HttpClient(OkHttp) {
-            install(ContentNegotiation)
+            install(JsonFeature)
             install(HttpTimeout)
             engine {
                 preconfigured = okHttpClient
