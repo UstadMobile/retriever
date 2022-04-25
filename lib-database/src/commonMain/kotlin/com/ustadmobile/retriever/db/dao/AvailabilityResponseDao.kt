@@ -1,14 +1,17 @@
 package com.ustadmobile.retriever.db.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
-import com.ustadmobile.core.db.dao.BaseDao
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
 import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.FileAvailabilityWithListener
 
 @Dao
-abstract class AvailabilityResponseDao: BaseDao<AvailabilityResponse> {
+abstract class AvailabilityResponseDao {
+
+    @Insert
+    abstract suspend fun insertList(responses: List<AvailabilityResponse>)
 
     @Query("""
             WITH AffectedObservers AS 

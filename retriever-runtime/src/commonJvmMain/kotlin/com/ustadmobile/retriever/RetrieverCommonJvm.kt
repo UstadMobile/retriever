@@ -11,6 +11,7 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import java.io.File
 import kotlinx.serialization.json.Json
 import com.ustadmobile.door.ext.withDoorTransactionAsync
+import com.ustadmobile.retriever.ext.asLocallyStoredFileAsync
 import com.ustadmobile.retriever.responder.PingResponder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,10 +65,10 @@ abstract class RetrieverCommonJvm(
             if(!file.exists())
                 throw IllegalArgumentException("addFiles: ${file.absolutePath} does not exist!")
 
-            LocallyStoredFile(it.originUrl, it.filePath, file.length(), file.crc32)
+            file.asLocallyStoredFileAsync(it.originUrl)
         }
 
-        db.locallyStoredFileDao.insertList(locallyStoredFiles)
+        db.locallyStoredFileDao.insertListAsync(locallyStoredFiles)
     }
 
     override suspend fun getAllLocallyStoredFiles(): List<LocallyStoredFile>{

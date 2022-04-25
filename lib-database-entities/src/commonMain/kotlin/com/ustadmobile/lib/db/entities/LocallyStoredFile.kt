@@ -19,7 +19,6 @@ open class LocallyStoredFile() {
     /**
      * Origin URL for this file
      */
-    //@PrimaryKey
     var lsfOriginUrl: String? = null
 
     /**
@@ -38,11 +37,37 @@ open class LocallyStoredFile() {
      */
     var lsfCrc32: Long = 0
 
-    constructor(originUrl: String, filePath: String, size: Long, crc32: Long) : this() {
+    /**
+     * Base64 encoded SHA-256 checksum
+     */
+    var lsfSha256: String? = null
+
+    /**
+     * Base64 encoded SHA-384 checksum
+     */
+    var lsfSha384: String? = null
+
+    /**
+     * Base64 encoded SHA-512 checksum
+     */
+    var lsfSha512: String? = null
+
+    constructor(
+        originUrl: String,
+        filePath: String,
+        size: Long,
+        crc32: Long,
+        sha256: String?,
+        sha384: String?,
+        sha512: String?
+    ) : this() {
         lsfOriginUrl = originUrl
         lsfFilePath = filePath
         lsfFileSize = size
         lsfCrc32 = crc32
+        lsfSha256 = sha256
+        lsfSha384 = sha384
+        lsfSha512 = sha512
     }
 
 }

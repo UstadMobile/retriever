@@ -1,17 +1,21 @@
 package com.ustadmobile.retriever.db.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
-import com.ustadmobile.core.db.dao.BaseDao
-import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.door.DoorLiveData
 import com.ustadmobile.door.annotation.SqliteOnly
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.lib.db.entities.LocallyStoredFileAndDownloadJobItem
 
 @Dao
-abstract class LocallyStoredFileDao: BaseDao<LocallyStoredFile> {
+abstract class LocallyStoredFileDao {
 
+    @Insert
+    abstract fun insertList(storedFiles: List<LocallyStoredFile>)
+
+    @Insert
+    abstract suspend fun insertListAsync(storedFiles: List<LocallyStoredFile>)
 
     @Query("""
         SELECT * FROM LocallyStoredFile 

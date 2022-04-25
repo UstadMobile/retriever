@@ -10,6 +10,7 @@ import org.mockito.kotlin.mock
 import com.google.gson.reflect.TypeToken
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.FileAvailableResponse
+import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -25,13 +26,15 @@ class AvailabilityResponderTest {
     private lateinit var json: Json
 
     private val availableFiles: List<LocallyStoredFile> = (0..7).map {
-        LocallyStoredFile("http://path.to/file$it", "/storage/file$it", 42, 0)
+        LocallyStoredFile("http://path.to/file$it", "/storage/file$it", 42, 0, "a", "b", "c")
     }
 
     @Before
     fun setup(){
         context = Any()
-        db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb").build()
+        db = DatabaseBuilder.databaseBuilder(context, RetrieverDatabase::class,"jvmTestDb")
+            .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
+            .build()
         db.clearAllTables()
 
         db.locallyStoredFileDao.insertList(availableFiles)

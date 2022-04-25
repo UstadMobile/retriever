@@ -9,6 +9,8 @@ import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
+import com.ustadmobile.retriever.ext.asLocallyStoredFile
 import com.ustadmobile.retriever.ext.crc32
 import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
@@ -74,10 +76,12 @@ class DownloaderFetcherIntegrationTest {
         downloadDestDir = temporaryFolder.newFolder("downloads")
         peerFilesDir = temporaryFolder.newFolder("peer-files")
         localDb = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "RetrieverDatabase")
+            .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build().also {
                 it.clearAllTables()
             }
         peerDb = DatabaseBuilder.databaseBuilder(Any(),  RetrieverDatabase::class, "RetrieverDatabasePeer")
+            .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build().also {
                 it.clearAllTables()
             }
@@ -150,17 +154,19 @@ class DownloaderFetcherIntegrationTest {
             networkNodeId = localDb.networkNodeDao.insert(this).toInt()
         }
 
-        localDb.availabilityResponseDao.insertList(itemsToDownload.map {
-            AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
-        })
+        runBlocking {
+            localDb.availabilityResponseDao.insertList(itemsToDownload.map {
+                AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
+            })
+        }
+
 
         peerDb.locallyStoredFileDao.insertList(
             RESOURCE_PATHS.map { resPath ->
                 val localFile = File(peerFilesDir, resPath.substringAfter("/"))
                 this@DownloaderFetcherIntegrationTest::class.java.getResourceAsStream(resPath)!!
                     .writeToFile(localFile)
-                LocallyStoredFile(originHttpServer.url("/resources$resPath"), localFile.absolutePath,
-                    localFile.length(), localFile.crc32)
+                localFile.asLocallyStoredFile(originHttpServer.url("/resources$resPath"))
             })
 
         val downloader = Downloader(batchId, mockAvailabilityManager, mock { }, originServerFetcher, localPeerFetcher,

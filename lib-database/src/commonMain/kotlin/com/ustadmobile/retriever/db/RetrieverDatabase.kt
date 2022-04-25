@@ -1,7 +1,6 @@
 package com.ustadmobile.retriever.db
 
 import androidx.room.Database
-import com.ustadmobile.core.db.dao.*
 import com.ustadmobile.door.*
 import com.ustadmobile.door.entities.*
 import com.ustadmobile.door.ext.DoorTag

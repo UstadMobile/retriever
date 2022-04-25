@@ -151,7 +151,7 @@ class RetrieverTest {
 
         val networkNodeId = retrieverJvm.discoverNode(nodeEndpoint)
         retrieverJvm.recordFailures(3, networkNodeId)
-        verifyBlocking(mockAvailabilityManager) {
+        verifyBlocking(mockAvailabilityManager, timeout(1000)) {
             handleNodesStruckOff(argWhere { networkNodeId in it })
         }
 

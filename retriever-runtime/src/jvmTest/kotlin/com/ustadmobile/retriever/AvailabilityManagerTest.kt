@@ -73,7 +73,6 @@ class AvailabilityManagerTest {
             .build()
         db.clearAllTables()
 
-        //Add Nodes
         db.networkNodeDao.insertList(defaultNetworkNodeList)
 
         availabilityChecker = mock {

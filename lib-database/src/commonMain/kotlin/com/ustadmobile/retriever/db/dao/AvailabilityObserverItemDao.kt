@@ -1,8 +1,8 @@
 package com.ustadmobile.retriever.db.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
-import com.ustadmobile.core.db.dao.BaseDao
 import com.ustadmobile.door.DoorDataSourceFactory
 import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
 import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
@@ -10,7 +10,10 @@ import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
 import com.ustadmobile.lib.db.entities.NetworkNode
 
 @Dao
-abstract class AvailabilityObserverItemDao: BaseDao<AvailabilityObserverItem> {
+abstract class AvailabilityObserverItemDao {
+
+    @Insert
+    abstract suspend fun insertList(observers: List<AvailabilityObserverItem>)
 
     //Return a list of AvailabilityObserverItem and NetworkNodeId for all Items without an availability resposne
     @Query(QUERY_FINDPENDINGITEMS)

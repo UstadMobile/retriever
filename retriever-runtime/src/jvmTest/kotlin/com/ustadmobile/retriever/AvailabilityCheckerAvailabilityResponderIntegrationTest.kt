@@ -5,6 +5,7 @@ import com.ustadmobile.lib.db.entities.AvailabilityResponse
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.lib.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
 import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.responder.AvailabilityResponder
 import fi.iki.elonen.router.RouterNanoHTTPD
@@ -29,13 +30,15 @@ class AvailabilityCheckerAvailabilityResponderIntegrationTest {
     private lateinit var httpClient: HttpClient
 
     private val availableFiles: List<LocallyStoredFile> = (0..7).map {
-        LocallyStoredFile("http://path.to/file$it", "/storage/file$it", 42, 0)
+        LocallyStoredFile("http://path.to/file$it", "/storage/file$it", 42, 0, "abc", "abc", "abc")
     }
 
 
     @Before
     fun setup() {
-        responderDb = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "jvmTestDb").build()
+        responderDb = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "jvmTestDb")
+            .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
+            .build()
         responderDb.clearAllTables()
 
         responderDb.locallyStoredFileDao.insertList(availableFiles)

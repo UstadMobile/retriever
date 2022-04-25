@@ -1,4 +1,4 @@
-package com.ustadmobile.core.db.dao
+package com.ustadmobile.retriever.db.dao
 
 import androidx.room.*
 import com.ustadmobile.door.DoorDataSourceFactory
@@ -7,7 +7,13 @@ import com.ustadmobile.lib.db.entities.NetworkNodeAndLastFailInfo
 import com.ustadmobile.lib.db.entities.NetworkNodeRestoreInfo
 
 @Dao
-abstract class NetworkNodeDao: BaseDao<NetworkNode> {
+abstract class NetworkNodeDao {
+
+    @Insert
+    abstract fun insertList(nodes: List<NetworkNode>)
+
+    @Insert
+    abstract fun insert(node: NetworkNode): Long
 
     @Query("""
         SELECT COALESCE(

@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
-apply plugin: 'digital.wup.android-maven-publish'
 apply plugin: "kotlin-android"
 apply plugin: 'kotlin-kapt'
+apply plugin: 'maven-publish'
 
 buildscript {
     repositories {
@@ -130,22 +130,27 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$version_android_espresso"
 }
 
-publishing {
-    publications {
-        mavenAar(MavenPublication) {
-            from components.android
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                // Applies the component for the release build variant.
+                from components.release
 
-            groupId rootProject.group
-            artifactId project.name
-            version "${rootProject.version}"
-        }
-    }
+                // You can then customize attributes of the publication as shown below.
+                groupId = rootProject.group
+                artifactId = "lib-database-android"
+                version = rootProject.version
+            }
+            // Creates a Maven publication called “debug”.
+            debug(MavenPublication) {
+                // Applies the component for the debug build variant.
+                from components.debug
 
-    repositories {
-        //Set this in projectdir/extrasettings.gradle
-        maven {
-            //TODO
-            //url rootProject.ext.buildConfigProperties['repo.dir']
+                groupId = rootProject.group
+                artifactId = "lib-database-android"
+                version = rootProject.version
+            }
         }
     }
 }

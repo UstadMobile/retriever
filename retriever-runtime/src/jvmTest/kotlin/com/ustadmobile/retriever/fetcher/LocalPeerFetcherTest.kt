@@ -21,6 +21,8 @@ import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import com.ustadmobile.retriever.io.RangeInputStream
+import io.github.aakira.napier.DebugAntilog
+import io.github.aakira.napier.Napier
 import org.mockito.kotlin.*
 import java.io.*
 import java.security.MessageDigest
@@ -97,6 +99,8 @@ class LocalPeerFetcherTest {
         tmpZipFile = temporaryFolder.newFile()
         integrityMap = mutableMapOf()
         makeTempZipFile()
+        Napier.takeLogarithm()
+        Napier.base(DebugAntilog())
 
         peerHttpServer = RouterNanoHTTPD(0)
         peerHttpServer.start()

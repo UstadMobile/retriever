@@ -2,6 +2,7 @@
 plugins {
     id 'org.jetbrains.kotlin.multiplatform'
     id 'org.jetbrains.kotlin.plugin.serialization'
+    id 'maven-publish'
 }
 
 sourceCompatibility = '1.8'

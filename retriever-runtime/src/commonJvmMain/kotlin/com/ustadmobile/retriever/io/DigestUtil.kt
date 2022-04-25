@@ -8,8 +8,13 @@ import java.util.*
  * MessageDigest.getInstance . Supports sha256, sha384, sha512 as per
  * https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
  */
-private val SUPPORTED_DIGEST_MAP = mapOf("sha-256" to "SHA-256", "sha384" to "SHA-384", "sha512" to "SHA-512")
+val SUPPORTED_DIGEST_MAP = mapOf("sha256" to "SHA-256", "sha384" to "SHA-384", "sha512" to "SHA-512")
 
+/**
+ * Given an SRI integrity string as per https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
+ * e.g. "sha384-digestInBase64" return a pair containing the digest algorithm nam as per MessageDigest.getInstance and the
+ * ByteArray of the actual digest
+ */
 fun parseIntegrity(integrity: String): Pair<String, ByteArray> {
     val integrityParts = integrity.split(delimiters = arrayOf("-"), false, 2)
     if(integrityParts.size != 2)

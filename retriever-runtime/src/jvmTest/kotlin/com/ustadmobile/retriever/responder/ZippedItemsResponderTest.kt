@@ -4,6 +4,8 @@ import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.door.ext.writeToFile
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
+import com.ustadmobile.retriever.ext.asLocallyStoredFile
 import com.ustadmobile.retriever.ext.crc32
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
@@ -47,15 +49,13 @@ class ZippedItemsResponderTest {
         this::class.java.getResourceAsStream("/animated-overlay.gif")!!.writeToFile(overlayFile)
 
         db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "RetrieverDatabase")
+            .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build().also {
                 it.clearAllTables()
             }
         db.locallyStoredFileDao.insertList(listOf(
-            LocallyStoredFile("http://cats.com/cat-pic0.jpg", catPicFile.absolutePath, catPicFile.length(),
-                catPicFile.crc32),
-            LocallyStoredFile("http://cats.com/overlay.gif", overlayFile.absolutePath, overlayFile.length(),
-                overlayFile.crc32),
-        ))
+            catPicFile.asLocallyStoredFile("http://cats.com/cat-pic0.jpg"),
+            overlayFile.asLocallyStoredFile("http://cats.com/overlay.gif")))
 
 
         mockUriResource = mock {

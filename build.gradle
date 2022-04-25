@@ -28,8 +28,8 @@ buildscript {
 }
 
 
-group 'com.ustadmobile.retriever'
-version '0.0.1'
+group 'com.github.UstadMobile.retriever'
+version '0.0.1f'
 
 
 allprojects {
@@ -38,19 +38,7 @@ allprojects {
         mavenCentral()
 
         maven {
-            url "https://devserver3.ustadmobile.com/maven"
-        }
-
-        maven {
-            url "https://devserver3.ustadmobile.com/repo-mvn"
-        }
-
-        maven {
             url "https://jitpack.io"
-        }
-
-        maven {
-            url "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/"
         }
 
     }

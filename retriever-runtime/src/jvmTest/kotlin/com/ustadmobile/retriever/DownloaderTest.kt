@@ -11,6 +11,7 @@ import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
+import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
 import com.ustadmobile.retriever.fetcher.*
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import io.github.aakira.napier.DebugAntilog
@@ -43,6 +44,7 @@ class DownloaderTest {
     fun setup() {
         Napier.base(DebugAntilog())
         db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "RetrieverDatabase")
+            .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build().also {
                 it.clearAllTables()
             }
@@ -129,9 +131,12 @@ class DownloaderTest {
             networkNodeId = db.networkNodeDao.insert(this).toInt()
         }
 
-        db.availabilityResponseDao.insertList(downloadJobItems.map {
-            AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
-        })
+        runBlocking {
+            db.availabilityResponseDao.insertList(downloadJobItems.map {
+                AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
+            })
+        }
+
 
         mockLocalPeerFetcher.stub {
             onBlocking { download(any(), any(), any()) }.thenAnswer {
@@ -340,9 +345,12 @@ class DownloaderTest {
             networkNodeId = db.networkNodeDao.insert(this).toInt()
         }
 
-        db.availabilityResponseDao.insertList(downloadJobItems.map {
-            AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
-        })
+        runBlocking {
+            db.availabilityResponseDao.insertList(downloadJobItems.map {
+                AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
+            })
+        }
+
 
         runBlocking {
             db.networkNodeFailureDao.insertListAsync((0..3).map { index ->
@@ -394,9 +402,12 @@ class DownloaderTest {
             networkNodeId = db.networkNodeDao.insert(this).toInt()
         }
 
-        db.availabilityResponseDao.insertList(downloadJobItems.map {
-            AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
-        })
+        runBlocking {
+            db.availabilityResponseDao.insertList(downloadJobItems.map {
+                AvailabilityResponse(networkNode.networkNodeId, it.djiOriginUrl!!, true, systemTimeInMillis())
+            })
+        }
+
 
         val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
             mockOriginServerFetcher, mockLocalPeerFetcher, db, strikeOffMaxFailures = 3, attemptRetryDelay = 100)

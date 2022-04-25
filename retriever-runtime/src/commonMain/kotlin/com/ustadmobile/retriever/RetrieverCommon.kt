@@ -1,5 +1,6 @@
 package com.ustadmobile.retriever
 
+import com.ustadmobile.door.ext.DoorTag
 import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
@@ -144,7 +145,14 @@ abstract class RetrieverCommon(
         networkNodeStatusChangeDao.clear()
 
         val (struckOffNodes, restoredNodes) = statusChanges.partition { it.scNewStatus == NetworkNode.STATUS_STRUCK_OFF }
-        availabilityManager.handleNodesStruckOff(struckOffNodes.map { it.scNetworkNodeId} )
+        if(struckOffNodes.isNotEmpty()) {
+            val struckOffNodeIds = struckOffNodes.map { it.scNetworkNodeId}
+            Napier.d("Nodes struck off: ${struckOffNodeIds.joinToString()}", tag = DoorTag.LOG_TAG)
+            availabilityManager.handleNodesStruckOff(struckOffNodeIds)
+        }else {
+            Napier.d("checked, no nodes struck off")
+        }
+
         if(restoredNodes.isNotEmpty())
             availabilityManager.checkQueue()
     }

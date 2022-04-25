@@ -41,3 +41,21 @@ suspend fun InputStream.copyToAndUpdateProgress(
 
     return totalBytesRead
 }
+
+//The read/write has to actually happen somewhere. This function regularly checks
+//for cancellation and behaves appropriately.
+@Suppress("BlockingMethodInNonBlockingContext")
+suspend fun InputStream.copyToAsync(
+    dest: OutputStream,
+    bufferSize: Int = 8192
+) {
+    val buffer = ByteArray(bufferSize)
+    var bytesRead = 0
+
+    while(coroutineContext.isActive && this.read(buffer).also { bytesRead = it} != -1) {
+        dest.write(buffer, 0, bytesRead)
+    }
+
+    dest.flush()
+}
+
