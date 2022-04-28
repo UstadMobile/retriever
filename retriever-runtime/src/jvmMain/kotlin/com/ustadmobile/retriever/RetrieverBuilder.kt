@@ -70,7 +70,8 @@ class RetrieverBuilder(
             pingRetryInterval, pingTimeout, port, integrityChecksumArr)
 
         val retriever = RetrieverJvm(db, config, AvailabilityCheckerHttp(ktorClient, json),
-            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json, integrityChecksumArr), json,
+            OriginServerFetcher(okHttpClient, integrityChecksumArr),
+            LocalPeerFetcher(okHttpClient, json, integrityChecksumArr), json,
             DefaultAvailabilityManagerFactory(), PingerHttp(ktorClient, pingTimeout), retrieverCoroutineScope)
         retriever.start()
         return retriever

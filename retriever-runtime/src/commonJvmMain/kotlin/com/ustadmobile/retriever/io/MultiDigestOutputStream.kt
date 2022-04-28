@@ -7,7 +7,8 @@ import java.util.zip.CRC32
 
 /**
  * Gets multiple digests simultaneously when writing. Similar to MessageDigestOutputStream. Should be faster because
- * we use send ByteArray buffers directly to the underlying outputStream and digests (unlike FilterOutputStream by default)
+ * we use send ByteArray buffers directly to the underlying outputStream and digests (unlike FilterOutputStream,
+ * which by default sends one byte at a time)
  */
 class MultiDigestOutputStream(
     outStream: OutputStream,

@@ -23,7 +23,9 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.*
 
 class RetrieverTest {
@@ -41,6 +43,10 @@ class RetrieverTest {
     private lateinit var mockAvailabilityManagerFactory: AvailabilityManagerFactory
 
     private lateinit var mockAvailabilityChecker: AvailabilityChecker
+
+    @JvmField
+    @Rule
+    var tempFolderRule = TemporaryFolder()
 
     @Before
     fun setup() {
@@ -178,6 +184,32 @@ class RetrieverTest {
 
         //Should be called once when Retriever start() is called, once when discovered, and then again when restored
         verify(mockAvailabilityManager, timeout(2000).times(3)).checkQueue()
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun givenInvalidIntegrity_whenRetrieveCalled_thenShouldThrowIllegalArgumentException() {
+        val retrieverConfig = RetrieverConfig("ustad", 1000, 3)
+        val retrieverJvm = RetrieverJvm(db, retrieverConfig,  mockAvailabilityChecker,  mock { }, mock {  },
+            json,  mockAvailabilityManagerFactory, mock {  }, GlobalScope)
+
+        runBlocking {
+            retrieverJvm.retrieve(listOf(RetrieverRequest("http://server.com/file",
+                tempFolderRule.newFile().absolutePath, "foobar")), mock { })
+        }
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun givenIntegrityNotInConfiguration_whenRetrieveCalled_thenShouldThrowIllegalArgumentException() {
+        val retrieverConfig = RetrieverConfig("ustad", 1000, 3,
+            integrityChecksumTypes = arrayOf(IntegrityChecksum.SHA256))
+        val retrieverJvm = RetrieverJvm(db, retrieverConfig,  mockAvailabilityChecker,  mock { }, mock {  },
+            json,  mockAvailabilityManagerFactory, mock {  }, GlobalScope)
+
+        runBlocking {
+            retrieverJvm.retrieve(listOf(RetrieverRequest("http://server.com/file",
+                tempFolderRule.newFile().absolutePath,
+                "sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC")), mock { })
+        }
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.ustadmobile.retriever.fetcher
 
 import com.ustadmobile.lib.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ResourcesResponder
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.ext.url
@@ -17,6 +18,7 @@ import org.mockito.kotlin.verifyBlocking
 import java.io.File
 import java.security.MessageDigest
 import java.util.*
+import java.util.zip.CRC32
 
 class OriginServerFetcherTest {
 
@@ -55,16 +57,20 @@ class OriginServerFetcherTest {
         val destFile = File(downloadDestDir, "cat-pic0")
         val mockProgressListener = mock<RetrieverListener>()
 
-        runBlocking {
-            val resourceBytes = this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.readAllBytes()
-            val messageDigest = MessageDigest.getInstance("SHA-384")
-            messageDigest.update(resourceBytes)
+        val resourceBytes = this::class.java.getResourceAsStream("/cat-pic0.jpg")!!.readAllBytes()
+        val sha256MessageDigest = MessageDigest.getInstance("SHA-256")
+        sha256MessageDigest.update(resourceBytes)
+        val sha256Digest = sha256MessageDigest.digest()
+        val expectedCrc32 = CRC32().also {
+            it.update(resourceBytes)
+        }.value
 
+        runBlocking {
             OriginServerFetcher(okHttpClient).download(
                 listOf(DownloadJobItem().apply {
                     djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
                     djiDestPath = destFile.absolutePath
-                    djiIntegrity = "sha384-" + Base64.getEncoder().encodeToString(messageDigest.digest())
+                    djiIntegrity = "sha256-" + Base64.getEncoder().encodeToString(sha256Digest)
                 }) , mockProgressListener)
         }
 
@@ -84,7 +90,8 @@ class OriginServerFetcherTest {
             })
 
             onRetrieverStatusUpdate(argWhere {
-                it.status == STATUS_SUCCESSFUL
+                it.status == STATUS_SUCCESSFUL && Arrays.equals(sha256Digest, it.checksums?.sha256)
+                        && expectedCrc32 == it.checksums?.crc32
             })
         }
     }
@@ -113,6 +120,12 @@ class OriginServerFetcherTest {
         val partialBytes = bytesInItem.copyOf(bytesInItem.size / 2)
         destFile.writeBytes(partialBytes)
 
+        val expectedSha256 = MessageDigest.getInstance("SHA-256")
+            .digest(bytesInItem)
+        val expectedCrc32 = CRC32().also {
+            it.update(bytesInItem)
+        }.value
+
         val mockProgressListener = mock<RetrieverListener>()
 
         runBlocking {
@@ -126,6 +139,12 @@ class OriginServerFetcherTest {
         Assert.assertArrayEquals("Downloaded bytes match original bytes",
             this::class.java.getResource("/cat-pic0.jpg")!!.readBytes(),
             destFile.readBytes())
+        verifyBlocking(mockProgressListener) {
+            onRetrieverStatusUpdate(argWhere {
+                it.status == Retriever.STATUS_SUCCESSFUL && Arrays.equals(expectedSha256, it.checksums?.sha256)
+                        && it.checksums?.crc32 == expectedCrc32
+            })
+        }
     }
 
     @Test

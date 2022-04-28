@@ -1,7 +1,7 @@
 package com.ustadmobile.retriever.io
 
 import com.ustadmobile.retriever.IntegrityChecksum
-import java.util.*
+import com.ustadmobile.retriever.ext.decodeBase64
 
 
 /**
@@ -13,20 +13,20 @@ val SUPPORTED_DIGEST_MAP = mapOf("sha256" to "SHA-256", "sha384" to "SHA-384", "
 
 /**
  * Given an SRI integrity string as per https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
- * e.g. "sha384-digestInBase64" return a pair containing the digest algorithm nam as per MessageDigest.getInstance and the
- * ByteArray of the actual digest
+ * e.g. "sha384-digestInBase64" return a pair containing the IntegrityChecksum enum class for the given algorithm and
+ * the ByteArray of the actual expected digest value
  */
 fun parseIntegrity(integrity: String): Pair<IntegrityChecksum, ByteArray> {
     val integrityParts = integrity.split(delimiters = arrayOf("-"), false, 2)
     if(integrityParts.size != 2)
-        throw IllegalArgumentException("Invalid integrity string!")
+        throw IllegalArgumentException("integrity: $integrity: Invalid integrity string!")
 
     val digestName = SUPPORTED_DIGEST_MAP[integrityParts.first()]
-        ?: throw IllegalArgumentException("Unsupported digest: $SUPPORTED_DIGEST_MAP")
+        ?: throw IllegalArgumentException("integrity: $integrity:  Unsupported digest: $SUPPORTED_DIGEST_MAP")
 
     val integrityChecksum = IntegrityChecksum.values().first { it.messageDigestName == digestName }
 
-    val expectedDigest = Base64.getDecoder().decode(integrityParts[1])
+    val expectedDigest = integrityParts[1].decodeBase64()
 
     return integrityChecksum to expectedDigest
 }

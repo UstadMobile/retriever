@@ -13,6 +13,7 @@ import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
 import com.ustadmobile.retriever.io.FileChecksums
+import com.ustadmobile.retriever.io.parseIntegrity
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -206,6 +207,17 @@ abstract class RetrieverCommon(
         retrieverRequests: List<RetrieverRequest>,
         progressListener: RetrieverListener
     ) {
+        //Make sure that any integrity checksums provided are valid
+        retrieverRequests.forEach { request ->
+            val checksumParsed = request.sriIntegrity?.let { parseIntegrity(it) }
+            if(checksumParsed != null){
+                if(config.integrityChecksumTypes.firstOrNull { it == checksumParsed.first } == null) {
+                    throw IllegalArgumentException("Request uses ${checksumParsed.first} but that is not in retriever " +
+                            "config integrityChecksumTypes")
+                }
+            }
+        }
+
         val batchId = systemTimeInMillis()
 
         data class CompletedDownload(val filePath: String, val checksums: FileChecksums?)
