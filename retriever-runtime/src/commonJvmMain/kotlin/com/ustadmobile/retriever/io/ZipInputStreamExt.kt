@@ -92,7 +92,8 @@ suspend fun ZipInputStream.extractToDir(
                         it.key to it.value.digest()
                     }.toMap()
 
-                    val finalStatus = if(integrityCheckumType != null && !Arrays.equals(expectedDigest, actualDigests[integrityCheckumType])) {
+                    val finalStatus = if(integrityCheckumType != null &&
+                            !Arrays.equals(expectedDigest, actualDigests[integrityCheckumType])) {
                         //fail integrity check; discard
 
                         destFile.delete()
@@ -103,14 +104,21 @@ suspend fun ZipInputStream.extractToDir(
                         STATUS_QUEUED
                     }
 
+                    val checksums = if(finalStatus == STATUS_SUCCESSFUL) {
+                        FileChecksums.fromMap(actualDigests, crc32.value)
+                    }else {
+                        null
+                    }
+
                     channel.send(RetrieverProgressEvent(downloadJobItem.djiUid, zipEntry.name, entryBytesSoFar,
                         entryBytesSoFar,0L, zipEntry.size))
                     progressListener?.onRetrieverStatusUpdate(RetrieverStatusUpdateEvent(downloadJobItem.djiUid,
-                        zipEntry.name, finalStatus))
+                        zipEntry.name, finalStatus, checksums))
                 }
                 messageDigests.forEach {
                     it.reset()
                 }
+                crc32.reset()
             }
         }catch(e: Exception) {
             throw e

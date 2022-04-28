@@ -1,6 +1,7 @@
 package com.ustadmobile.retriever.fetcher
 
 import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.ext.headerSize
 import com.ustadmobile.retriever.ext.url
@@ -123,7 +124,43 @@ class LocalPeerFetcherTest {
                 djiDestPath = File(downloadDestDir, resPath.substringAfterLast("/")).absolutePath
                 djiIndex = index
                 djiIntegrity = integrityMap[resPath]
+                djiUid = index
             }
+        }
+    }
+
+
+    private fun DownloadJobItem.assertSuccessfullyCompleted(){
+        val originalItemBytes = this::class.java.getResourceAsStream(
+            "${djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes()
+        Assert.assertArrayEquals("Content for ${djiOriginUrl} is the same",
+            originalItemBytes, File(djiDestPath!!).readBytes())
+        val expectedSha256 = MessageDigest.getInstance("SHA-256").digest(originalItemBytes)
+        val expectedCrc32 = CRC32().also { it.update(originalItemBytes) }.value
+        verifyBlocking(mockRetrieverListener, atLeastOnce()) {
+            onRetrieverProgress(argWhere { evt ->
+                evt.downloadJobItemUid == djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
+            })
+        }
+
+        verifyBlocking(mockRetrieverListener) {
+            onRetrieverStatusUpdate(argWhere { evt ->
+                evt.downloadJobItemUid == djiUid && evt.status == Retriever.STATUS_SUCCESSFUL
+                        && Arrays.equals(expectedSha256, evt.checksums?.sha256)
+                        && evt.checksums?.crc32 == expectedCrc32
+            })
+        }
+    }
+
+    /**
+     * Check each download item completed successfully as expected, including
+     *  1. The bytes stored in the destination file match with the original bytes
+     *  2. An event was provided to the retrieverListener that the download was successful
+     *  3. The success event contains crc32 and SHA-256 that matches the expected values
+     */
+    private fun assertDownloadJobItemsSuccessfullyCompleted() {
+        downloadJobItems.forEach {
+            it.assertSuccessfullyCompleted()
         }
     }
 
@@ -137,16 +174,7 @@ class LocalPeerFetcherTest {
             localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverListener)
         }
 
-        downloadJobItems.forEach {
-            Assert.assertArrayEquals("Content for ${it.djiOriginUrl} is the same",
-                this::class.java.getResourceAsStream("${it.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
-                File(it.djiDestPath!!).readBytes())
-            verifyBlocking(mockRetrieverListener, atLeastOnce()) {
-                onRetrieverProgress(argWhere { evt ->
-                    evt.downloadJobItemUid == it.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
-                })
-            }
-        }
+        assertDownloadJobItemsSuccessfullyCompleted()
     }
 
     @Test(expected = IllegalStateException::class)
@@ -174,13 +202,7 @@ class LocalPeerFetcherTest {
             localPeerFetcher.download(hostEndpoint, downloadJobItems, mockRetrieverListener)
         }
 
-
-
-        downloadJobItems.forEach {
-            Assert.assertArrayEquals("Content for ${it.djiOriginUrl} is the same",
-                this::class.java.getResourceAsStream("${it.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
-                File(it.djiDestPath!!).readBytes())
-        }
+        assertDownloadJobItemsSuccessfullyCompleted()
     }
 
     @Test
@@ -253,16 +275,7 @@ class LocalPeerFetcherTest {
                 Assert.assertFalse("Corrupt download was deleted", File(jobItem.djiDestPath!!).exists())
 
             }else {
-                verifyBlocking(mockRetrieverListener, atLeastOnce()) {
-                    onRetrieverProgress(argWhere { evt ->
-                        evt.downloadJobItemUid == jobItem.djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
-                    })
-                }
-
-                Assert.assertArrayEquals("Content for ${jobItem.djiOriginUrl} is the same",
-                    this::class.java.getResourceAsStream("${jobItem.djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes(),
-                    File(jobItem.djiDestPath!!).readBytes())
-
+                jobItem.assertSuccessfullyCompleted()
             }
 
         }

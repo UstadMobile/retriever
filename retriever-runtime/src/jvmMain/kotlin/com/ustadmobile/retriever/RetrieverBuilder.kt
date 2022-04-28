@@ -65,11 +65,12 @@ class RetrieverBuilder(
             .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build()
 
+        val integrityChecksumArr = integrityChecksums.toTypedArray()
         val config = RetrieverConfig(nsdServiceName, strikeOffTimeWindow, strikeOffMaxFailures, pingInterval,
-            pingRetryInterval, pingTimeout, port, integrityChecksums.toTypedArray())
+            pingRetryInterval, pingTimeout, port, integrityChecksumArr)
 
         val retriever = RetrieverJvm(db, config, AvailabilityCheckerHttp(ktorClient, json),
-            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json,
+            OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json, integrityChecksumArr), json,
             DefaultAvailabilityManagerFactory(), PingerHttp(ktorClient, pingTimeout), retrieverCoroutineScope)
         retriever.start()
         return retriever

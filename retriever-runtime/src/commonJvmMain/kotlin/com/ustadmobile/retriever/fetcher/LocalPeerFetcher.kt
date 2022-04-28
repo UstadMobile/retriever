@@ -2,6 +2,7 @@ package com.ustadmobile.retriever.fetcher
 
 import com.ustadmobile.door.ext.writeToFile
 import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.IntegrityChecksum
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.RetrieverStatusUpdateEvent
@@ -22,7 +23,8 @@ import java.util.*
 
 actual class LocalPeerFetcher(
     private val okHttpClient: OkHttpClient,
-    private val json: Json
+    private val json: Json,
+    private val integrityChecksums: Array<IntegrityChecksum> = IntegrityChecksum.values(),
 ) {
 
     actual suspend fun download(
@@ -114,7 +116,8 @@ actual class LocalPeerFetcher(
                 }
 
                 ZipInputStream(sourceInput).use { zipIn ->
-                    zipIn.extractToDir(destFileProvider, jobItemUrlMap, progressListener = listenerWrapper)
+                    zipIn.extractToDir(destFileProvider, jobItemUrlMap, integrityChecksums = integrityChecksums,
+                        progressListener = listenerWrapper)
                 }
             }
 

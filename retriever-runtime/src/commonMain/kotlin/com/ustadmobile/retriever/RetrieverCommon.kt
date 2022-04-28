@@ -12,6 +12,7 @@ import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import com.ustadmobile.retriever.fetcher.RetrieverProgressEvent
+import com.ustadmobile.retriever.io.FileChecksums
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -207,8 +208,10 @@ abstract class RetrieverCommon(
     ) {
         val batchId = systemTimeInMillis()
 
-        //Map of url to destination file
-        val completedFileMap = mutableMapOf<String, String>()
+        data class CompletedDownload(val filePath: String, val checksums: FileChecksums?)
+
+        //Map of the origin URL to the filePath and checksums of completed downloads
+        val completedFileMap = mutableMapOf<String, CompletedDownload>()
 
         val listenerWrapper = object: RetrieverListener {
             override suspend fun onRetrieverProgress(retrieverProgressEvent: RetrieverProgressEvent) {
@@ -217,8 +220,9 @@ abstract class RetrieverCommon(
 
             override suspend fun onRetrieverStatusUpdate(retrieverStatusEvent: RetrieverStatusUpdateEvent) {
                 if(retrieverStatusEvent.status == Retriever.STATUS_SUCCESSFUL){
-                    completedFileMap[retrieverStatusEvent.url] = retrieverRequests
-                        .first { it.originUrl == retrieverStatusEvent.url }.destinationFilePath
+                    val destPath = retrieverRequests.first { it.originUrl == retrieverStatusEvent.url }.destinationFilePath
+                    completedFileMap[retrieverStatusEvent.url] = CompletedDownload(destPath,
+                        retrieverStatusEvent.checksums)
                 }
 
                 progressListener.onRetrieverStatusUpdate(retrieverStatusEvent)
@@ -236,10 +240,14 @@ abstract class RetrieverCommon(
             }
         })
 
-        Downloader(batchId, availabilityManager, listenerWrapper, originServerFetcher, localPeerFetcher, db,
-            strikeOffMaxFailures = config.strikeOffMaxFailures, strikeOffTimeWindow = config.strikeOffTimeWindow).download()
+        try {
+            Downloader(batchId, availabilityManager, listenerWrapper, originServerFetcher, localPeerFetcher, db,
+                strikeOffMaxFailures = config.strikeOffMaxFailures, strikeOffTimeWindow = config.strikeOffTimeWindow).download()
+        }finally {
+            addFiles(completedFileMap.map { LocalFileInfo(it.key, it.value.filePath, it.value.checksums) })
+        }
 
-        addFiles(completedFileMap.map { LocalFileInfo(it.key, it.value) })
+
     }
 
     override fun close() {
