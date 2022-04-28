@@ -8,5 +8,6 @@ data class RetrieverConfig(
     val pingRetryInterval: Long = 5000,
     val pingTimeout: Long = 5000,
     val port: Int = 0,
+    val integrityChecksumTypes: Array<IntegrityChecksum> = arrayOf(IntegrityChecksum.SHA256),
 ) {
 }

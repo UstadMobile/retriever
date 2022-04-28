@@ -1,14 +1,14 @@
 package com.ustadmobile.retriever
 
+import com.ustadmobile.retriever.io.FileChecksums
+
 /**
- * @param sha256 SHA-256 sum (base64 encoded)
- * @param sha384 SHA-384 sum (base64 encoded)
- * @param sha512 SHA-512 sum (base64 encoded)
+ * @param originUrl the origin url for this file
+ * @param filePath the file path of the file on the disk (e.g. /path/to/file, not a file uri)
+ * @param checksums - the checksums for this file (if already known)
  */
 class LocalFileInfo(
     val originUrl: String,
     val filePath: String,
-    val sha256: String? = null,
-    val sha384: String? = null,
-    val sha512: String? = null,
+    val checksums: FileChecksums? = null,
 )

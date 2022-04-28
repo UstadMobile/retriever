@@ -1,5 +1,6 @@
 package com.ustadmobile.retriever.io
 
+import com.ustadmobile.retriever.IntegrityChecksum
 import java.util.*
 
 
@@ -15,7 +16,7 @@ val SUPPORTED_DIGEST_MAP = mapOf("sha256" to "SHA-256", "sha384" to "SHA-384", "
  * e.g. "sha384-digestInBase64" return a pair containing the digest algorithm nam as per MessageDigest.getInstance and the
  * ByteArray of the actual digest
  */
-fun parseIntegrity(integrity: String): Pair<String, ByteArray> {
+fun parseIntegrity(integrity: String): Pair<IntegrityChecksum, ByteArray> {
     val integrityParts = integrity.split(delimiters = arrayOf("-"), false, 2)
     if(integrityParts.size != 2)
         throw IllegalArgumentException("Invalid integrity string!")
@@ -23,7 +24,9 @@ fun parseIntegrity(integrity: String): Pair<String, ByteArray> {
     val digestName = SUPPORTED_DIGEST_MAP[integrityParts.first()]
         ?: throw IllegalArgumentException("Unsupported digest: $SUPPORTED_DIGEST_MAP")
 
+    val integrityChecksum = IntegrityChecksum.values().first { it.messageDigestName == digestName }
+
     val expectedDigest = Base64.getDecoder().decode(integrityParts[1])
 
-    return digestName to expectedDigest
+    return integrityChecksum to expectedDigest
 }

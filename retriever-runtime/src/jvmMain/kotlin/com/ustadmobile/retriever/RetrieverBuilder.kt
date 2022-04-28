@@ -54,6 +54,11 @@ class RetrieverBuilder(
      */
     var pingTimeout: Long = 5000
 
+    /**
+     * The types of integrity checksums to support
+     */
+    var integrityChecksums: List<IntegrityChecksum> = listOf(IntegrityChecksum.SHA256)
+
     fun build(): Retriever{
         val db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, dbName)
             .addCallback(DELETE_NODE_INFO_CALLBACK)
@@ -61,7 +66,7 @@ class RetrieverBuilder(
             .build()
 
         val config = RetrieverConfig(nsdServiceName, strikeOffTimeWindow, strikeOffMaxFailures, pingInterval,
-            pingRetryInterval, pingTimeout, port)
+            pingRetryInterval, pingTimeout, port, integrityChecksums.toTypedArray())
 
         val retriever = RetrieverJvm(db, config, AvailabilityCheckerHttp(ktorClient, json),
             OriginServerFetcher(okHttpClient), LocalPeerFetcher(okHttpClient, json), json,

@@ -2,7 +2,6 @@ package com.ustadmobile.retriever
 
 import com.ustadmobile.lib.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
-import com.ustadmobile.retriever.ext.crc32
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher
 import com.ustadmobile.retriever.responder.AvailabilityResponder
@@ -65,7 +64,7 @@ abstract class RetrieverCommonJvm(
             if(!file.exists())
                 throw IllegalArgumentException("addFiles: ${file.absolutePath} does not exist!")
 
-            file.asLocallyStoredFileAsync(it.originUrl)
+            file.asLocallyStoredFileAsync(it.originUrl, config.integrityChecksumTypes, it.checksums)
         }
 
         db.locallyStoredFileDao.insertListAsync(locallyStoredFiles)

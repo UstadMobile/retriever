@@ -6,6 +6,9 @@ plugins {
     id 'maven-publish'
 }
 
+group rootProject.group
+version rootProject.version
+
 
 repositories {
     mavenCentral()
@@ -156,16 +159,6 @@ android {
     buildTypes {
         release {
             consumerProguardFiles 'proguard-rules.pro'
-        }
-    }
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId rootProject.group
-            artifactId project.name
-            version rootProject.version
         }
     }
 }

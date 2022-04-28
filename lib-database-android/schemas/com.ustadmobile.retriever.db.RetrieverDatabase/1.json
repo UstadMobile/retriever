@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "a23fd1ba0a5bd59c1f91511e4fb7f647",
+    "identityHash": "1f222946502af672509f0ff7b91966dd",
     "entities": [
       {
         "tableName": "AvailabilityResponse",
@@ -165,7 +165,7 @@
       },
       {
         "tableName": "LocallyStoredFile",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`locallyStoredFileUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `lsfOriginUrl` TEXT, `lsfFilePath` TEXT, `lsfFileSize` INTEGER NOT NULL, `lsfCrc32` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`locallyStoredFileUid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `lsfOriginUrl` TEXT, `lsfFilePath` TEXT, `lsfFileSize` INTEGER NOT NULL, `lsfCrc32` INTEGER NOT NULL, `lsfSha256` TEXT, `lsfSha384` TEXT, `lsfSha512` TEXT)",
         "fields": [
           {
             "fieldPath": "locallyStoredFileUid",
@@ -196,6 +196,24 @@
             "columnName": "lsfCrc32",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "lsfSha256",
+            "columnName": "lsfSha256",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lsfSha384",
+            "columnName": "lsfSha384",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lsfSha512",
+            "columnName": "lsfSha512",
+            "affinity": "TEXT",
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -583,7 +601,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a23fd1ba0a5bd59c1f91511e4fb7f647')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1f222946502af672509f0ff7b91966dd')"
     ]
   }
 }

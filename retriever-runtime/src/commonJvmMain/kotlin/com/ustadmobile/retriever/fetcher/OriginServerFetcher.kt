@@ -38,9 +38,9 @@ actual class OriginServerFetcher(
             var totalBytes = 0L
 
             try {
-                val (digestName, expectedDigest) =  downloadJobItem.djiIntegrity?.let { parseIntegrity(it) }
+                val (integrityChecksum, expectedDigest) =  downloadJobItem.djiIntegrity?.let { parseIntegrity(it) }
                     ?: (null to null)
-                val messageDigest = digestName?.let { MessageDigest.getInstance(it) }
+                val messageDigest = integrityChecksum?.let { MessageDigest.getInstance(it.messageDigestName) }
 
 
                 if(bytesAlreadyDownloaded > 0 && messageDigest != null) {

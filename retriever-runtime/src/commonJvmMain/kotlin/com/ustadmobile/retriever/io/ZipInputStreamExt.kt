@@ -8,6 +8,7 @@ import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.isActive
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.IntegrityChecksum
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
@@ -23,6 +24,7 @@ import java.util.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.*
+import java.util.zip.CRC32
 
 
 /**
@@ -32,6 +34,7 @@ import kotlinx.coroutines.channels.*
 suspend fun ZipInputStream.extractToDir(
     destProvider: (ZipEntry) -> File,
     urlToJobMap: Map<String, DownloadJobItem>,
+    integrityChecksums: Array<IntegrityChecksum> = IntegrityChecksum.values(),
     progressInterval: Int = 200,
     progressListener: RetrieverListener? = null,
 ) {
@@ -52,7 +55,11 @@ suspend fun ZipInputStream.extractToDir(
         }
 
         try {
-            val messageDigests = arrayOfSupportedDigests()
+            val crc32 = CRC32()
+            val digestMap = integrityChecksums.associate {
+                it to MessageDigest.getInstance(it.messageDigestName)
+            }
+            val messageDigests = digestMap.values.toTypedArray()
 
             while(zipIn.nextEntry?.also { zipEntry = it } != null) {
                 val destFile = destProvider(zipEntry)
@@ -63,10 +70,10 @@ suspend fun ZipInputStream.extractToDir(
                 lastProgressUpdateTime = systemTimeInMillis()
 
                 var entryBytesSoFar = 0L
-                val (digestName, expectedDigest) =  downloadJobItem.djiIntegrity?.let { parseIntegrity(it)}
+                val (integrityCheckumType, expectedDigest) =  downloadJobItem.djiIntegrity?.let { parseIntegrity(it)}
                     ?: (null to null)
                 val destFileOutput = FileOutputStream(destFile)
-                val outputStream = MultiDigestOutputStream(destFileOutput, messageDigests)
+                val outputStream = MultiDigestOutputStream(destFileOutput, messageDigests, crc32)
 
                 outputStream.use { fileOut ->
                     while(coroutineContext.isActive && zipIn.read(buffer).also { bytesRead = it } != -1) {
@@ -81,13 +88,11 @@ suspend fun ZipInputStream.extractToDir(
                     }
                     fileOut.flush()
 
-                    val actualDigest = if(digestName != null) {
-                        messageDigests[SUPPORTED_DIGEST_INDEX_MAP[digestName]!!].digest()
-                    }else {
-                        null
-                    }
+                    val actualDigests = digestMap.map {
+                        it.key to it.value.digest()
+                    }.toMap()
 
-                    val finalStatus = if(actualDigest != null && !Arrays.equals(expectedDigest, actualDigest)) {
+                    val finalStatus = if(integrityCheckumType != null && !Arrays.equals(expectedDigest, actualDigests[integrityCheckumType])) {
                         //fail integrity check; discard
 
                         destFile.delete()

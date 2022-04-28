@@ -102,19 +102,3 @@ afterEvaluate {
     }
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId rootProject.group
-            artifactId project.name
-            version rootProject.version
-        }
-    }
-
-    repositories {
-        maven {
-            //TODO:
-            //url rootProject.ext.buildConfigProperties['repo.dir']
-        }
-    }
-}
