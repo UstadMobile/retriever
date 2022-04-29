@@ -6,6 +6,8 @@ import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.ext.url
+import com.ustadmobile.retriever.util.assertSuccessfullyCompleted
+import com.ustadmobile.retriever.util.h5pDownloadJobItemList
 import fi.iki.elonen.router.RouterNanoHTTPD
 import kotlinx.coroutines.runBlocking
 import okhttp3.Dispatcher
@@ -19,6 +21,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.*
 import java.util.zip.CRC32
+import kotlin.system.measureTimeMillis
 
 class OriginServerFetcherTest {
 
@@ -61,40 +64,48 @@ class OriginServerFetcherTest {
         val sha256MessageDigest = MessageDigest.getInstance("SHA-256")
         sha256MessageDigest.update(resourceBytes)
         val sha256Digest = sha256MessageDigest.digest()
-        val expectedCrc32 = CRC32().also {
-            it.update(resourceBytes)
-        }.value
+
+        val downloadJobItem = DownloadJobItem().apply {
+            djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
+            djiDestPath = destFile.absolutePath
+            djiIntegrity = "sha256-" + Base64.getEncoder().encodeToString(sha256Digest)
+        }
 
         runBlocking {
             OriginServerFetcher(okHttpClient).download(
-                listOf(DownloadJobItem().apply {
-                    djiOriginUrl = originHttpServer.url("/resources/cat-pic0.jpg")
-                    djiDestPath = destFile.absolutePath
-                    djiIntegrity = "sha256-" + Base64.getEncoder().encodeToString(sha256Digest)
-                }) , mockProgressListener)
+                listOf(downloadJobItem) , mockProgressListener)
         }
 
-        Assert.assertArrayEquals("Downloaded bytes match original bytes",
-            this::class.java.getResource("/cat-pic0.jpg")!!.readBytes(),
-            destFile.readBytes())
+        downloadJobItem.assertSuccessfullyCompleted(mockProgressListener,
+            originHttpServer.url("/resources/"))
+
 
         verifyBlocking (mockProgressListener) {
             onRetrieverProgress(argWhere {
                 it.bytesSoFar == 0L && it.totalBytes > 0L
             })
         }
+    }
 
-        verifyBlocking(mockProgressListener) {
-            onRetrieverProgress(argWhere {
-                it.bytesSoFar > 0L && it.bytesSoFar == it.totalBytes
-            })
+    @Test
+    fun givenListOfValidUrls_whenDownloadCalled_thenAllShouldSucceed() {
+        val mockProgressListener = mock<RetrieverListener>()
+        val downloadJobItems = h5pDownloadJobItemList(downloadDestDir) {
+            originHttpServer.url("/resources$it")
+        }
 
-            onRetrieverStatusUpdate(argWhere {
-                it.status == STATUS_SUCCESSFUL && Arrays.equals(sha256Digest, it.checksums?.sha256)
-                        && expectedCrc32 == it.checksums?.crc32
-            })
+        runBlocking {
+            val runTime = measureTimeMillis {
+                OriginServerFetcher(okHttpClient).download(downloadJobItems, mockProgressListener)
+            }
+            println("H5P Container Download time: ${runTime}ms")
+        }
+
+        downloadJobItems.forEach {
+            it.assertSuccessfullyCompleted(mockProgressListener, originHttpServer.url("/resources/"))
         }
     }
+
 
     @Test
     fun givenUrlDoesntExist_whenDownloadCalled_thenShouldFail() {

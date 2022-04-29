@@ -22,6 +22,7 @@ import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import com.ustadmobile.retriever.io.RangeInputStream
+import com.ustadmobile.retriever.util.assertSuccessfullyCompleted
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import org.mockito.kotlin.*
@@ -129,29 +130,6 @@ class LocalPeerFetcherTest {
         }
     }
 
-
-    private fun DownloadJobItem.assertSuccessfullyCompleted(){
-        val originalItemBytes = this::class.java.getResourceAsStream(
-            "${djiOriginUrl?.removePrefix(originUrlPrefix)}")!!.readBytes()
-        Assert.assertArrayEquals("Content for ${djiOriginUrl} is the same",
-            originalItemBytes, File(djiDestPath!!).readBytes())
-        val expectedSha256 = MessageDigest.getInstance("SHA-256").digest(originalItemBytes)
-        val expectedCrc32 = CRC32().also { it.update(originalItemBytes) }.value
-        verifyBlocking(mockRetrieverListener, atLeastOnce()) {
-            onRetrieverProgress(argWhere { evt ->
-                evt.downloadJobItemUid == djiUid && evt.bytesSoFar > 0 && evt.bytesSoFar == evt.totalBytes
-            })
-        }
-
-        verifyBlocking(mockRetrieverListener) {
-            onRetrieverStatusUpdate(argWhere { evt ->
-                evt.downloadJobItemUid == djiUid && evt.status == Retriever.STATUS_SUCCESSFUL
-                        && Arrays.equals(expectedSha256, evt.checksums?.sha256)
-                        && evt.checksums?.crc32 == expectedCrc32
-            })
-        }
-    }
-
     /**
      * Check each download item completed successfully as expected, including
      *  1. The bytes stored in the destination file match with the original bytes
@@ -160,7 +138,7 @@ class LocalPeerFetcherTest {
      */
     private fun assertDownloadJobItemsSuccessfullyCompleted() {
         downloadJobItems.forEach {
-            it.assertSuccessfullyCompleted()
+            it.assertSuccessfullyCompleted(mockRetrieverListener, originUrlPrefix)
         }
     }
 
@@ -275,7 +253,7 @@ class LocalPeerFetcherTest {
                 Assert.assertFalse("Corrupt download was deleted", File(jobItem.djiDestPath!!).exists())
 
             }else {
-                jobItem.assertSuccessfullyCompleted()
+                jobItem.assertSuccessfullyCompleted(mockRetrieverListener, originUrlPrefix)
             }
 
         }

@@ -20,6 +20,7 @@ import java.util.zip.ZipInputStream
 import com.ustadmobile.retriever.ext.headerSize
 import java.io.*
 import java.util.*
+import io.github.aakira.napier.Napier
 
 actual class LocalPeerFetcher(
     private val okHttpClient: OkHttpClient,
@@ -123,6 +124,7 @@ actual class LocalPeerFetcher(
 
             return FetchResult()
         }catch (e: Exception) {
+            Napier.e("Exception attempting to download from peer", e, tag= Retriever.LOGTAG)
             throw e
         }finally {
             if(firstFileTmp?.exists() == true && firstFile.exists())

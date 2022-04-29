@@ -2,9 +2,12 @@ package com.ustadmobile.retriever
 
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import com.ustadmobile.retriever.util.ReverseProxyDispatcher
+import com.ustadmobile.retriever.util.assertSuccessfullyCompleted
+import com.ustadmobile.retriever.util.h5pDownloadJobItemList
 import com.ustadmobile.retriever.util.waitUntilOrTimeout
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD
@@ -29,6 +32,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verifyBlocking
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.system.measureTimeMillis
 
 class RetrieverIntegrationTest {
 
@@ -129,8 +133,11 @@ class RetrieverIntegrationTest {
             resBytes, downloadedBytes)
     }
 
-    private fun RetrieverJvm.assertAllDownloadedLocally(originUrl: String) {
-        val peerDownloadJobItem = runBlocking { db.downloadJobItemDao.findByUrlFirstOrNull(originUrl) }
+    private fun RetrieverJvm.assertAllDownloadedLocally(
+        originUrl: String,
+        txDb: RetrieverDatabase = db,
+    ) {
+        val peerDownloadJobItem = runBlocking { txDb.downloadJobItemDao.findByUrlFirstOrNull(originUrl) }
             ?: throw IllegalStateException("Download for $originUrl not found!")
         Assert.assertEquals("$originUrl was downloaded entirely from peer",
             peerDownloadJobItem.djiTotalSize, peerDownloadJobItem.djiLocalBytesSoFar)
@@ -186,6 +193,53 @@ class RetrieverIntegrationTest {
         retrieverPeers[1].assertDownloadMatchesOriginal(originUrl)
         retrieverPeers[1].assertAllDownloadedLocally(originUrl)
     }
+
+    /**
+     * Simulate a large download batch with 1700+ files. First download from the origin server, then check that the
+     * second peer can download all of them from the peer.
+     */
+    @Test
+    fun givenPeerOnlineWithH5pContainerAvaailable_whenOtherPeerDownloads_thenShouldFetchFromOtherPeer() {
+        mockDiscoverPeers()
+
+        val jobItems0 = h5pDownloadJobItemList(peerTmpFolders[0]) {
+            originServer.url("/resources$it")
+        }
+
+        val mockProgressListener0 : RetrieverListener = mock { }
+        runBlocking {
+            val downloadTime = measureTimeMillis {
+                retrieverPeers[0].retrieve(jobItems0.map {
+                    RetrieverRequest(it.djiOriginUrl!!, it.djiDestPath!!, it.djiIntegrity!!)
+                }, mockProgressListener0)
+            }
+            println("Downloaded from origin in: $downloadTime ms")
+        }
+
+        jobItems0.forEach {
+            it.assertSuccessfullyCompleted(mockProgressListener0, originServer.url("/resources/"))
+        }
+
+        val downloadFromPeerItems = h5pDownloadJobItemList(peerTmpFolders[1]) {
+            originServer.url("/resources$it")
+        }
+
+        val mockProgressListener1: RetrieverListener = mock { }
+        runBlocking {
+            val downloadTime = measureTimeMillis {
+                retrieverPeers[1].retrieve(downloadFromPeerItems.map {
+                    RetrieverRequest(it.djiOriginUrl!!, it.djiDestPath!!, it.djiIntegrity!!)
+                }, mockProgressListener1)
+            }
+            println("Downloaded from peer in: $downloadTime ms")
+        }
+
+        downloadFromPeerItems.forEach {
+            it.assertSuccessfullyCompleted(mockProgressListener1, originServer.url("/resources/"))
+            retrieverPeers[1].assertAllDownloadedLocally(it.djiOriginUrl!!)
+        }
+    }
+
 
     @Test
     fun givenNoOtherPeerDiscovered_whenDownloadCalled_thenShouldDownFromOrigin() {
