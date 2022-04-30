@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever
 
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNode
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.*

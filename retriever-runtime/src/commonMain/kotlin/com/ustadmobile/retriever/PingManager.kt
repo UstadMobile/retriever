@@ -4,9 +4,9 @@ import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.NetworkNodeAndLastFailInfo
-import com.ustadmobile.lib.db.entities.NetworkNodeFailure
-import com.ustadmobile.lib.db.entities.NetworkNodeSuccess
+import com.ustadmobile.retriever.db.entities.NetworkNodeAndLastFailInfo
+import com.ustadmobile.retriever.db.entities.NetworkNodeFailure
+import com.ustadmobile.retriever.db.entities.NetworkNodeSuccess
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.*

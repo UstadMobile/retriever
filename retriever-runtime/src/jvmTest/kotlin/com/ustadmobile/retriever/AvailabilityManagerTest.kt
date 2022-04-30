@@ -3,9 +3,9 @@ package com.ustadmobile.retriever
 import com.soywiz.klock.DateTime
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
-import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.lib.db.entities.NetworkNodeFailure
+import com.ustadmobile.retriever.db.entities.AvailabilityObserverItem
+import com.ustadmobile.retriever.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNodeFailure
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
 import com.ustadmobile.retriever.util.mockRecordingFailuresAndNodeStrikeOff

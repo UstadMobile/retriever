@@ -112,6 +112,3 @@ kotlin {
         }
     }
 }
-
-//Kotlin plugin applied using subprojects DSL on the root project as advised by documentation
-apply plugin: "maven-publish"

@@ -3,10 +3,10 @@ package com.ustadmobile.retriever
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.door.ext.writeToFile
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.AvailabilityResponse
-import com.ustadmobile.lib.db.entities.DownloadJobItem
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.AvailabilityResponse
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.NetworkNode
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK

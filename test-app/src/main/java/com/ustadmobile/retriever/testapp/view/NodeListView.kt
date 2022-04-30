@@ -1,7 +1,7 @@
 package com.ustadmobile.retriever.testapp.view
 
 import com.ustadmobile.door.DoorDataSourceFactory
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNode
 
 interface NodeListView{
 

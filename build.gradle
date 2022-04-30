@@ -29,7 +29,7 @@ buildscript {
 
 
 group 'com.github.UstadMobile.retriever'
-version '0.0.1k'
+version '0.0.1m'
 
 
 allprojects {

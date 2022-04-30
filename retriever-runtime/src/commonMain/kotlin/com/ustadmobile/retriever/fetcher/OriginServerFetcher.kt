@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever.fetcher
 
-import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
 
 /**
  * Simple single item fetcher that will download from a given url and save to a given destination using a get request.

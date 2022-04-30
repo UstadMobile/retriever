@@ -2,7 +2,7 @@ package com.ustadmobile.retriever.db.dao
 
 import androidx.room.Dao
 import androidx.room.Query
-import com.ustadmobile.lib.db.entities.NetworkNodeStatusChange
+import com.ustadmobile.retriever.db.entities.NetworkNodeStatusChange
 
 @Dao
 abstract class NetworkNodeStatusChangeDao {

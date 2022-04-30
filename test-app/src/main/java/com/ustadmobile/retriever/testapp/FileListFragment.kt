@@ -13,8 +13,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
-import com.ustadmobile.lib.db.entities.LocallyStoredFileAndDownloadJobItem
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFileAndDownloadJobItem
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverAndroidImpl
 import com.ustadmobile.retriever.testapp.databinding.FragmentFileListBinding

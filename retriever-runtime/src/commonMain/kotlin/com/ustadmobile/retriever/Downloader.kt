@@ -4,8 +4,8 @@ import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.DownloadJobItem
-import com.ustadmobile.lib.db.entities.DownloadJobItemAndNodeInfo
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.DownloadJobItemAndNodeInfo
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED

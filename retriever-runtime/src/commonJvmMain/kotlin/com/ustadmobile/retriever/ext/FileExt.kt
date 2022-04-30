@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever.ext
 
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.IntegrityChecksum
 import com.ustadmobile.retriever.io.FileChecksums
 import com.ustadmobile.retriever.io.MultiDigestOutputStream

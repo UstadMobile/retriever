@@ -6,7 +6,7 @@ import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.ustadmobile.retriever.testapp.databinding.ItemNetworknodeBinding
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNode
 
 interface NodeListener{
     fun onClickNode(node: NetworkNode)

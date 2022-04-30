@@ -1,9 +1,9 @@
 package com.ustadmobile.retriever.util
 
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.lib.db.entities.NetworkNodeFailure
-import com.ustadmobile.lib.db.entities.NetworkNodeSuccess
+import com.ustadmobile.retriever.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNodeFailure
+import com.ustadmobile.retriever.db.entities.NetworkNodeSuccess
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.RetrieverNodeHandler
 import com.ustadmobile.retriever.db.RetrieverDatabase

@@ -9,8 +9,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.work.*
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItem.Companion.MODE_INC_AVAILABLE_NODES
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.AvailabilityObserverItem.Companion.MODE_INC_AVAILABLE_NODES
+import com.ustadmobile.retriever.db.entities.NetworkNode
 import com.ustadmobile.retriever.AvailabilityEvent
 import com.ustadmobile.retriever.AvailabilityObserver
 import com.ustadmobile.retriever.OnAvailabilityChanged

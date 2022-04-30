@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever.fetcher
 
-import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.Retriever
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.ext.headerSize

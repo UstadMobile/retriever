@@ -1,4 +1,4 @@
-package com.ustadmobile.lib.db.entities
+package com.ustadmobile.retriever.db.entities
 
 class DownloadJobItemAndNodeInfo : DownloadJobItem(){
 

@@ -2,10 +2,10 @@ package com.ustadmobile.retriever
 
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.AvailabilityResponse
-import com.ustadmobile.lib.db.entities.DownloadJobItem
-import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.lib.db.entities.NetworkNodeFailure
+import com.ustadmobile.retriever.db.entities.AvailabilityResponse
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNodeFailure
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED

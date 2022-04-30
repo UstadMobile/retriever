@@ -1,7 +1,7 @@
 package com.ustadmobile.retriever
 
-import com.ustadmobile.lib.db.entities.NetworkNodeFailure
-import com.ustadmobile.lib.db.entities.NetworkNodeSuccess
+import com.ustadmobile.retriever.db.entities.NetworkNodeFailure
+import com.ustadmobile.retriever.db.entities.NetworkNodeSuccess
 import com.ustadmobile.retriever.db.RetrieverDatabase
 
 /**

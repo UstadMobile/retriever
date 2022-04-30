@@ -4,7 +4,7 @@ package com.ustadmobile.retriever
 import com.ustadmobile.door.ext.concurrentSafeListOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.*
+import com.ustadmobile.retriever.db.entities.*
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.receiveThenTryReceiveAllAvailable
 import io.github.aakira.napier.Napier
@@ -226,7 +226,7 @@ class AvailabilityManager(
     }
 
 
-    internal fun checkQueue() {
+    internal fun checkQueue(restoredNodes: Boolean = false) {
         checkQueueSignalChannel.trySend(0)
     }
 

@@ -7,8 +7,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ustadmobile.retriever.testapp.databinding.ItemFileBinding
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
-import com.ustadmobile.lib.db.entities.LocallyStoredFileAndDownloadJobItem
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFileAndDownloadJobItem
 
 interface FileListener{
     fun deleteFile(availableFile: LocallyStoredFile)

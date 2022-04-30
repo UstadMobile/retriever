@@ -1,7 +1,7 @@
 package com.ustadmobile.retriever
 
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.fetcher.RetrieverListener

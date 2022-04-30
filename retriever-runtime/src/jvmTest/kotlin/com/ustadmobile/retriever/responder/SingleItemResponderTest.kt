@@ -2,7 +2,7 @@ package com.ustadmobile.retriever.responder
 
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.door.ext.writeToFile
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
 import com.ustadmobile.retriever.ext.asLocallyStoredFile

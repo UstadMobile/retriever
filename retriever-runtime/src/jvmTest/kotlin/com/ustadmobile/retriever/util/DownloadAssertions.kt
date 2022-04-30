@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever.util
 
-import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ext.requirePrefix
 import com.ustadmobile.retriever.fetcher.RetrieverListener
 import org.junit.Assert

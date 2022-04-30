@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever.responder
 
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.router.RouterNanoHTTPD

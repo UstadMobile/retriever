@@ -1,4 +1,4 @@
-package com.ustadmobile.lib.db.entities
+package com.ustadmobile.retriever.db.entities
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
  * As devices(retreiver's service) are discovered, an entry it put in NetworkNode table with its
  * ip address, endpoint url, time of discovery, time lost.
  * The network nodes are removed when they are lost.
- * All network nodes are likely to be purged when the application closes/restarts. TODO: verify
+ * All network nodes are likely to be purged when the application closes/restarts.
 */
 @Entity(indices =
     arrayOf(Index(value = arrayOf("networkNodeEndpointUrl"), name = "networknode_endpoint_index", unique = true)))

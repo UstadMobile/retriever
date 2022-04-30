@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever.testapp.util
 
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
 import kotlin.math.round
 
 private const val UNIT_GB = 1024L * 1024L * 1024L

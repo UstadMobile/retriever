@@ -3,8 +3,8 @@ package com.ustadmobile.retriever.db.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.ustadmobile.lib.db.entities.DownloadJobItem
-import com.ustadmobile.lib.db.entities.DownloadJobItemAndNodeInfo
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.DownloadJobItemAndNodeInfo
 
 @Dao
 abstract class DownloadJobItemDao {

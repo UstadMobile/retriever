@@ -3,7 +3,7 @@ package com.ustadmobile.retriever.testapp
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNode
 import com.ustadmobile.retriever.testapp.databinding.ItemNetworknodeBinding
 
 class NodeListRecyclerAdapter(): ListAdapter<NetworkNode, NodePagedListRecyclerAdapter.NodeListViewHolder> (

@@ -4,10 +4,10 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.ustadmobile.door.DoorDataSourceFactory
-import com.ustadmobile.lib.db.entities.AvailabilityFileWithNumNodes
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItemWithNetworkNode
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.AvailabilityFileWithNumNodes
+import com.ustadmobile.retriever.db.entities.AvailabilityObserverItem
+import com.ustadmobile.retriever.db.entities.AvailabilityObserverItemWithNetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNode
 
 @Dao
 abstract class AvailabilityObserverItemDao {

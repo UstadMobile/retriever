@@ -3,7 +3,7 @@ package com.ustadmobile.retriever.db.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.ustadmobile.lib.db.entities.NetworkNodeFailure
+import com.ustadmobile.retriever.db.entities.NetworkNodeFailure
 
 @Dao
 abstract class NetworkNodeFailureDao {

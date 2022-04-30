@@ -2,7 +2,7 @@ package com.ustadmobile.retriever
 
 import com.ustadmobile.door.DatabaseBuilder
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNode
 import com.ustadmobile.retriever.Retriever.Companion.DEFAULT_NODE_FAILURE_STRIKEOFF_PERIOD
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK

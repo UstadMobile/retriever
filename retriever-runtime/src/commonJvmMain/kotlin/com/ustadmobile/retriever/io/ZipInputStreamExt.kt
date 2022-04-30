@@ -7,7 +7,7 @@ import java.util.zip.ZipInputStream
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.isActive
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.IntegrityChecksum
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL

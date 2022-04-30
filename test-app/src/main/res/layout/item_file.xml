@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <import type="com.ustadmobile.lib.db.entities.LocallyStoredFile"/>
-        <import type="com.ustadmobile.lib.db.entities.DownloadJobItem"/>
+        <import type="com.ustadmobile.retriever.db.entities.LocallyStoredFile"/>
+        <import type="com.ustadmobile.retriever.db.entities.DownloadJobItem"/>
         <import type="android.text.format.Formatter"/>
         <import type="android.view.View"/>
         <import type="com.ustadmobile.retriever.testapp.util.FormatFileSizeTextKt"/>

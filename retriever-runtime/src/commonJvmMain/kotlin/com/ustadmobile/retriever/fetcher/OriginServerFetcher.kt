@@ -1,7 +1,7 @@
 package com.ustadmobile.retriever.fetcher
 
 import java.io.File
-import com.ustadmobile.lib.db.entities.DownloadJobItem
+import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.IntegrityChecksum
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL

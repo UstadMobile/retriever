@@ -4,7 +4,7 @@ import com.ustadmobile.door.ext.DoorTag
 import com.ustadmobile.door.ext.concurrentSafeMapOf
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.*
+import com.ustadmobile.retriever.db.entities.*
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.ext.receiveThenTryReceiveAllAvailable
@@ -156,7 +156,7 @@ abstract class RetrieverCommon(
         }
 
         if(restoredNodes.isNotEmpty())
-            availabilityManager.checkQueue()
+            availabilityManager.checkQueue(restoredNodes = true)
     }
 
     /**

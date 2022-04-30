@@ -1,12 +1,13 @@
 package com.ustadmobile.retriever.util
 
 import com.ustadmobile.door.DatabaseBuilder
+import com.ustadmobile.door.ext.bindNewSqliteDataSourceIfNotExisting
 import com.ustadmobile.door.ext.withDoorTransaction
 import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
-import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.lib.db.entities.NetworkNodeFailure
-import com.ustadmobile.lib.db.entities.NetworkNodeSuccess
+import com.ustadmobile.retriever.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNodeFailure
+import com.ustadmobile.retriever.db.entities.NetworkNodeSuccess
 import com.ustadmobile.retriever.*
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
@@ -27,6 +28,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.*
+import java.io.File
+import javax.naming.InitialContext
 
 class RetrieverTest {
 
@@ -48,12 +51,21 @@ class RetrieverTest {
     @Rule
     var tempFolderRule = TemporaryFolder()
 
+    var dbTimeStamp: Long = 0
+
     @Before
     fun setup() {
         Napier.takeLogarithm()
         Napier.base(DebugAntilog())
 
-        db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "jvmTestDb")
+        dbTimeStamp = systemTimeInMillis()
+
+        val sqliteDir = File(File("build"), "tmp")
+        sqliteDir.takeIf { !it.exists() }?.mkdirs()
+        InitialContext().bindNewSqliteDataSourceIfNotExisting("jvmTestDb_$dbTimeStamp",
+            sqliteDir)
+        Napier.d("TEST DATABASE: $dbTimeStamp")
+        db = DatabaseBuilder.databaseBuilder(Any(), RetrieverDatabase::class, "jvmTestDb_$dbTimeStamp")
             .addCallback(NODE_STATUS_CHANGE_TRIGGER_CALLBACK)
             .build()
         db.clearAllTables()
@@ -139,6 +151,7 @@ class RetrieverTest {
         val nodeInDb = runBlocking { db.networkNodeDao.findByUidAsync(networkNodeId) }
         Assert.assertEquals("Node status is now struck off", NetworkNode.STATUS_STRUCK_OFF,
             nodeInDb?.networkNodeStatus)
+        retrieverJvm.close()
     }
 
     @Test
@@ -171,19 +184,15 @@ class RetrieverTest {
 
         retrieverJvm.recordSuccess(1, networkNodeId)
 
-        runBlocking {
-            db.waitUntilOrTimeout(2000, listOf("NetworkNode")) {
-                it.networkNodeDao.findByUidAsync(networkNodeId)?.networkNodeStatus == NetworkNode.STATUS_OK
-            }
-        }
-
+        verify(mockAvailabilityManager, timeout(2000)).checkQueue(true)
 
         val nodeInDb = runBlocking { db.networkNodeDao.findByUidAsync(networkNodeId) }
         Assert.assertEquals("NetworkNode status is OK", NetworkNode.STATUS_OK,
             nodeInDb?.networkNodeStatus)
 
         //Should be called once when Retriever start() is called, once when discovered, and then again when restored
-        verify(mockAvailabilityManager, timeout(2000).times(3)).checkQueue()
+
+        retrieverJvm.close()
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -210,6 +219,7 @@ class RetrieverTest {
                 tempFolderRule.newFile().absolutePath,
                 "sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC")), mock { })
         }
+        retrieverJvm.close()
     }
 
     @Test

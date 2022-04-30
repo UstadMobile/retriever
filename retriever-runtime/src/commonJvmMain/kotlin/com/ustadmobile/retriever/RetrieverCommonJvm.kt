@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever
 
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.db.RetrieverDatabase
 import com.ustadmobile.retriever.fetcher.LocalPeerFetcher
 import com.ustadmobile.retriever.fetcher.OriginServerFetcher

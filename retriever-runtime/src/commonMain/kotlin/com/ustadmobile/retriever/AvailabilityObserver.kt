@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever
 
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
+import com.ustadmobile.retriever.db.entities.AvailabilityObserverItem
 
 /**
  * Availability Observer

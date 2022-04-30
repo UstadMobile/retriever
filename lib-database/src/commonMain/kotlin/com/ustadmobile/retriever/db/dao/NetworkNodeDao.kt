@@ -2,9 +2,9 @@ package com.ustadmobile.retriever.db.dao
 
 import androidx.room.*
 import com.ustadmobile.door.DoorDataSourceFactory
-import com.ustadmobile.lib.db.entities.NetworkNode
-import com.ustadmobile.lib.db.entities.NetworkNodeAndLastFailInfo
-import com.ustadmobile.lib.db.entities.NetworkNodeRestoreInfo
+import com.ustadmobile.retriever.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNodeAndLastFailInfo
+import com.ustadmobile.retriever.db.entities.NetworkNodeRestoreInfo
 
 @Dao
 abstract class NetworkNodeDao {

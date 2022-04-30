@@ -4,7 +4,7 @@ import androidx.room.Database
 import com.ustadmobile.door.*
 import com.ustadmobile.door.entities.*
 import com.ustadmobile.door.ext.DoorTag
-import com.ustadmobile.lib.db.entities.*
+import com.ustadmobile.retriever.db.entities.*
 import com.ustadmobile.retriever.db.dao.*
 
 @Database(entities = [

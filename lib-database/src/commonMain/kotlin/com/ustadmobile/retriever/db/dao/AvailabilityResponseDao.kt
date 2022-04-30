@@ -3,9 +3,9 @@ package com.ustadmobile.retriever.db.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.ustadmobile.lib.db.entities.AvailabilityObserverItem
-import com.ustadmobile.lib.db.entities.AvailabilityResponse
-import com.ustadmobile.lib.db.entities.FileAvailabilityWithListener
+import com.ustadmobile.retriever.db.entities.AvailabilityObserverItem
+import com.ustadmobile.retriever.db.entities.AvailabilityResponse
+import com.ustadmobile.retriever.db.entities.FileAvailabilityWithListener
 
 @Dao
 abstract class AvailabilityResponseDao {

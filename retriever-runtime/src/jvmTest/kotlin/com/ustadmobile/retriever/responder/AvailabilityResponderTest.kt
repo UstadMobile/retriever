@@ -8,7 +8,7 @@ import fi.iki.elonen.router.RouterNanoHTTPD
 import org.junit.*
 import org.mockito.kotlin.mock
 import com.google.gson.reflect.TypeToken
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
 import com.ustadmobile.retriever.FileAvailableResponse
 import com.ustadmobile.retriever.db.callback.NODE_STATUS_CHANGE_TRIGGER_CALLBACK
 import kotlinx.serialization.json.Json

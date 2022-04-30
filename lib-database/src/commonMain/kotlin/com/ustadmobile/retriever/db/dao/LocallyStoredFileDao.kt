@@ -5,8 +5,8 @@ import androidx.room.Insert
 import androidx.room.Query
 import com.ustadmobile.door.DoorLiveData
 import com.ustadmobile.door.annotation.SqliteOnly
-import com.ustadmobile.lib.db.entities.LocallyStoredFile
-import com.ustadmobile.lib.db.entities.LocallyStoredFileAndDownloadJobItem
+import com.ustadmobile.retriever.db.entities.LocallyStoredFile
+import com.ustadmobile.retriever.db.entities.LocallyStoredFileAndDownloadJobItem
 
 @Dao
 abstract class LocallyStoredFileDao {

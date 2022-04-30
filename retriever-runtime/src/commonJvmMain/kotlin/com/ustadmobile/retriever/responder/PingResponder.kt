@@ -1,6 +1,6 @@
 package com.ustadmobile.retriever.responder
 
-import com.ustadmobile.lib.db.entities.NetworkNode
+import com.ustadmobile.retriever.db.entities.NetworkNode
 import com.ustadmobile.retriever.RetrieverCommon
 import com.ustadmobile.retriever.RetrieverCommon.Companion.RETRIEVER_PORT_HEADER
 import fi.iki.elonen.NanoHTTPD

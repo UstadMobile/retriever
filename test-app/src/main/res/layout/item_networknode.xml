@@ -4,13 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <import type="com.ustadmobile.lib.db.entities.NetworkNode"/>
+        <import type="com.ustadmobile.retriever.db.entities.NetworkNode"/>
 
         <import type="android.view.View"/>
 
         <variable
             name="node"
-            type="com.ustadmobile.lib.db.entities.NetworkNode" />
+            type="com.ustadmobile.retriever.db.entities.NetworkNode" />
 
         <variable
             name="listener"
