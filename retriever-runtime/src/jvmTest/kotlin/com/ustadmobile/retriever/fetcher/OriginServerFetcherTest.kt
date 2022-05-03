@@ -3,7 +3,7 @@ package com.ustadmobile.retriever.fetcher
 import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.ResourcesResponder
 import com.ustadmobile.retriever.Retriever
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.util.assertSuccessfullyCompleted
@@ -119,7 +119,7 @@ class OriginServerFetcherTest {
         }
 
         verifyBlocking(mockProgressListener) {
-            onRetrieverStatusUpdate(argWhere { it.status == STATUS_ATTEMPT_FAILED })
+            onRetrieverStatusUpdate(argWhere { it.status == STATUS_FAILED })
         }
     }
 
@@ -178,7 +178,7 @@ class OriginServerFetcherTest {
 
         verifyBlocking(mockProgressListener) {
             onRetrieverStatusUpdate(argWhere {
-                it.status == STATUS_ATTEMPT_FAILED
+                it.status == STATUS_FAILED
             })
         }
 

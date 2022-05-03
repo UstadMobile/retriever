@@ -3,10 +3,10 @@ package com.ustadmobile.retriever.fetcher
 import java.io.File
 import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.IntegrityChecksum
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
+import com.ustadmobile.retriever.Retriever
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
 import com.ustadmobile.retriever.RetrieverStatusUpdateEvent
 import com.ustadmobile.retriever.ext.copyToAndUpdateProgress
 import com.ustadmobile.retriever.io.FileChecksums
@@ -18,22 +18,27 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import kotlinx.coroutines.isActive
-import java.security.DigestOutputStream
 import java.security.MessageDigest
 import java.util.*
 import java.util.zip.CRC32
 import kotlin.coroutines.coroutineContext
+import io.github.aakira.napier.Napier
+import java.util.concurrent.atomic.AtomicInteger
 
 actual class OriginServerFetcher(
     private val okHttpClient: OkHttpClient,
     private val integrityChecksums: Array<IntegrityChecksum> = IntegrityChecksum.values(),
 ) {
 
+    val requestIdAtomic = AtomicInteger()
+
     actual suspend fun download(
         downloadJobItems: List<DownloadJobItem>,
         retrieverListener: RetrieverListener,
     ) {
+        val requestId = requestIdAtomic.getAndIncrement()
 
+        val logPrefix = "[OriginServerFetcher: #$requestId]"
         val crc32 = CRC32()
         val digestMap = integrityChecksums.associate {
             it to MessageDigest.getInstance(it.messageDigestName)
@@ -41,6 +46,7 @@ actual class OriginServerFetcher(
         val messageDigests = digestMap.values.toTypedArray()
 
         downloadJobItems.forEach { downloadJobItem ->
+            Napier.d("$logPrefix download: ${downloadJobItem.djiOriginUrl}", tag = Retriever.LOGTAG)
             val url = downloadJobItem.djiOriginUrl
                 ?: throw IllegalArgumentException("Null URL on ${downloadJobItem.djiUid}")
             val destFile = downloadJobItem.djiDestPath?.let { File(it) }
@@ -53,6 +59,8 @@ actual class OriginServerFetcher(
                     ?: (null to null)
 
                 if(bytesAlreadyDownloaded > 0) {
+                    Napier.d("$logPrefix ${downloadJobItem.djiOriginUrl} already downloaded $bytesAlreadyDownloaded",
+                        tag = Retriever.LOGTAG)
                     FileInputStream(destFile).use { fileIn ->
                         var bytesRead = 0
                         val buffer = ByteArray(8 * 1024)
@@ -126,12 +134,18 @@ actual class OriginServerFetcher(
                     }.toMap()
                     val finalStatus = if(integrityChecksum != null && !Arrays.equals(expectedDigest,
                             actualDigests[integrityChecksum])) {
+                        Napier.e("$logPrefix ${downloadJobItem.djiOriginUrl} - checksum does not match integrity!",
+                            tag = Retriever.LOGTAG)
                         //Integrity check failed - discard
                         destFile.delete()
-                        STATUS_ATTEMPT_FAILED
+                        STATUS_FAILED
                     }else if(totalBytes == bytesReadFromHttp + bytesAlreadyDownloaded) {
+                        Napier.e("$logPrefix ${downloadJobItem.djiOriginUrl} - download completed OK",
+                            tag = Retriever.LOGTAG)
                         STATUS_SUCCESSFUL
                     }else {
+                        Napier.w("$logPrefix ${downloadJobItem.djiOriginUrl} - download has not received all bytes " +
+                                "expected", tag = Retriever.LOGTAG)
                         STATUS_QUEUED
                     }
 
@@ -154,8 +168,10 @@ actual class OriginServerFetcher(
             }catch(e: Exception) {
                 //Don't just throw an exception, because we could be handling multiple downloads (hence should continue
                 // with the next ones)
+                Napier.e("$logPrefix Exception attempting to download ${downloadJobItem.djiOriginUrl}", e,
+                    tag = Retriever.LOGTAG)
                 retrieverListener.onRetrieverStatusUpdate(
-                    RetrieverStatusUpdateEvent(downloadJobItem.djiUid, url, STATUS_ATTEMPT_FAILED))
+                    RetrieverStatusUpdateEvent(downloadJobItem.djiUid, url, STATUS_FAILED, exception = e))
             }
         }
     }

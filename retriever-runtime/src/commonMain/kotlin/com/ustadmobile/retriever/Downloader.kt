@@ -6,7 +6,6 @@ import com.ustadmobile.door.ext.withDoorTransactionAsync
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.db.entities.DownloadJobItemAndNodeInfo
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
@@ -182,7 +181,8 @@ class Downloader(
                     jobItemIdsStarted += retrieverProgressEvent.downloadJobItemUid
 
                     downloadJobItemUpdateMutex.withLock {
-                        Napier.d("DownloadJobItem update: bytes so far: ${retrieverProgressEvent.bytesSoFar}")
+                        Napier.d("DownloadJobItem update: bytes so far: ${retrieverProgressEvent.bytesSoFar}",
+                            tag = Retriever.LOGTAG)
                         pendingUpdates[retrieverProgressEvent.downloadJobItemUid] = retrieverProgressEvent
                     }
 
@@ -190,9 +190,9 @@ class Downloader(
                 }
 
                 override suspend fun onRetrieverStatusUpdate(retrieverStatusEvent: RetrieverStatusUpdateEvent) {
-                    hasFailedAttempts = hasFailedAttempts || retrieverStatusEvent.status == STATUS_ATTEMPT_FAILED
+                    hasFailedAttempts = hasFailedAttempts || retrieverStatusEvent.status == STATUS_FAILED
 
-                    val isFailedAttempt = (retrieverStatusEvent.status == STATUS_ATTEMPT_FAILED)
+                    val isFailedAttempt = (retrieverStatusEvent.status == STATUS_FAILED)
                     val downloadItem = item.itemsToDownload.first {it.djiUid == retrieverStatusEvent.downloadJobItemUid }
                     var attemptCount = downloadItem.djiAttemptCount
                     val newEvt =  when {
@@ -231,7 +231,7 @@ class Downloader(
                 }
             }catch(e: Exception) {
                 hasFailedAttempts = true
-                Napier.e("Exception running downloader", e)
+                Napier.e("Exception running downloader", e, tag = Retriever.LOGTAG)
             }finally {
                 withContext(NonCancellable) {
                     if(hasFailedAttempts) {
@@ -247,7 +247,8 @@ class Downloader(
 
                     updateDownloadJobItemTransaction { txDb ->
                         statusCommits.forEach {
-                            Napier.d("$logPrefix - processor $id Update Job status of # ${it.key} = ${it.value.status} (${systemTimeInMillis()})")
+                            Napier.d("$logPrefix - processor $id Update Job status of # ${it.key} = ${it.value.status} (${systemTimeInMillis()})",
+                                tag = Retriever.LOGTAG)
                             txDb.downloadJobItemDao.updateStatusAndAttemptCountByUid(it.key, it.value.status,
                                 it.value.attempts)
                         }
@@ -275,7 +276,9 @@ class Downloader(
                                 attemptCountToSet = it.djiAttemptCount
                             }
 
-                            Napier.d("$logPrefix - processor $id Update Job status of # ${it.djiUid} = ${statusToSet} (${systemTimeInMillis()})")
+                            Napier.d(
+                                "$logPrefix - processor $id Update Job status of # ${it.djiUid} = ${statusToSet} (${systemTimeInMillis()})",
+                                tag = Retriever.LOGTAG)
                             txDb.downloadJobItemDao.updateStatusAndAttemptCountByUid(it.djiUid, statusToSet,
                                 attemptCountToSet)
                         }
@@ -284,7 +287,8 @@ class Downloader(
                         txDb.commitProgressUpdates()
                     }
 
-                    Napier.d("$logPrefix - processor $id Requesting queue check ${systemTimeInMillis()}")
+                    Napier.d("$logPrefix - processor $id Requesting queue check ${systemTimeInMillis()}",
+                        tag = Retriever.LOGTAG)
                     checkQueueChannel.send(true)
                 }
 
@@ -294,7 +298,7 @@ class Downloader(
     }
 
     suspend fun download() {
-        Napier.i("$logPrefix download started")
+        Napier.i("$logPrefix download started", tag = Retriever.LOGTAG)
         val downloadUrlList: List<String> = db.downloadJobItemDao.findAllUrlsByBatchId(downloadBatchId).filterNotNull()
         val noChecksPendingCompleteable = CompletableDeferred<Boolean>()
         val availabilityObserver = AvailabilityObserver(downloadUrlList, {
@@ -338,7 +342,7 @@ class Downloader(
                 availabilityManager.removeAvailabilityObserver(availabilityObserver)
             }
         }
-        Napier.i("$logPrefix download finished")
+        Napier.i("$logPrefix download finished", tag = Retriever.LOGTAG)
     }
 
 

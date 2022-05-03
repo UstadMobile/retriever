@@ -6,7 +6,6 @@ import com.ustadmobile.retriever.db.entities.AvailabilityResponse
 import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.db.entities.NetworkNode
 import com.ustadmobile.retriever.db.entities.NetworkNodeFailure
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
@@ -179,7 +178,7 @@ class DownloaderTest {
         val maxNumAttempts = 4
 
         mockOriginServerFetcher.stub {
-            onOriginDownloadThenAnswerAndFireUpdate { STATUS_ATTEMPT_FAILED }
+            onOriginDownloadThenAnswerAndFireUpdate { STATUS_FAILED }
         }
 
         val downloader = Downloader(42, mockAvailabilityManager, mockProgressListener,
@@ -225,7 +224,7 @@ class DownloaderTest {
                 if(jobItems.firstOrNull()?.djiOriginUrl == downloadJobItems.first().djiOriginUrl) {
                     failCount--
                     if(failCount >= 0)
-                        STATUS_ATTEMPT_FAILED
+                        STATUS_FAILED
                     else
                         STATUS_SUCCESSFUL
                 }else {

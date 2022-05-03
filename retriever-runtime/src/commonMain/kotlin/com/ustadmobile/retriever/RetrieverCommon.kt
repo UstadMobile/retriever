@@ -140,7 +140,9 @@ abstract class RetrieverCommon(
     }
 
     /**
-     * Check the status changes that have been reported in
+     * Check the status changes that have been reported. Note: The way this delivers events is NOT GOOD. This code is
+     * running in a transaction, but the event is being fired right away. It would be better for the event firing to be
+     * done after the transaction is finished.
      */
     private suspend fun RetrieverDatabase.checkNetworkNodeStatusChanges() {
         val statusChanges = networkNodeStatusChangeDao.findAll()
@@ -216,6 +218,16 @@ abstract class RetrieverCommon(
                             "config integrityChecksumTypes")
                 }
             }
+        }
+
+        //make sure there are no items with the same destination
+        val duplicateDestRequests = retrieverRequests.filter { request ->
+            retrieverRequests.count { it.destinationFilePath == request.destinationFilePath } > 1
+        }
+
+        if(duplicateDestRequests.isNotEmpty()) {
+            throw IllegalArgumentException("Request has multiple items attempting to save to the same destination: " +
+                    duplicateDestRequests.map { it.destinationFilePath}.distinct())
         }
 
         val batchId = systemTimeInMillis()

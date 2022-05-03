@@ -38,7 +38,7 @@ kotlin {
                 implementation "com.github.UstadMobile.door:door-runtime:$version_door"
                 implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$version_kotlinx_serialization"
                 compileOnly project(':lib-database')
-                compileOnly project(':lib-database-entities')
+                implementation project(':lib-database-entities')
                 implementation "com.soywiz.korlibs.klock:klock:$version_klock"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version_coroutines"
                 implementation "org.jetbrains.kotlinx:atomicfu:$version_atomicfu"
@@ -69,6 +69,7 @@ kotlin {
         jvmMain {
             dependsOn commonJvmMain
             dependencies {
+                implementation project(":lib-database-mpp")
                 implementation "com.squareup.okhttp3:okhttp:$version_okhttp"
                 implementation "io.ktor:ktor-client-gson:$version_ktor"
                 implementation "io.ktor:ktor-client-okhttp:$version_ktor"

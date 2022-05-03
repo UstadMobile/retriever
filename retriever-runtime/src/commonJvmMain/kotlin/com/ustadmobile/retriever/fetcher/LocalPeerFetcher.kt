@@ -4,7 +4,6 @@ import com.ustadmobile.door.ext.writeToFile
 import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.IntegrityChecksum
 import com.ustadmobile.retriever.Retriever
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
 import com.ustadmobile.retriever.RetrieverStatusUpdateEvent
 import com.ustadmobile.retriever.ext.requirePostfix
 import com.ustadmobile.retriever.io.extractToDir

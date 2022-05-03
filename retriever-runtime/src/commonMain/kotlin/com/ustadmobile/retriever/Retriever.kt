@@ -45,8 +45,6 @@ interface Retriever{
 
         const val STATUS_SUCCESSFUL = 24
 
-        const val STATUS_ATTEMPT_FAILED = 25
-
         const val STATUS_FAILED = 26
 
         /**

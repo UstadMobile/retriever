@@ -9,7 +9,7 @@ import kotlinx.coroutines.isActive
 import com.ustadmobile.door.util.systemTimeInMillis
 import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.IntegrityChecksum
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_SUCCESSFUL
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_QUEUED
 import com.ustadmobile.retriever.Retriever.Companion.STATUS_RUNNING
@@ -97,7 +97,7 @@ suspend fun ZipInputStream.extractToDir(
                         //fail integrity check; discard
 
                         destFile.delete()
-                        STATUS_ATTEMPT_FAILED
+                        STATUS_FAILED
                     }else if(entryBytesSoFar == zipEntry.size) {
                         STATUS_SUCCESSFUL
                     }else {

@@ -2,7 +2,7 @@ package com.ustadmobile.retriever.fetcher
 
 import com.ustadmobile.retriever.db.entities.DownloadJobItem
 import com.ustadmobile.retriever.Retriever
-import com.ustadmobile.retriever.Retriever.Companion.STATUS_ATTEMPT_FAILED
+import com.ustadmobile.retriever.Retriever.Companion.STATUS_FAILED
 import com.ustadmobile.retriever.ext.headerSize
 import com.ustadmobile.retriever.ext.url
 import com.ustadmobile.retriever.responder.AbstractUriResponder
@@ -246,7 +246,7 @@ class LocalPeerFetcherTest {
             if(index == corruptResIndex) {
                 verifyBlocking(mockRetrieverListener, atLeastOnce()) {
                     onRetrieverStatusUpdate(argWhere { evt ->
-                        evt.downloadJobItemUid == jobItem.djiUid && evt.status == STATUS_ATTEMPT_FAILED
+                        evt.downloadJobItemUid == jobItem.djiUid && evt.status == STATUS_FAILED
                     })
                 }
 
