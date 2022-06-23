@@ -4,8 +4,8 @@ apply plugin: "com.github.ben-manes.versions"
 
 buildscript {
 
-    ext.kotlin_version = "1.6.0"
-    ext.atomicfu_version = '0.17.0'
+    ext.kotlin_version = "1.7.0"
+    ext.atomicfu_version = '0.18.0'
     ext.gradle_versions_version = "0.42.0"
 
     repositories {
@@ -49,16 +49,16 @@ allprojects {
  * https://maven.google.com/web/index.html
  */
 ext {
-    version_kotlin = "1.6.0"
-    version_ktor = "1.6.8"
+    version_kotlin = "1.7.0"
+    version_ktor = "2.0.2"
     version_nanohttpd = "2.3.1"
-    version_napier = "2.5.0"
-    version_atomicfu = '0.17.1'
+    version_napier = "2.6.1"
+    version_atomicfu = '0.18.0'
     version_sqlite_jdbc = "3.36.0.3"
-    version_kodein_di = "7.11.0"
+    version_kodein_di = "7.13.0"
     version_kotlin_mockito = "4.0.0"
-    version_mockito_inline = "4.4.0"
-    version_mockwebserver = "4.9.3"
+    version_mockito_inline = "4.6.1"
+    version_mockwebserver = "4.10.0"
     version_android_room = "2.4.2"
     version_androidx_lifecycle = "2.4.1"
     version_androidx_paging = "2.1.2"
@@ -66,15 +66,15 @@ ext {
     version_kotlinpoet = "1.9.0"
     version_jsqlparser = "4.0"
     version_apache_commons_text = "1.9"
-    version_gson = "2.8.6"
+    version_gson = "2.9.0"
     version_simple_jndi = "0.23.0"
     version_apache_commons_pool2 = "2.11.1"
     version_sqlite_jdbc = "3.36.0.3"
     version_postgres_jdbc = "42.2.20"
     version_apache_commons_dbcp2 = "2.9.0"
     version_logback = "1.2.3"
-    version_okhttp = "4.9.1"
-    version_kotlinx_serialization = "1.3.0"
+    version_okhttp = "4.10.0"
+    version_kotlinx_serialization = "1.3.3"
     version_kotlinx_metadata = "0.3.0"
 
     version_android_junit_runner = "1.4.0"
@@ -87,22 +87,21 @@ ext {
     version_androidx_recyclerview = "1.2.1"
     version_androidx_datastore = "1.0.0"
 
-    version_door = "0.0.56"
+    version_door = "0.0.60"
     version_junit = "4.13"
 
     version_kotlin_jvmTarget = "1.8"
-    version_coroutines = "1.6.0"
+    version_coroutines = "1.6.3"
 
-    version_android_maven_publish = "3.6.2"
-    version_androidx_appcompat = "1.4.1"
+    version_androidx_appcompat = "1.4.2"
     version_androidx_legacy = "1.0.0"
-    version_android_roboelectric = "4.5.1"
+    version_android_roboelectric = "4.8.1"
     version_android_espresso = "3.4.0"
-    version_android_material = "1.5.0"
-    version_android_constraint_layout = "2.1.3"
+    version_android_material = "1.6.1"
+    version_android_constraint_layout = "2.1.4"
     version_android_coordinator_layout = "1.2.0"
 
-    version_klock = "2.0.7"
+    version_klock = "2.4.13"
 
     version_android_navigation = "2.4.2"
 }

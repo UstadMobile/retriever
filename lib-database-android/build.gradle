@@ -3,16 +3,6 @@ apply plugin: "kotlin-android"
 apply plugin: 'kotlin-kapt'
 apply plugin: 'maven-publish'
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath "digital.wup:android-maven-publish:$version_android_maven_publish"
-    }
-}
-
 android {
     compileSdkVersion rootProject.ext.version_android_compile_sdk
 
@@ -102,7 +92,7 @@ dependencies {
     //Room persistence
     implementation "androidx.room:room-runtime:$version_android_room"
     implementation "androidx.room:room-ktx:$version_android_room"
-    kapt "androidx.room:room-compiler:$version_android_room"
+    annotationProcessor "androidx.room:room-compiler:$version_android_room"
 
 
     //Logging

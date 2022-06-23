@@ -3,8 +3,9 @@ package com.ustadmobile.retriever
 import com.ustadmobile.retriever.db.entities.NetworkNode
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -28,7 +29,7 @@ class AvailabilityCheckerHttpTest {
     fun setup() {
         json = Json { encodeDefaults = true }
         httpClient = HttpClient(OkHttp) {
-            install(JsonFeature)
+            install(ContentNegotiation)
             install(HttpTimeout)
         }
 
